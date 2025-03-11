@@ -11,6 +11,7 @@ import FactoryExpenses from "./pages/Accounts/FactoryExpenses";
 import TruckOtherExpenses from "./pages/Accounts/TruckOtherExpenses";
 import Brands from "./pages/Brands/Brands";
 import TruckRoute from "./pages/TruckRoute/TruckRoute";
+import Hero from "./pages/Hero";
 
 const AppRouter = () => {
   return (
@@ -20,6 +21,7 @@ const AppRouter = () => {
         <main className="flex-grow p-4 pt-16">
           <Routes>
             {/* Accounts Section */}
+            <Route path="/" element={<Hero />} />
             <Route path="/accounts/company-accounts" element={<CompanyAccounts />} />
             <Route path="/accounts/employees" element={<Employees />} />
             <Route path="/accounts/bank-accounts" element={<BankAccounts />} />

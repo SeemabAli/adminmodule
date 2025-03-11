@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FiMenu, FiX, FiSun, FiMoon } from "react-icons/fi";
+import { FiMenu, FiX, FiSun, FiMoon, FiChevronDown } from "react-icons/fi";
 
 const Navbar = () => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+    const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
 
     useEffect(() => {
         document.documentElement.setAttribute("data-theme", theme);
@@ -12,34 +13,61 @@ const Navbar = () => {
     }, [theme]);
 
     const toggleTheme = () => {
-        const newTheme = theme === "light" ? "dark" : "light";
-        setTheme(newTheme);
+        setTheme(theme === "light" ? "dark" : "light");
     };
+
+    // Close menu and dropdown on mobile item click
+    const closeMenu = () => {
+        setMenuOpen(false);
+    };
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (!(event.target as HTMLElement).closest(".dropdown")) {
+                setAccountDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener("click", handleClickOutside);
+        return () => document.removeEventListener("click", handleClickOutside);
+    }, []);
 
     return (
         <nav className="bg-base-200 shadow-md p-4 fixed top-0 left-0 w-full z-50">
             <div className="container mx-auto flex justify-between items-center">
-                <h1 className="text-2xl font-bold">Cement Factory</h1>
-
+                <Link to="/">
+                    <h1 className="text-2xl font-bold hover:text-primary">Cement Factory</h1>
+                </Link>
                 {/* Desktop Menu */}
-                <div className="hidden md:flex space-x-6 items-center">
-                    {/* DaisyUI Dropdown */}
-                    <div className="dropdown dropdown-hover">
-                        <label tabIndex={0} className="btn btn-ghost m-1">Accounts</label>
-                        <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-300 rounded-box w-52">
-                            <li><Link to="/accounts/company-accounts">Company Accounts</Link></li>
-                            <li><Link to="/accounts/employees">Employees</Link></li>
-                            <li><Link to="/accounts/bank-accounts">Bank Accounts</Link></li>
-                            <li><Link to="/accounts/truck-information">Truck Information</Link></li>
-                            <li><Link to="/accounts/delivery-routes">Delivery Routes</Link></li>
-                            <li><Link to="/accounts/tax-accounts">Tax Accounts</Link></li>
-                            <li><Link to="/accounts/factory-expenses">Factory Expenses</Link></li>
-                            <li><Link to="/accounts/truck-other-expenses">Truck Other Expenses</Link></li>
-                        </ul>
+                <div className="hidden md:flex items-center">
+                    {/* Desktop Dropdown */}
+                    <div className="dropdown relative">
+                        <button
+                            className="btn btn-ghost flex items-center gap-2 hover:text-primary"
+                            onClick={(e) => {
+                                e.stopPropagation(); // Prevent immediate closing
+                                setAccountDropdownOpen(!accountDropdownOpen);
+                            }}
+                        >
+                            Accounts <FiChevronDown className={`transition-transform ${accountDropdownOpen ? "rotate-180" : ""}`} />
+                        </button>
+                        {accountDropdownOpen && (
+                            <ul className="absolute left-0 mt-2 w-52 menu p-2 shadow bg-base-300 rounded-box">
+                                <li><Link to="/accounts/company-accounts">Company Accounts</Link></li>
+                                <li><Link to="/accounts/employees">Employees</Link></li>
+                                <li><Link to="/accounts/bank-accounts">Bank Accounts</Link></li>
+                                <li><Link to="/accounts/truck-information">Truck Information</Link></li>
+                                <li><Link to="/accounts/delivery-routes">Delivery Routes</Link></li>
+                                <li><Link to="/accounts/tax-accounts">Tax Accounts</Link></li>
+                                <li><Link to="/accounts/factory-expenses">Factory Expenses</Link></li>
+                                <li><Link to="/accounts/truck-other-expenses">Truck Other Expenses</Link></li>
+                            </ul>
+                        )}
                     </div>
 
-                    <Link to="/brands" className="hover:text-gray-400">Brands</Link>
-                    <Link to="/truck-route" className="hover:text-gray-400">Truck Route</Link>
+                    <Link to="/brands" className="btn btn-ghost hover:text-primary" onClick={closeMenu}>Brands</Link>
+                    <Link to="/truck-route" className="btn btn-ghost hover:text-primary" onClick={closeMenu}>Truck Route</Link>
 
                     <button onClick={toggleTheme} className="btn btn-ghost">
                         {theme === "light" ? <FiMoon size={20} /> : <FiSun size={20} />}
@@ -58,23 +86,30 @@ const Navbar = () => {
                     <FiX />
                 </button>
                 <div className="p-6 mt-10 space-y-4">
-                    {/* DaisyUI Dropdown in Mobile Menu */}
-                    <div className="dropdown">
-                        <label tabIndex={0} className="btn btn-ghost w-full text-left">Accounts</label>
-                        <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-300 rounded-box w-52">
-                            <li><Link to="/accounts/company-accounts">Company Accounts</Link></li>
-                            <li><Link to="/accounts/employees">Employees</Link></li>
-                            <li><Link to="/accounts/bank-accounts">Bank Accounts</Link></li>
-                            <li><Link to="/accounts/truck-information">Truck Information</Link></li>
-                            <li><Link to="/accounts/delivery-routes">Delivery Routes</Link></li>
-                            <li><Link to="/accounts/tax-accounts">Tax Accounts</Link></li>
-                            <li><Link to="/accounts/factory-expenses">Factory Expenses</Link></li>
-                            <li><Link to="/accounts/truck-other-expenses">Truck Other Expenses</Link></li>
-                        </ul>
+                    {/* Mobile Dropdown */}
+                    <div>
+                        <button
+                            onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
+                            className="btn btn-ghost w-full flex justify-between items-center"
+                        >
+                            Accounts <FiChevronDown className={`transition-transform ${accountDropdownOpen ? "rotate-180" : ""}`} />
+                        </button>
+                        {accountDropdownOpen && (
+                            <ul className="menu bg-base-200 rounded-box mt-2 p-2 shadow">
+                                <li><Link to="/accounts/company-accounts" onClick={closeMenu}>Company Accounts</Link></li>
+                                <li><Link to="/accounts/employees" onClick={closeMenu}>Employees</Link></li>
+                                <li><Link to="/accounts/bank-accounts" onClick={closeMenu}>Bank Accounts</Link></li>
+                                <li><Link to="/accounts/truck-information" onClick={closeMenu}>Truck Information</Link></li>
+                                <li><Link to="/accounts/delivery-routes" onClick={closeMenu}>Delivery Routes</Link></li>
+                                <li><Link to="/accounts/tax-accounts" onClick={closeMenu}>Tax Accounts</Link></li>
+                                <li><Link to="/accounts/factory-expenses" onClick={closeMenu}>Factory Expenses</Link></li>
+                                <li><Link to="/accounts/truck-other-expenses" onClick={closeMenu}>Truck Other Expenses</Link></li>
+                            </ul>
+                        )}
                     </div>
 
-                    <Link to="/brands" className="block py-2">Brands</Link>
-                    <Link to="/truck-route" className="block py-2">Truck Route</Link>
+                    <Link to="/brands" className="block py-2" onClick={closeMenu}>Brands</Link>
+                    <Link to="/truck-route" className="block py-2" onClick={closeMenu}>Truck Route</Link>
 
                     <button onClick={toggleTheme} className="btn btn-ghost w-full mt-4">
                         {theme === "light" ? <FiMoon size={20} /> : <FiSun size={20} />} Toggle Theme
