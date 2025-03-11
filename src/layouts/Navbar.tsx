@@ -7,7 +7,7 @@ const Navbar = () => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
     const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
-    const [mobileAccountDropdownOpen, setMobileAccountDropdownOpen] = useState(false); // Separate state
+    const [mobileAccountDropdownOpen, setMobileAccountDropdownOpen] = useState(false);
 
     useEffect(() => {
         document.documentElement.setAttribute("data-theme", theme);
@@ -15,20 +15,19 @@ const Navbar = () => {
     }, [theme]);
 
     const toggleTheme = () => {
-        setTheme(theme === "light" ? "dark" : "light");
+        setTheme((prev) => (prev === "light" ? "dark" : "light"));
     };
 
-    // Close menu on mobile item click
     const closeMenu = () => {
         setMenuOpen(false);
-        setMobileAccountDropdownOpen(false); // Close mobile dropdown too
+        setMobileAccountDropdownOpen(false);
     };
 
-    // Close desktop dropdown when clicking outside
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
+        const handleClickOutside = (event: Event) => {
             if (!(event.target as HTMLElement).closest(".dropdown")) {
                 setAccountDropdownOpen(false);
+                setMobileAccountDropdownOpen(false);
             }
         };
 
@@ -43,15 +42,15 @@ const Navbar = () => {
                     <img src={blue} alt="Logo" className="h-10 w-auto" />
                     <h1 className="text-2xl font-bold hover:text-primary">MB & CO</h1>
                 </Link>
+
                 {/* Desktop Menu */}
                 <div className="hidden md:flex items-center">
-                    {/* Desktop Dropdown */}
                     <div className="dropdown relative">
                         <button
                             className="btn btn-ghost flex items-center gap-2 hover:text-primary"
                             onClick={(e) => {
                                 e.stopPropagation();
-                                setAccountDropdownOpen(!accountDropdownOpen);
+                                setAccountDropdownOpen((prev) => !prev);
                             }}
                         >
                             Accounts <FiChevronDown className={`transition-transform ${accountDropdownOpen ? "rotate-180" : ""}`} />
@@ -79,9 +78,48 @@ const Navbar = () => {
                 </div>
 
                 {/* Mobile Menu Button */}
-                <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-2xl z-50">
+                <button onClick={() => setMenuOpen((prev) => !prev)} className="md:hidden text-2xl z-50">
                     {menuOpen ? <FiX /> : <FiMenu />}
                 </button>
+
+                {/* Mobile Menu */}
+                <div className={`fixed top-0 right-0 h-full w-64 bg-base-300 shadow-lg transform ${menuOpen ? "translate-x-0" : "translate-x-full"} transition-transform duration-300 md:hidden z-50`}>
+                    <button onClick={closeMenu} className="absolute top-3 right-3 text-2xl">
+                        <FiX />
+                    </button>
+                    <div className="p-6 mt-10 space-y-4">
+                        <div>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setMobileAccountDropdownOpen((prev) => !prev);
+                                }}
+                                className="btn btn-ghost flex justify-between items-center w-full"
+                            >
+                                Accounts <FiChevronDown className={`transition-transform ${mobileAccountDropdownOpen ? "rotate-180" : ""}`} />
+                            </button>
+                            {mobileAccountDropdownOpen && (
+                                <ul className="menu bg-base-200 rounded-box mt-2 p-2 shadow">
+                                    <li><Link to="/accounts/company-accounts" onClick={closeMenu}>Company Accounts</Link></li>
+                                    <li><Link to="/accounts/employees" onClick={closeMenu}>Employees</Link></li>
+                                    <li><Link to="/accounts/bank-accounts" onClick={closeMenu}>Bank Accounts</Link></li>
+                                    <li><Link to="/accounts/truck-information" onClick={closeMenu}>Truck Information</Link></li>
+                                    <li><Link to="/accounts/delivery-routes" onClick={closeMenu}>Delivery Routes</Link></li>
+                                    <li><Link to="/accounts/tax-accounts" onClick={closeMenu}>Tax Accounts</Link></li>
+                                    <li><Link to="/accounts/factory-expenses" onClick={closeMenu}>Factory Expenses</Link></li>
+                                    <li><Link to="/accounts/truck-other-expenses" onClick={closeMenu}>Truck Other Expenses</Link></li>
+                                </ul>
+                            )}
+                        </div>
+
+                        <Link to="/brands" className="btn btn-ghost flex justify-start py-2" onClick={closeMenu}>Brands</Link>
+                        <Link to="/truck-route" className="btn btn-ghost flex justify-start py-2" onClick={closeMenu}>Truck Route</Link>
+
+                        <button onClick={toggleTheme} className="btn btn-ghost flex justify-start w-full mt-4">
+                            {theme === "light" ? <FiMoon size={20} /> : <FiSun size={20} />} Toggle Theme
+                        </button>
+                    </div>
+                </div>
             </div>
         </nav>
     );
