@@ -6,6 +6,7 @@ const Navbar = () => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
     const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
+    const [mobileAccountDropdownOpen, setMobileAccountDropdownOpen] = useState(false); // Separate state
 
     useEffect(() => {
         document.documentElement.setAttribute("data-theme", theme);
@@ -16,12 +17,13 @@ const Navbar = () => {
         setTheme(theme === "light" ? "dark" : "light");
     };
 
-    // Close menu and dropdown on mobile item click
+    // Close menu on mobile item click
     const closeMenu = () => {
         setMenuOpen(false);
+        setMobileAccountDropdownOpen(false); // Close mobile dropdown too
     };
 
-    // Close dropdown when clicking outside
+    // Close desktop dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (!(event.target as HTMLElement).closest(".dropdown")) {
@@ -46,7 +48,7 @@ const Navbar = () => {
                         <button
                             className="btn btn-ghost flex items-center gap-2 hover:text-primary"
                             onClick={(e) => {
-                                e.stopPropagation(); // Prevent immediate closing
+                                e.stopPropagation();
                                 setAccountDropdownOpen(!accountDropdownOpen);
                             }}
                         >
@@ -89,12 +91,15 @@ const Navbar = () => {
                     {/* Mobile Dropdown */}
                     <div>
                         <button
-                            onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setMobileAccountDropdownOpen(!mobileAccountDropdownOpen);
+                            }}
                             className="btn btn-ghost w-full flex justify-between items-center"
                         >
-                            Accounts <FiChevronDown className={`transition-transform ${accountDropdownOpen ? "rotate-180" : ""}`} />
+                            Accounts <FiChevronDown className={`transition-transform ${mobileAccountDropdownOpen ? "rotate-180" : ""}`} />
                         </button>
-                        {accountDropdownOpen && (
+                        {mobileAccountDropdownOpen && (
                             <ul className="menu bg-base-200 rounded-box mt-2 p-2 shadow">
                                 <li><Link to="/accounts/company-accounts" onClick={closeMenu}>Company Accounts</Link></li>
                                 <li><Link to="/accounts/employees" onClick={closeMenu}>Employees</Link></li>
