@@ -95,7 +95,7 @@ const Navbar = () => {
                                 e.stopPropagation();
                                 setMobileAccountDropdownOpen(!mobileAccountDropdownOpen);
                             }}
-                            className="btn btn-ghost w-full flex justify-between items-center"
+                            className="btn btn-ghost flex justify-between items-center"
                         >
                             Accounts <FiChevronDown className={`transition-transform ${mobileAccountDropdownOpen ? "rotate-180" : ""}`} />
                         </button>
@@ -113,10 +113,10 @@ const Navbar = () => {
                         )}
                     </div>
 
-                    <Link to="/brands" className="block py-2" onClick={closeMenu}>Brands</Link>
-                    <Link to="/truck-route" className="block py-2" onClick={closeMenu}>Truck Route</Link>
+                    <Link to="/brands" className="btn btn-ghost flex justify-start py-2" onClick={closeMenu}>Brands</Link>
+                    <Link to="/truck-route" className="btn btn-ghost flex justify-start py-2" onClick={closeMenu}>Truck Route</Link>
 
-                    <button onClick={toggleTheme} className="btn btn-ghost w-full mt-4">
+                    <button onClick={toggleTheme} className="btn btn-ghost flex justify-start w-full mt-4">
                         {theme === "light" ? <FiMoon size={20} /> : <FiSun size={20} />} Toggle Theme
                     </button>
                 </div>
