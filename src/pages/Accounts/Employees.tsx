@@ -1,36 +1,57 @@
 import { useState } from "react";
 
 const Employees = () => {
-    const [employees, setEmployees] = useState<{ name: string; phone: string; cnic: string; designation: string; department: string; salary: string }[]>([]);
+    const [employees, setEmployees] = useState<
+        { name: string; phone: string; cnic: string; designation: string; department: string; salary: string }[]
+    >([]);
     const [employeeName, setEmployeeName] = useState("");
-    const [employeePhone, setEmployeePhone] = useState("");
+    const [employeePhone, setEmployeePhone] = useState("+92");
     const [employeeCnic, setEmployeeCnic] = useState("");
     const [designation, setDesignation] = useState("");
     const [department, setDepartment] = useState("");
     const [salary, setSalary] = useState("");
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
+    // Handle Phone Input (Always starts with +92 and allows only 10 digits)
+    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        let value = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
+        if (value.startsWith("92")) value = value.substring(2); // Remove leading 92 if user types it
+        if (value.length > 10) value = value.slice(0, 10); // Limit to 10 digits
+        setEmployeePhone(`+92${value}`);
+    };
+
+    // Handle CNIC Input (Auto-format XXXXX-XXXXXXX-X)
+    const handleCnicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        let value = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
+
+        if (value.length > 13) value = value.slice(0, 13); // Limit to 13 digits
+
+        // Format as XXXXX-XXXXXXX-X
+        if (value.length > 5) value = value.slice(0, 5) + "-" + value.slice(5);
+        if (value.length > 13) value = value.slice(0, 13) + "-" + value.slice(13);
+
+        setEmployeeCnic(value);
+    };
+
     // Handle form submission
     const handleAddEmployee = () => {
-        if (employeeName.trim() === "" || employeePhone.trim() === "" || employeeCnic.trim() === "" || designation.trim() === "" || salary.trim() === "") return;
+        if (employeeName.trim() === "" || employeePhone.length !== 13 || employeeCnic.length !== 15 || designation.trim() === "" || salary.trim() === "") return;
 
         if (editingIndex !== null) {
-            // Update existing employee
             const updatedEmployees = [...employees];
             updatedEmployees[editingIndex] = { name: employeeName, phone: employeePhone, cnic: employeeCnic, designation, department, salary };
             setEmployees(updatedEmployees);
             setEditingIndex(null);
         } else {
-            // Add new employee
             setEmployees([...employees, { name: employeeName, phone: employeePhone, cnic: employeeCnic, designation, department, salary }]);
         }
 
         // Clear inputs
         setEmployeeName("");
-        setEmployeePhone("");
+        setEmployeePhone("+92");
         setEmployeeCnic("");
         setDesignation("");
-        setDepartment("Driver");
+        setDepartment("");
         setSalary("");
     };
 
@@ -62,17 +83,19 @@ const Employees = () => {
                     />
                     <input
                         type="text"
-                        placeholder="Employee Phone"
+                        placeholder="Employee Phone (+92XXXXXXXXXX)"
                         value={employeePhone}
-                        onChange={(e) => setEmployeePhone(e.target.value)}
+                        onChange={handlePhoneChange}
                         className="input input-bordered w-full"
+                        maxLength={13} // +92XXXXXXXXXX (13 characters)
                     />
                     <input
                         type="text"
-                        placeholder="Employee CNIC"
+                        placeholder="Employee CNIC (XXXXX-XXXXXXX-X)"
                         value={employeeCnic}
-                        onChange={(e) => setEmployeeCnic(e.target.value)}
+                        onChange={handleCnicChange}
                         className="input input-bordered w-full"
+                        maxLength={15} // CNIC format XXXXX-XXXXXXX-X (15 characters)
                     />
                     <input
                         type="text"
@@ -87,6 +110,7 @@ const Employees = () => {
                         onChange={(e) => setDepartment(e.target.value)}
                         className="select select-bordered w-full"
                     >
+                        <option value="">Select Department</option>
                         <option value="Driver">Driver</option>
                         <option value="Manager">Manager</option>
                         <option value="Engineer">Engineer</option>

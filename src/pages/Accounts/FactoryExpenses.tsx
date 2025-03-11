@@ -15,26 +15,38 @@ const FactoryExpenseTypes = () => {
     const [expenseDate, setExpenseDate] = useState("");
     const [expenseType, setExpenseType] = useState("Fixed Amount");
     const [expenseCategory, setExpenseCategory] = useState("General");
-    const [amount, setAmount] = useState<number>(0);
+    const [amount, setAmount] = useState<number | "">("");
     const [rangeTon, setRangeTon] = useState("0-50 Tons");
-    const [extraCharge, setExtraCharge] = useState<number>(0);
+    const [extraCharge, setExtraCharge] = useState<number | "">("");
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     const rangeOptions = ["0-50 Tons", "51-100 Tons", "101+ Tons"]; // Dummy ranges
     const expenseCategories = ["General", "Operational", "Maintenance", "Miscellaneous"]; // Dummy types
 
     // Save or Update Expense Type
     const handleSaveExpense = () => {
-        if (expenseName.trim() === "" || expenseDate === "" || amount <= 0) return;
+        if (expenseName.trim() === "") {
+            setError("Expense name is required.");
+            return;
+        }
+        if (expenseDate === "") {
+            setError("Expense date is required.");
+            return;
+        }
+        if (amount === "" || amount <= 0) {
+            setError("Amount must be greater than 0.");
+            return;
+        }
 
         const newExpense = {
             name: expenseName,
             date: expenseDate,
             type: expenseCategory,
-            amount,
+            amount: amount as number,
             expenseType,
             range: expenseType === "Range Ton From" ? rangeTon : undefined,
-            extraCharge
+            extraCharge: extraCharge as number,
         };
 
         if (editingIndex !== null) {
@@ -51,9 +63,10 @@ const FactoryExpenseTypes = () => {
         setExpenseDate("");
         setExpenseType("Fixed Amount");
         setExpenseCategory("General");
-        setAmount(0);
+        setAmount("");
         setRangeTon("0-50 Tons");
-        setExtraCharge(0);
+        setExtraCharge("");
+        setError(null);
     };
 
     // Edit Expense
@@ -72,6 +85,9 @@ const FactoryExpenseTypes = () => {
     return (
         <div className="p-6">
             <h2 className="text-2xl font-bold mb-4">Factory Expense Types</h2>
+
+            {/* Error Message */}
+            {error && <div className="text-red-500 mb-4">{error}</div>}
 
             {/* Form */}
             <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
@@ -111,7 +127,7 @@ const FactoryExpenseTypes = () => {
                         type="number"
                         placeholder="Amount"
                         value={amount}
-                        onChange={(e) => setAmount(parseFloat(e.target.value))}
+                        onChange={(e) => setAmount(e.target.value === "" ? "" : parseFloat(e.target.value))}
                         className="input input-bordered w-full"
                     />
 
@@ -154,7 +170,7 @@ const FactoryExpenseTypes = () => {
                         type="number"
                         placeholder="Extra Charges If Brand Change"
                         value={extraCharge}
-                        onChange={(e) => setExtraCharge(parseFloat(e.target.value))}
+                        onChange={(e) => setExtraCharge(e.target.value === "" ? "" : parseFloat(e.target.value))}
                         className="input input-bordered w-full"
                     />
                 </div>

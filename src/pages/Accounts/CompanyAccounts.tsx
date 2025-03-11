@@ -6,27 +6,24 @@ const CompanyAccounts = () => {
     const [companyAddress, setCompanyAddress] = useState("");
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
-    // Handle form submission
+    // Handle adding or updating a company
     const handleAddCompany = () => {
         if (companyName.trim() === "" || companyAddress.trim() === "") return;
 
         if (editingIndex !== null) {
-            // Update existing company
             const updatedCompanies = [...companies];
             updatedCompanies[editingIndex] = { name: companyName, address: companyAddress };
             setCompanies(updatedCompanies);
             setEditingIndex(null);
         } else {
-            // Add new company
             setCompanies([...companies, { name: companyName, address: companyAddress }]);
         }
 
-        // Clear inputs
         setCompanyName("");
         setCompanyAddress("");
     };
 
-    // Handle edit button click
+    // Handle editing a company
     const handleEdit = (index: number) => {
         setCompanyName(companies[index].name);
         setCompanyAddress(companies[index].address);

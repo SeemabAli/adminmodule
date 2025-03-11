@@ -1,13 +1,20 @@
 import { useState } from "react";
 
+interface Truck {
+    truckNumber: string;
+    defaultDriver: string;
+    defaultRoute: string;
+    truckType: string;
+}
+
 const TruckInformation = () => {
-    const [trucks, setTrucks] = useState<
-        { truckNumber: string; defaultDriver: string; defaultRoute: string; truckType: string }[]
-    >([]);
-    const [truckNumber, setTruckNumber] = useState("");
-    const [defaultDriver, setDefaultDriver] = useState("");
-    const [defaultRoute, setDefaultRoute] = useState("Karachi - Lahore");
-    const [truckType, setTruckType] = useState("MBnCO");
+    const [trucks, setTrucks] = useState<Truck[]>([]);
+    const [formData, setFormData] = useState<Truck>({
+        truckNumber: "",
+        defaultDriver: "",
+        defaultRoute: "Karachi - Lahore",
+        truckType: "MBnCO",
+    });
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
     const routes = [
@@ -17,36 +24,51 @@ const TruckInformation = () => {
         "Quetta - Karachi",
         "Faisalabad - Multan",
         "Multan - Hyderabad",
-        "Sialkot - Rawalpindi"
+        "Sialkot - Rawalpindi",
     ];
 
-    // Save Truck Information
+    // Handle input changes
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    // Save or update truck information
     const handleSaveTruck = () => {
-        if (truckNumber.trim() === "" || defaultDriver.trim() === "" || !truckType) return;
+        const { truckNumber, defaultDriver, truckType } = formData;
+
+        if (!truckNumber.trim() || !defaultDriver.trim() || !truckType) {
+            alert("All fields are required!");
+            return;
+        }
 
         if (editingIndex !== null) {
             const updatedTrucks = [...trucks];
-            updatedTrucks[editingIndex] = { truckNumber, defaultDriver, defaultRoute, truckType };
+            updatedTrucks[editingIndex] = formData;
             setTrucks(updatedTrucks);
             setEditingIndex(null);
         } else {
-            setTrucks([...trucks, { truckNumber, defaultDriver, defaultRoute, truckType }]);
+            setTrucks([...trucks, formData]);
         }
 
-        setTruckNumber("");
-        setDefaultDriver("");
-        setDefaultRoute("Karachi - Lahore");
-        setTruckType("MBnCO");
+        resetForm();
     };
 
-    // Edit Truck
+    // Edit truck details
     const handleEditTruck = (index: number) => {
-        const truck = trucks[index];
-        setTruckNumber(truck.truckNumber);
-        setDefaultDriver(truck.defaultDriver);
-        setDefaultRoute(truck.defaultRoute);
-        setTruckType(truck.truckType);
+        setFormData(trucks[index]);
         setEditingIndex(index);
+    };
+
+    // Delete truck entry
+    const handleDeleteTruck = (index: number) => {
+        const updatedTrucks = trucks.filter((_, i) => i !== index);
+        setTrucks(updatedTrucks);
+    };
+
+    // Reset form fields
+    const resetForm = () => {
+        setFormData({ truckNumber: "", defaultDriver: "", defaultRoute: "Karachi - Lahore", truckType: "MBnCO" });
+        setEditingIndex(null);
     };
 
     return (
@@ -56,22 +78,57 @@ const TruckInformation = () => {
             {/* Truck Information Form */}
             <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" placeholder="Truck Number" value={truckNumber} onChange={(e) => setTruckNumber(e.target.value)} className="input input-bordered w-full" />
-                    <input type="text" placeholder="Default Driver" value={defaultDriver} onChange={(e) => setDefaultDriver(e.target.value)} className="input input-bordered w-full" />
-                    <select value={defaultRoute} onChange={(e) => setDefaultRoute(e.target.value)} className="select select-bordered w-full">
+                    <input
+                        type="text"
+                        name="truckNumber"
+                        placeholder="Truck Number"
+                        value={formData.truckNumber}
+                        onChange={handleChange}
+                        className="input input-bordered w-full"
+                    />
+                    <input
+                        type="text"
+                        name="defaultDriver"
+                        placeholder="Default Driver"
+                        value={formData.defaultDriver}
+                        onChange={handleChange}
+                        className="input input-bordered w-full"
+                    />
+                    <select
+                        name="defaultRoute"
+                        value={formData.defaultRoute}
+                        onChange={handleChange}
+                        className="select select-bordered w-full"
+                    >
                         {routes.map((route, index) => (
-                            <option key={index} value={route}>{route}</option>
+                            <option key={index} value={route}>
+                                {route}
+                            </option>
                         ))}
                     </select>
 
                     {/* Truck Type Radio Buttons */}
                     <div className="flex gap-4 items-center">
                         <label className="flex items-center space-x-2">
-                            <input type="radio" name="truckType" value="MBnCO" checked={truckType === "MBnCO"} onChange={() => setTruckType("MBnCO")} className="radio" />
+                            <input
+                                type="radio"
+                                name="truckType"
+                                value="MBnCO"
+                                checked={formData.truckType === "MBnCO"}
+                                onChange={handleChange}
+                                className="radio"
+                            />
                             <span>MBnCO</span>
                         </label>
                         <label className="flex items-center space-x-2">
-                            <input type="radio" name="truckType" value="Outsource" checked={truckType === "Outsource"} onChange={() => setTruckType("Outsource")} className="radio" />
+                            <input
+                                type="radio"
+                                name="truckType"
+                                value="Outsource"
+                                checked={formData.truckType === "Outsource"}
+                                onChange={handleChange}
+                                className="radio"
+                            />
                             <span>Outsource</span>
                         </label>
                     </div>
@@ -104,8 +161,11 @@ const TruckInformation = () => {
                                     <td className="p-3">{truck.defaultRoute}</td>
                                     <td className="p-3">{truck.truckType}</td>
                                     <td className="p-3">
-                                        <button onClick={() => handleEditTruck(index)} className="btn btn-sm btn-warning">
+                                        <button onClick={() => handleEditTruck(index)} className="btn btn-sm btn-warning mr-2">
                                             Edit
+                                        </button>
+                                        <button onClick={() => handleDeleteTruck(index)} className="btn btn-sm btn-error">
+                                            Delete
                                         </button>
                                     </td>
                                 </tr>

@@ -8,11 +8,14 @@ const TaxAccounts = () => {
     const [taxValue, setTaxValue] = useState("");
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
-    const taxTypes = ["Sales Tax", "Income Tax", "Excise Duty", "Customs Duty"]; // Dummy data
+    const taxTypes = ["Sales Tax", "Income Tax", "Excise Duty", "Customs Duty"];
 
-    // Save or Update Tax Account
     const handleSaveTax = () => {
         if (taxName.trim() === "" || taxValue.trim() === "") return;
+        if (isNaN(Number(taxValue)) || Number(taxValue) < 0) {
+            alert("Please enter a valid tax value.");
+            return;
+        }
 
         if (editingIndex !== null) {
             const updatedTaxes = [...taxes];
@@ -23,13 +26,9 @@ const TaxAccounts = () => {
             setTaxes([...taxes, { taxName, taxType, taxRateType, taxValue }]);
         }
 
-        setTaxName("");
-        setTaxType("Sales Tax");
-        setTaxRateType("Percentage");
-        setTaxValue("");
+        resetForm();
     };
 
-    // Edit Tax Account
     const handleEditTax = (index: number) => {
         const tax = taxes[index];
         setTaxName(tax.taxName);
@@ -39,77 +38,48 @@ const TaxAccounts = () => {
         setEditingIndex(index);
     };
 
+    const handleDeleteTax = (index: number) => {
+        setTaxes(taxes.filter((_, i) => i !== index));
+    };
+
+    const resetForm = () => {
+        setTaxName("");
+        setTaxType("Sales Tax");
+        setTaxRateType("Percentage");
+        setTaxValue("");
+        setEditingIndex(null);
+    };
+
     return (
         <div className="p-6">
             <h2 className="text-2xl font-bold mb-4">Tax Accounts</h2>
 
-            {/* Form */}
             <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Tax Name */}
-                    <input
-                        type="text"
-                        placeholder="Tax Name"
-                        value={taxName}
-                        onChange={(e) => setTaxName(e.target.value)}
-                        className="input input-bordered w-full"
-                    />
-
-                    {/* Tax Type Dropdown */}
-                    <select
-                        value={taxType}
-                        onChange={(e) => setTaxType(e.target.value)}
-                        className="select select-bordered w-full"
-                    >
-                        {taxTypes.map((type, index) => (
-                            <option key={index} value={type}>
-                                {type}
-                            </option>
-                        ))}
+                    <input type="text" placeholder="Tax Name" value={taxName} onChange={(e) => setTaxName(e.target.value)} className="input input-bordered w-full" />
+                    <select value={taxType} onChange={(e) => setTaxType(e.target.value)} className="select select-bordered w-full">
+                        {taxTypes.map((type, index) => (<option key={index} value={type}>{type}</option>))}
                     </select>
-
-                    {/* Tax Rate Type */}
                     <div className="flex gap-4 items-center">
                         <label className="flex items-center space-x-2">
-                            <input
-                                type="radio"
-                                name="taxRateType"
-                                value="Percentage"
-                                checked={taxRateType === "Percentage"}
-                                onChange={() => setTaxRateType("Percentage")}
-                                className="radio"
-                            />
+                            <input type="radio" name="taxRateType" value="Percentage" checked={taxRateType === "Percentage"} onChange={() => setTaxRateType("Percentage")} className="radio" />
                             <span>Percentage (%)</span>
                         </label>
                         <label className="flex items-center space-x-2">
-                            <input
-                                type="radio"
-                                name="taxRateType"
-                                value="Fixed Per Bag"
-                                checked={taxRateType === "Fixed Per Bag"}
-                                onChange={() => setTaxRateType("Fixed Per Bag")}
-                                className="radio"
-                            />
+                            <input type="radio" name="taxRateType" value="Fixed Per Bag" checked={taxRateType === "Fixed Per Bag"} onChange={() => setTaxRateType("Fixed Per Bag")} className="radio" />
                             <span>Fixed Per Bag</span>
                         </label>
                     </div>
-
-                    {/* Tax Value */}
-                    <input
-                        type="text"
-                        placeholder={taxRateType === "Percentage" ? "Enter Percentage (%)" : "Enter Fixed Rate (Per Bag)"}
-                        value={taxValue}
-                        onChange={(e) => setTaxValue(e.target.value)}
-                        className="input input-bordered w-full"
-                    />
+                    <input type="text" placeholder={taxRateType === "Percentage" ? "Enter Percentage (%)" : "Enter Fixed Rate (Per Bag)"} value={taxValue} onChange={(e) => setTaxValue(e.target.value)} className="input input-bordered w-full" />
                 </div>
-
                 <button onClick={handleSaveTax} className="btn btn-primary mt-4">
                     {editingIndex !== null ? "Update Tax" : "Save Tax"}
                 </button>
+                {editingIndex !== null && (
+                    <button onClick={resetForm} className="btn btn-secondary ml-2">Cancel</button>
+                )}
             </div>
 
-            {/* Tax Accounts Table */}
             {taxes.length > 0 ? (
                 <div className="overflow-x-auto">
                     <table className="table w-full bg-base-200 rounded-lg shadow-md">
@@ -132,12 +102,8 @@ const TaxAccounts = () => {
                                     <td className="p-3">{tax.taxRateType}</td>
                                     <td className="p-3">{tax.taxValue}</td>
                                     <td className="p-3">
-                                        <button
-                                            onClick={() => handleEditTax(index)}
-                                            className="btn btn-sm btn-warning"
-                                        >
-                                            Edit
-                                        </button>
+                                        <button onClick={() => handleEditTax(index)} className="btn btn-sm btn-warning">Edit</button>
+                                        <button onClick={() => handleDeleteTax(index)} className="btn btn-sm btn-error ml-2">Delete</button>
                                     </td>
                                 </tr>
                             ))}

@@ -10,7 +10,10 @@ const DeliveryRoutes = () => {
 
     // Save or Update Route
     const handleSaveRoute = () => {
-        if (routeName.trim() === "" || shortCode.trim() === "") return;
+        if (routeName.trim() === "" || shortCode.trim() === "") {
+            alert("Route Name and Short Code are required!");
+            return;
+        }
 
         if (editingIndex !== null) {
             const updatedRoutes = [...routes];
@@ -21,18 +24,32 @@ const DeliveryRoutes = () => {
             setRoutes([...routes, { routeName, shortCode, haveToll }]);
         }
 
-        setRouteName("");
-        setShortCode("");
-        setHaveToll("Yes");
+        resetForm();
     };
 
     // Edit Route
     const handleEditRoute = (index: number) => {
-        const route = routes[index];
-        setRouteName(route.routeName);
-        setShortCode(route.shortCode);
-        setHaveToll(route.haveToll);
+        setRouteName(routes[index].routeName);
+        setShortCode(routes[index].shortCode);
+        setHaveToll(routes[index].haveToll);
         setEditingIndex(index);
+    };
+
+    // Delete Route
+    const handleDeleteRoute = (index: number) => {
+        const confirmDelete = window.confirm("Are you sure you want to delete this route?");
+        if (confirmDelete) {
+            const updatedRoutes = routes.filter((_, i) => i !== index);
+            setRoutes(updatedRoutes);
+        }
+    };
+
+    // Reset Form Fields
+    const resetForm = () => {
+        setRouteName("");
+        setShortCode("");
+        setHaveToll("Yes");
+        setEditingIndex(null);
     };
 
     // Filter Routes
@@ -118,22 +135,25 @@ const DeliveryRoutes = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredRoutes.map((route, index) => (
-                                <tr key={index} className="border-b border-base-300 text-center">
-                                    <td className="p-3">{index + 1}</td>
-                                    <td className="p-3">{route.routeName}</td>
-                                    <td className="p-3">{route.shortCode}</td>
-                                    <td className="p-3">{route.haveToll}</td>
-                                    <td className="p-3">
-                                        <button
-                                            onClick={() => handleEditRoute(index)}
-                                            className="btn btn-sm btn-warning"
-                                        >
-                                            Edit
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
+                            {filteredRoutes.map((route, index) => {
+                                const actualIndex = routes.findIndex((r) => r.routeName === route.routeName && r.shortCode === route.shortCode);
+                                return (
+                                    <tr key={index} className="border-b border-base-300 text-center">
+                                        <td className="p-3">{index + 1}</td>
+                                        <td className="p-3">{route.routeName}</td>
+                                        <td className="p-3">{route.shortCode}</td>
+                                        <td className="p-3">{route.haveToll}</td>
+                                        <td className="p-3">
+                                            <button onClick={() => handleEditRoute(actualIndex)} className="btn btn-sm btn-warning mr-2">
+                                                Edit
+                                            </button>
+                                            <button onClick={() => handleDeleteRoute(actualIndex)} className="btn btn-sm btn-error">
+                                                Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
