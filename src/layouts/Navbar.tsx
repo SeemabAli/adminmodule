@@ -1,37 +1,74 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FiMenu, FiX, FiSun, FiMoon, FiChevronDown } from "react-icons/fi";
+import { notify } from "../lib/notify";
 import blue from "../assets/blue.png";
 
 const Navbar = () => {
     const [menuOpen, setMenuOpen] = useState(false);
-    const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+    const [theme, setTheme] = useState("light");
     const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
     const [mobileAccountDropdownOpen, setMobileAccountDropdownOpen] = useState(false);
 
     useEffect(() => {
-        document.documentElement.setAttribute("data-theme", theme);
-        localStorage.setItem("theme", theme);
+        try {
+            const storedTheme = localStorage.getItem("theme") || "light";
+            setTheme(storedTheme);
+            document.documentElement.setAttribute("data-theme", storedTheme);
+        } catch (error) {
+            console.error("Error accessing localStorage:", error);
+            notify.error("Failed to load theme settings.");
+        }
+    }, []);
+
+    useEffect(() => {
+        try {
+            document.documentElement.setAttribute("data-theme", theme);
+            localStorage.setItem("theme", theme);
+        } catch (error) {
+            console.error("Error saving theme to localStorage:", error);
+            notify.error("Failed to save theme settings.");
+        }
     }, [theme]);
 
     const toggleTheme = () => {
-        setTheme((prev) => (prev === "light" ? "dark" : "light"));
+        try {
+            setTheme((prev) => (prev === "light" ? "dark" : "light"));
+        } catch (error) {
+            console.error("Error toggling theme:", error);
+            notify.error("Failed to change theme.");
+        }
     };
 
     const closeMenu = () => {
-        setMenuOpen(false);
-        setMobileAccountDropdownOpen(false);
+        try {
+            setMenuOpen(false);
+            setMobileAccountDropdownOpen(false);
+        } catch (error) {
+            console.error("Error closing menu:", error);
+            notify.error("Failed to close menu.");
+        }
     };
 
     const handleDropdownItemClick = () => {
-        setAccountDropdownOpen(false); // Closes dropdown when item is clicked
+        try {
+            setAccountDropdownOpen(false);
+        } catch (error) {
+            console.error("Error handling dropdown click:", error);
+            notify.error("Failed to close dropdown.");
+        }
     };
 
     useEffect(() => {
         const handleClickOutside = (event: Event) => {
-            if (!(event.target as HTMLElement).closest(".dropdown")) {
-                setAccountDropdownOpen(false);
-                setMobileAccountDropdownOpen(false);
+            try {
+                if (!(event.target as HTMLElement).closest(".dropdown")) {
+                    setAccountDropdownOpen(false);
+                    setMobileAccountDropdownOpen(false);
+                }
+            } catch (error) {
+                console.error("Error handling outside click:", error);
+                notify.error("Failed to close dropdown.");
             }
         };
 
@@ -62,6 +99,7 @@ const Navbar = () => {
                         {accountDropdownOpen && (
                             <ul className="absolute left-0 mt-2 w-52 menu p-2 shadow bg-base-300 rounded-box">
                                 <li><Link to="/accounts/company-accounts" onClick={handleDropdownItemClick}>Company Accounts</Link></li>
+                                <li><Link to="/accounts/customer" onClick={closeMenu}>Customer</Link></li>
                                 <li><Link to="/accounts/employees" onClick={handleDropdownItemClick}>Employees</Link></li>
                                 <li><Link to="/accounts/bank-accounts" onClick={handleDropdownItemClick}>Bank Accounts</Link></li>
                                 <li><Link to="/accounts/truck-information" onClick={handleDropdownItemClick}>Truck Information</Link></li>
@@ -105,6 +143,7 @@ const Navbar = () => {
                             {mobileAccountDropdownOpen && (
                                 <ul className="menu bg-base-200 rounded-box mt-2 p-2 shadow">
                                     <li><Link to="/accounts/company-accounts" onClick={closeMenu}>Company Accounts</Link></li>
+                                    <li><Link to="/accounts/customer" onClick={closeMenu}>Customer</Link></li>
                                     <li><Link to="/accounts/employees" onClick={closeMenu}>Employees</Link></li>
                                     <li><Link to="/accounts/bank-accounts" onClick={closeMenu}>Bank Accounts</Link></li>
                                     <li><Link to="/accounts/truck-information" onClick={closeMenu}>Truck Information</Link></li>

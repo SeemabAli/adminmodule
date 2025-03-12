@@ -13,6 +13,7 @@ import Brands from "./pages/Brands/Brands";
 import TruckRoute from "./pages/TruckRoute/TruckRoute";
 import { LandingPage } from "./pages/Hero";
 import { Toaster } from "react-hot-toast";
+import Customer from "./pages/Accounts/Customer";
 
 const AppRouter = () => {
   return (
@@ -32,6 +33,7 @@ const AppRouter = () => {
               <Route path="/" element={<LandingPage />} />
               <Route path="/accounts/company-accounts" element={<CompanyAccounts />} />
               <Route path="/accounts/employees" element={<Employees />} />
+              <Route path="/accounts/customer" element={<Customer />} />
               <Route path="/accounts/bank-accounts" element={<BankAccounts />} />
               <Route path="/accounts/truck-information" element={<TruckInformation />} />
               <Route path="/accounts/delivery-routes" element={<DeliveryRoutes />} />

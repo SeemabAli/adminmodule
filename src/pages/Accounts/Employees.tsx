@@ -32,7 +32,6 @@ const Employees = () => {
     const handleAddEmployee = () => {
         if (employeeName.trim() === "" || employeePhone.length !== 13 || employeeCnic.length !== 20 || designation.trim() === "" || salary.trim() === "") {
             notify.error("Please Fill All Fields Correctly!!!")
-
             return;
         }
 
@@ -41,6 +40,7 @@ const Employees = () => {
             updatedEmployees[editingIndex] = { name: employeeName, phone: employeePhone, cnic: employeeCnic, designation, department, salary };
             setEmployees(updatedEmployees);
             setEditingIndex(null);
+            notify.success("")
         } else {
             setEmployees([...employees, { name: employeeName, phone: employeePhone, cnic: employeeCnic, designation, department, salary }]);
         }

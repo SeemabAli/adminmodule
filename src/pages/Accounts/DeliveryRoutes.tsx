@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { notify } from "../../lib/notify";
+
 
 const DeliveryRoutes = () => {
     const [routes, setRoutes] = useState<{ routeName: string; shortCode: string; haveToll: string; tollType?: string }[]>([]);
@@ -12,7 +14,7 @@ const DeliveryRoutes = () => {
     // Save or Update Route
     const handleSaveRoute = () => {
         if (routeName.trim() === "" || shortCode.trim() === "") {
-            alert("Route Name and Short Code are required!");
+            notify.error("Route Name and Short Code are required!");
             return;
         }
 
@@ -23,8 +25,10 @@ const DeliveryRoutes = () => {
             updatedRoutes[editingIndex] = newRoute;
             setRoutes(updatedRoutes);
             setEditingIndex(null);
+            notify.success("Route updated successfully!");
         } else {
             setRoutes([...routes, newRoute]);
+            notify.success("Route added successfully!");
         }
 
         resetForm();
@@ -44,6 +48,7 @@ const DeliveryRoutes = () => {
         const confirmDelete = window.confirm("Are you sure you want to delete this route?");
         if (confirmDelete) {
             setRoutes(routes.filter((_, i) => i !== index));
+            notify.success("Route deleted successfully!");
         }
     };
 
