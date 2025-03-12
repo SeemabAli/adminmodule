@@ -421,7 +421,7 @@ const BankAccounts = () => {
                             <input
                                 type="text"
                                 name="chequeFrom"
-                                placeholder="Cheque From Number"
+                                placeholder="Cheque From"
                                 value={chequeFormData.chequeFrom}
                                 onChange={handleChequeInputChange}
                                 className="input input-bordered w-full"
@@ -429,7 +429,7 @@ const BankAccounts = () => {
                             <input
                                 type="text"
                                 name="chequeTo"
-                                placeholder="Cheque To Number"
+                                placeholder="Cheque To"
                                 value={chequeFormData.chequeTo}
                                 onChange={handleChequeInputChange}
                                 className="input input-bordered w-full"
