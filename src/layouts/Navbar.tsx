@@ -23,6 +23,10 @@ const Navbar = () => {
         setMobileAccountDropdownOpen(false);
     };
 
+    const handleDropdownItemClick = () => {
+        setAccountDropdownOpen(false); // Closes dropdown when item is clicked
+    };
+
     useEffect(() => {
         const handleClickOutside = (event: Event) => {
             if (!(event.target as HTMLElement).closest(".dropdown")) {
@@ -57,14 +61,14 @@ const Navbar = () => {
                         </button>
                         {accountDropdownOpen && (
                             <ul className="absolute left-0 mt-2 w-52 menu p-2 shadow bg-base-300 rounded-box">
-                                <li><Link to="/accounts/company-accounts">Company Accounts</Link></li>
-                                <li><Link to="/accounts/employees">Employees</Link></li>
-                                <li><Link to="/accounts/bank-accounts">Bank Accounts</Link></li>
-                                <li><Link to="/accounts/truck-information">Truck Information</Link></li>
-                                <li><Link to="/accounts/delivery-routes">Delivery Routes</Link></li>
-                                <li><Link to="/accounts/tax-accounts">Tax Accounts</Link></li>
-                                <li><Link to="/accounts/factory-expenses">Factory Expenses</Link></li>
-                                <li><Link to="/accounts/truck-other-expenses">Truck Other Expenses</Link></li>
+                                <li><Link to="/accounts/company-accounts" onClick={handleDropdownItemClick}>Company Accounts</Link></li>
+                                <li><Link to="/accounts/employees" onClick={handleDropdownItemClick}>Employees</Link></li>
+                                <li><Link to="/accounts/bank-accounts" onClick={handleDropdownItemClick}>Bank Accounts</Link></li>
+                                <li><Link to="/accounts/truck-information" onClick={handleDropdownItemClick}>Truck Information</Link></li>
+                                <li><Link to="/accounts/delivery-routes" onClick={handleDropdownItemClick}>Delivery Routes</Link></li>
+                                <li><Link to="/accounts/tax-accounts" onClick={handleDropdownItemClick}>Tax Accounts</Link></li>
+                                <li><Link to="/accounts/factory-expenses" onClick={handleDropdownItemClick}>Factory Expenses</Link></li>
+                                <li><Link to="/accounts/truck-other-expenses" onClick={handleDropdownItemClick}>Truck Other Expenses</Link></li>
                             </ul>
                         )}
                     </div>
