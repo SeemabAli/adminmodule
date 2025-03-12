@@ -11,17 +11,17 @@ import FactoryExpenses from "./pages/Accounts/FactoryExpenses";
 import TruckOtherExpenses from "./pages/Accounts/TruckOtherExpenses";
 import Brands from "./pages/Brands/Brands";
 import TruckRoute from "./pages/TruckRoute/TruckRoute";
-import Hero from "./pages/Hero";
+import { LandingPage } from "./pages/Hero";
 
 const AppRouter = () => {
   return (
     <Router>
       <div className="flex flex-col min-h-screen">
         <Navbar />
-        <main className="flex-grow p-4 pt-16">
+        <main className="flex-grow p-4 pb-0 pt-16">
           <Routes>
             {/* Accounts Section */}
-            <Route path="/" element={<Hero />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/accounts/company-accounts" element={<CompanyAccounts />} />
             <Route path="/accounts/employees" element={<Employees />} />
             <Route path="/accounts/bank-accounts" element={<BankAccounts />} />
