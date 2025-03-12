@@ -37,20 +37,26 @@ const CompanyAccounts = () => {
             {/* Form */}
             <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                        type="text"
-                        placeholder="Company Name"
-                        value={companyName}
-                        onChange={(e) => setCompanyName(e.target.value)}
-                        className="input input-bordered w-full"
-                    />
-                    <input
-                        type="text"
-                        placeholder="Company Address"
-                        value={companyAddress}
-                        onChange={(e) => setCompanyAddress(e.target.value)}
-                        className="input input-bordered w-full"
-                    />
+                    <label className="block mb-1 font-medium">
+                        Company Name
+                        <input
+                            type="text"
+                            placeholder="Enter Name"
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            className="input input-bordered w-full"
+                        />
+                    </label>
+                    <label className="block mb-1 font-medium">
+                        Company Address
+                        <input
+                            type="text"
+                            placeholder="Enter Address"
+                            value={companyAddress}
+                            onChange={(e) => setCompanyAddress(e.target.value)}
+                            className="input input-bordered w-full"
+                        />
+                    </label>
                 </div>
                 <button onClick={handleAddCompany} className="btn btn-primary mt-4">
                     {editingIndex !== null ? "Update Company" : "Add Company"}

@@ -65,6 +65,7 @@ const TruckRoute = () => {
             <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Route Name & Short Code */}
+                    <label className="block mb-1 font-medium">Salary
                     <input
                         type="text"
                         placeholder="Route Name"
@@ -72,6 +73,8 @@ const TruckRoute = () => {
                         onChange={(e) => setRouteName(e.target.value)}
                         className="input input-bordered w-full"
                     />
+                    </label>
+                    <label className="block mb-1 font-medium">Salary
                     <input
                         type="text"
                         placeholder="Route Short Code"
@@ -79,6 +82,7 @@ const TruckRoute = () => {
                         onChange={(e) => setRouteShortCode(e.target.value)}
                         className="input input-bordered w-full"
                     />
+                    </label>
                 </div>
 
                 <button onClick={handleSaveRoute} className="btn btn-primary mt-4">

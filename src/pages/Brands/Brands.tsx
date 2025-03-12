@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { notify } from "../../lib/notify";
 
 const Brands = () => {
     const [brands, setBrands] = useState<{
@@ -7,40 +8,54 @@ const Brands = () => {
         kgPerBag: number;
         commission: number;
         lessCommission: boolean;
-        taxType: string;
+        taxes: string[];
         routeShortCode: string;
         freight: number;
         givenToTruck: number;
+        companyName: string;
     }[]>([]);
 
     const [brandName, setBrandName] = useState("");
     const [brandShortCode, setBrandShortCode] = useState("");
+    const [companyName, setCompanyName] = useState("");
     const [kgPerBag, setKgPerBag] = useState<number | null>(null);
     const [commission, setCommission] = useState<number | null>(null);
     const [lessCommission, setLessCommission] = useState(false);
-    const [taxType, setTaxType] = useState("");
     const [routeShortCode, setRouteShortCode] = useState("");
     const [freight, setFreight] = useState<number | null>(null);
     const [givenToTruck, setGivenToTruck] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
-
+    const [taxes, setTaxes] = useState<string[]>([]);
+    const [step, setStep] = useState(1);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
+    const [isInEditMode, setIsInEditMode] = useState(false);
 
     // Dummy Data
     const taxTypes = ["WHT", "GST", "Sales Tax"];
     const routeShortCodes = ["RTE001", "RTE002", "RTE003", "RTE004"];
 
+    const handleNext = () => {
+        if (!companyName || !brandName || !brandShortCode) return;
+        setStep(2);
+    };
+
+    const handleBack = () => setStep(1);
+
     // Save or Update Brand
     const handleSaveBrand = () => {
-        if (brandName.trim() === "" || brandShortCode.trim() === "" || !kgPerBag || !commission || taxType === "" || routeShortCode === "" || !freight || !givenToTruck) return;
+        if (!kgPerBag || !commission ||  routeShortCode === "" || !freight || !givenToTruck) {
+          notify.error("Please complete all fields correctly");
+          return;  
+        };
 
         const newBrand = {
             name: brandName,
             shortCode: brandShortCode,
+            companyName,
             kgPerBag,
             commission,
             lessCommission,
-            taxType,
+            taxes,
             routeShortCode,
             freight,
             givenToTruck
@@ -55,31 +70,36 @@ const Brands = () => {
             setBrands([...brands, newBrand]);
         }
 
-        // Reset Fields
+        // Reset Fields & Return to Step 1
         setBrandName("");
         setBrandShortCode("");
+        setCompanyName("");
         setKgPerBag(null);
         setCommission(null);
         setLessCommission(false);
-        setTaxType("");
+        setTaxes([]);
         setRouteShortCode("");
         setFreight(null);
         setGivenToTruck(null);
+        setStep(1);
     };
 
     // Edit Brand
     const handleEditBrand = (index: number) => {
+        setIsInEditMode(true);
         const brand = brands[index];
         setBrandName(brand.name);
         setBrandShortCode(brand.shortCode);
+        setCompanyName(brand.companyName);
         setKgPerBag(brand.kgPerBag);
         setCommission(brand.commission);
         setLessCommission(brand.lessCommission);
-        setTaxType(brand.taxType);
+        setTaxes([...brand.taxes])
         setRouteShortCode(brand.routeShortCode);
         setFreight(brand.freight);
         setGivenToTruck(brand.givenToTruck);
         setEditingIndex(index);
+        setStep(2);
     };
 
     // Filtered brands based on search query
@@ -87,6 +107,12 @@ const Brands = () => {
         brand.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         brand.shortCode.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    const handleTaxChange = (tax: string) => {
+        setTaxes((prev) =>
+            prev.includes(tax) ? prev.filter((t) => t !== tax) : [...prev, tax]
+        );
+    };
 
     return (
         <div className="p-6">
@@ -101,102 +127,56 @@ const Brands = () => {
                 className="input input-bordered w-full mb-4"
             />
 
-            {/* Form */}
-            <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Brand Name & Short Code */}
-                    <input
-                        type="text"
-                        placeholder="Brand Name"
-                        value={brandName}
-                        onChange={(e) => setBrandName(e.target.value)}
-                        className="input input-bordered w-full"
-                    />
-                    <input
-                        type="text"
-                        placeholder="Brand Short Code"
-                        value={brandShortCode}
-                        onChange={(e) => setBrandShortCode(e.target.value)}
-                        className="input input-bordered w-full"
-                    />
+            <div className="bg-base-200 p-4 rounded-lg shadow-md">
+                {step === 1 ? (
+                    <>
+                        <label className="block mb-1 font-medium" >Company Name</label>
+                        <input type="text" className="input input-bordered w-full mb-2" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
 
-                    {/* KG per Bag & Commission per Bag */}
-                    <input
-                        type="number"
-                        placeholder="KG per Bag"
-                        value={kgPerBag ?? ""}
-                        onChange={(e) => setKgPerBag(e.target.value ? parseFloat(e.target.value) : null)}
-                        className="input input-bordered w-full"
-                    />
-                    <input
-                        type="number"
-                        placeholder="Commission per Bag"
-                        value={commission ?? ""}
-                        onChange={(e) => setCommission(e.target.value ? parseFloat(e.target.value) : null)}
-                        className="input input-bordered w-full"
-                    />
+                        <label className="block mb-1 font-medium">Brand Name</label>
+                        <input type="text" className="input input-bordered w-full mb-2" value={brandName} onChange={(e) => setBrandName(e.target.value)} />
 
-                    {/* Less Commission Checkbox */}
-                    <label className="flex items-center gap-2">
-                        <input
-                            type="checkbox"
-                            checked={lessCommission}
-                            onChange={(e) => setLessCommission(e.target.checked)}
-                            className="checkbox"
-                        />
-                        At Purchase Time Less Commission
-                    </label>
+                        <label className="block mb-1 font-medium">Brand Short Code</label>
+                        <input type="text" className="input input-bordered w-full mb-2" value={brandShortCode} onChange={(e) => setBrandShortCode(e.target.value)} />
 
-                    {/* Tax Type Dropdown */}
-                    <select
-                        value={taxType}
-                        onChange={(e) => setTaxType(e.target.value)}
-                        className="select select-bordered w-full"
-                    >
-                        <option value="">Select Applicable Tax</option>
-                        {taxTypes.map((tax, index) => (
-                            <option key={index} value={tax}>
-                                {tax}
-                            </option>
-                        ))}
-                    </select>
+                        <button className="btn btn-primary mt-4" onClick={handleNext}>Next</button>
+                    </>
+                ) : (
+                    <>
+                        <label>KG per Bag</label>
+                        <input type="number" className="input input-bordered w-full mb-2" value={kgPerBag ?? ""} onChange={(e) => setKgPerBag(parseFloat(e.target.value))} />
 
-                    {/* Route Short Code, Freight & Given to Truck */}
-                    <select
-                        value={routeShortCode}
-                        onChange={(e) => setRouteShortCode(e.target.value)}
-                        className="select select-bordered w-full"
-                    >
-                        <option value="">Select Route Short Code</option>
-                        {routeShortCodes.map((route, index) => (
-                            <option key={index} value={route}>
-                                {route}
-                            </option>
-                        ))}
-                    </select>
+                        <label>Commission per Bag</label>
+                        <input type="number" className="input input-bordered w-full mb-2" value={commission ?? ""} onChange={(e) => setCommission(parseFloat(e.target.value))} />
 
-                    <input
-                        type="number"
-                        placeholder="Freight"
-                        value={freight ?? ""}
-                        onChange={(e) => setFreight(e.target.value ? parseFloat(e.target.value) : null)}
-                        className="input input-bordered w-full"
-                    />
+                        <label>Taxes</label>
+                        <div className="mb-2">
+                            {taxTypes.map((tax) => (
+                                <label key={tax} className="flex items-center gap-2">
+                                    <input type="checkbox" checked={taxes.includes(tax)} onChange={() => handleTaxChange(tax)} /> {tax}
+                                </label>
+                            ))}
+                        </div>
 
-                    <input
-                        type="number"
-                        placeholder="Given to Truck"
-                        value={givenToTruck ?? ""}
-                        onChange={(e) => setGivenToTruck(e.target.value ? parseFloat(e.target.value) : null)}
-                        className="input input-bordered w-full"
-                    />
-                </div>
+                        <label>Route Short Code</label>
+                        <select className="select select-bordered w-full mb-2" value={routeShortCode} onChange={(e) => setRouteShortCode(e.target.value)}>
+                            <option value="">Select Route</option>
+                            {routeShortCodes.map((route) => <option key={route} value={route}>{route}</option>)}
+                        </select>
 
-                <button onClick={handleSaveBrand} className="btn btn-primary mt-4">
-                    {editingIndex !== null ? "Update Brand" : "Save Brand"}
-                </button>
+                        <label>Freight</label>
+                        <input type="number" className="input input-bordered w-full mb-2" value={freight ?? ""} onChange={(e) => setFreight(parseFloat(e.target.value))} />
+
+                        <label>Given to Truck</label>
+                        <input type="number" className="input input-bordered w-full mb-2" value={givenToTruck ?? ""} onChange={(e) => setGivenToTruck(parseFloat(e.target.value))} />
+
+                        <div className="flex justify-between mt-4">
+                            <button className="btn btn-secondary" onClick={handleBack}>Back</button>
+                            <button className="btn btn-primary" onClick={handleSaveBrand}>{isInEditMode ? "Update Brand" : "Save Brand"}</button>
+                        </div>
+                    </>
+                )}
             </div>
-
             {/* Brands Table */}
             {filteredBrands.length > 0 ? (
                 <div className="overflow-x-auto">
@@ -223,7 +203,7 @@ const Brands = () => {
                                     <td>{brand.shortCode}</td>
                                     <td>{brand.kgPerBag}</td>
                                     <td>{brand.commission}</td>
-                                    <td>{brand.taxType}</td>
+                                    <td>{brand.taxes.toString()}</td>
                                     <td>{brand.routeShortCode}</td>
                                     <td>{brand.freight}</td>
                                     <td>{brand.givenToTruck}</td>

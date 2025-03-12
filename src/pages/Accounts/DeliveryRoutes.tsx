@@ -1,10 +1,11 @@
 import { useState } from "react";
 
 const DeliveryRoutes = () => {
-    const [routes, setRoutes] = useState<{ routeName: string; shortCode: string; haveToll: string }[]>([]);
+    const [routes, setRoutes] = useState<{ routeName: string; shortCode: string; haveToll: string; tollType?: string }[]>([]);
     const [routeName, setRouteName] = useState("");
     const [shortCode, setShortCode] = useState("");
     const [haveToll, setHaveToll] = useState("Yes");
+    const [tollType, setTollType] = useState("One Way");
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
 
@@ -15,13 +16,15 @@ const DeliveryRoutes = () => {
             return;
         }
 
+        const newRoute = { routeName, shortCode, haveToll, tollType: haveToll === "Yes" ? tollType : undefined };
+
         if (editingIndex !== null) {
             const updatedRoutes = [...routes];
-            updatedRoutes[editingIndex] = { routeName, shortCode, haveToll };
+            updatedRoutes[editingIndex] = newRoute;
             setRoutes(updatedRoutes);
             setEditingIndex(null);
         } else {
-            setRoutes([...routes, { routeName, shortCode, haveToll }]);
+            setRoutes([...routes, newRoute]);
         }
 
         resetForm();
@@ -32,6 +35,7 @@ const DeliveryRoutes = () => {
         setRouteName(routes[index].routeName);
         setShortCode(routes[index].shortCode);
         setHaveToll(routes[index].haveToll);
+        setTollType(routes[index].tollType || "One Way");
         setEditingIndex(index);
     };
 
@@ -39,8 +43,7 @@ const DeliveryRoutes = () => {
     const handleDeleteRoute = (index: number) => {
         const confirmDelete = window.confirm("Are you sure you want to delete this route?");
         if (confirmDelete) {
-            const updatedRoutes = routes.filter((_, i) => i !== index);
-            setRoutes(updatedRoutes);
+            setRoutes(routes.filter((_, i) => i !== index));
         }
     };
 
@@ -49,6 +52,7 @@ const DeliveryRoutes = () => {
         setRouteName("");
         setShortCode("");
         setHaveToll("Yes");
+        setTollType("One Way");
         setEditingIndex(null);
     };
 
@@ -63,6 +67,8 @@ const DeliveryRoutes = () => {
             <h2 className="text-2xl font-bold mb-4">Delivery Routes</h2>
 
             {/* Search Bar */}
+            <label className="block mb-1 font-medium">
+                Search
             <input
                 type="text"
                 placeholder="Search by Route Name or Short Code"
@@ -70,10 +76,13 @@ const DeliveryRoutes = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="input input-bordered w-full mb-4"
             />
+        </label>
 
             {/* Route Form */}
             <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
+                    <label className="block mb-1 font-medium">
+                        Route Name
                     <input
                         type="text"
                         placeholder="Route Name"
@@ -81,6 +90,9 @@ const DeliveryRoutes = () => {
                         onChange={(e) => setRouteName(e.target.value)}
                         className="input input-bordered w-full"
                     />
+                    </label>
+                    <label className="block mb-1 font-medium">
+                        Route Short Code
                     <input
                         type="text"
                         placeholder="Route Short Code"
@@ -88,6 +100,7 @@ const DeliveryRoutes = () => {
                         onChange={(e) => setShortCode(e.target.value)}
                         className="input input-bordered w-full"
                     />
+                    </label>
 
                     {/* Have Toll - Radio Buttons */}
                     <div className="flex gap-4 items-center">
@@ -115,6 +128,35 @@ const DeliveryRoutes = () => {
                             <span>No</span>
                         </label>
                     </div>
+
+                    {/* Toll Type - One Way / Two Way (Only if Toll is Yes) */}
+                    {haveToll === "Yes" && (
+                        <div className="flex gap-4 items-center">
+                            Toll Type:
+                            <label className="flex items-center space-x-2">
+                                <input
+                                    type="radio"
+                                    name="tollType"
+                                    value="One Way"
+                                    checked={tollType === "One Way"}
+                                    onChange={() => setTollType("One Way")}
+                                    className="radio"
+                                />
+                                <span>One Way</span>
+                            </label>
+                            <label className="flex items-center space-x-2">
+                                <input
+                                    type="radio"
+                                    name="tollType"
+                                    value="Two Way"
+                                    checked={tollType === "Two Way"}
+                                    onChange={() => setTollType("Two Way")}
+                                    className="radio"
+                                />
+                                <span>Two Way</span>
+                            </label>
+                        </div>
+                    )}
                 </div>
                 <button onClick={handleSaveRoute} className="btn btn-primary mt-4">
                     {editingIndex !== null ? "Update Route" : "Save Route"}
@@ -131,6 +173,7 @@ const DeliveryRoutes = () => {
                                 <th className="p-3">Route Name</th>
                                 <th className="p-3">Short Code</th>
                                 <th className="p-3">Have Toll</th>
+                                <th className="p-3">Toll Type</th>
                                 <th className="p-3">Actions</th>
                             </tr>
                         </thead>
@@ -143,6 +186,7 @@ const DeliveryRoutes = () => {
                                         <td className="p-3">{route.routeName}</td>
                                         <td className="p-3">{route.shortCode}</td>
                                         <td className="p-3">{route.haveToll}</td>
+                                        <td className="p-3">{route.haveToll === "Yes" ? route.tollType : "-"}</td>
                                         <td className="p-3">
                                             <button onClick={() => handleEditRoute(actualIndex)} className="btn btn-sm btn-warning mr-2">
                                                 Edit

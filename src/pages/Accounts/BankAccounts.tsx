@@ -45,12 +45,15 @@ const BankAccounts = () => {
     });
     const [editingChequeId, setEditingChequeId] = useState<string | null>(null);
 
-    // Handle bank form input changes
+    const formatNumberWithCommas = (num: string) => {
+        return num.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    };
+
     const handleBankInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setBankFormData({
             ...bankFormData,
-            [name]: value,
+            [name]: name === "openingBalance" ? formatNumberWithCommas(value.replace(/,/g, "")) : value,
         });
     };
 
@@ -282,41 +285,53 @@ const BankAccounts = () => {
                     {editingAccountId ? "Edit Bank Account" : "Add New Bank Account"}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <select
-                        name="bankName"
-                        value={bankFormData.bankName}
-                        onChange={handleBankInputChange}
-                        className="select select-bordered w-full"
-                    >
-                        <option value="HBL">HBL</option>
-                        <option value="UBL">UBL</option>
-                        <option value="Meezan">Meezan</option>
-                        <option value="Other">Other</option>
-                    </select>
-                    <input
-                        type="text"
-                        name="accountTitle"
-                        placeholder="Account Title"
-                        value={bankFormData.accountTitle}
-                        onChange={handleBankInputChange}
-                        className="input input-bordered w-full"
-                    />
-                    <input
-                        type="text"
-                        name="accountNumber"
-                        placeholder="Account Number"
-                        value={bankFormData.accountNumber}
-                        onChange={handleBankInputChange}
-                        className="input input-bordered w-full"
-                    />
-                    <input
-                        type="text"
-                        name="openingBalance"
-                        placeholder="Opening Balance"
-                        value={bankFormData.openingBalance}
-                        onChange={handleBankInputChange}
-                        className="input input-bordered w-full"
-                    />
+                    <label className="block mb-1 font-medium">
+                        Select Bank
+                        <select
+                            name="bankName"
+                            value={bankFormData.bankName}
+                            onChange={handleBankInputChange}
+                            className="select select-bordered w-full"
+                        >
+                            <option value="HBL">HBL</option>
+                            <option value="UBL">UBL</option>
+                            <option value="Meezan">Meezan</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </label>
+                    <label className="block mb-1 font-medium">
+                        Account Title
+                        <input
+                            type="text"
+                            name="accountTitle"
+                            placeholder="Account Title"
+                            value={bankFormData.accountTitle}
+                            onChange={handleBankInputChange}
+                            className="input input-bordered w-full"
+                        />
+                    </label>
+                    <label className="block mb-1 font-medium">
+                        Account Number
+                        <input
+                            type="text"
+                            name="accountNumber"
+                            placeholder="Account Number"
+                            value={bankFormData.accountNumber}
+                            onChange={handleBankInputChange}
+                            className="input input-bordered w-full"
+                        />
+                    </label>
+                    <label className="block mb-1 font-medium">
+                        Opening Balance
+                        <input
+                            type="text"
+                            name="openingBalance"
+                            placeholder="Opening Balance"
+                            value={bankFormData.openingBalance}
+                            onChange={handleBankInputChange}
+                            className="input input-bordered w-full"
+                        />
+                    </label>
                 </div>
                 <div className="flex mt-4">
                     <button onClick={handleSaveBankAccount} className="btn btn-primary">
@@ -497,7 +512,7 @@ const BankAccounts = () => {
                                                 <td className="p-3">{cheque.dateAdded}</td>
                                                 <td className="p-3">
                                                     <span className={`badge ${cheque.status === "active" ? "badge-success" :
-                                                            cheque.status === "completed" ? "badge-warning" : "badge-error"
+                                                        cheque.status === "completed" ? "badge-warning" : "badge-error"
                                                         }`}>
                                                         {cheque.status}
                                                     </span>

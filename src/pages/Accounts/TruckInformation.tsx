@@ -78,6 +78,8 @@ const TruckInformation = () => {
             {/* Truck Information Form */}
             <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label className="block mb-1 font-medium">
+                        Truck Number
                     <input
                         type="text"
                         name="truckNumber"
@@ -86,6 +88,9 @@ const TruckInformation = () => {
                         onChange={handleChange}
                         className="input input-bordered w-full"
                     />
+                    </label>
+                    <label className="block mb-1 font-medium">
+                        Driver Name
                     <input
                         type="text"
                         name="defaultDriver"
@@ -94,6 +99,9 @@ const TruckInformation = () => {
                         onChange={handleChange}
                         className="input input-bordered w-full"
                     />
+                    </label>
+                    <label className="block mb-1 font-medium">
+                        Route
                     <select
                         name="defaultRoute"
                         value={formData.defaultRoute}
@@ -106,6 +114,7 @@ const TruckInformation = () => {
                             </option>
                         ))}
                     </select>
+                    </label>
 
                     {/* Truck Type Radio Buttons */}
                     <div className="flex gap-4 items-center">

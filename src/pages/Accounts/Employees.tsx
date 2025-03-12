@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { notify } from "../../lib/notify";
 
 const Employees = () => {
     const [employees, setEmployees] = useState<
@@ -22,20 +23,18 @@ const Employees = () => {
 
     // Handle CNIC Input (Auto-format XXXXX-XXXXXXX-X)
     const handleCnicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        let value = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
-
-        if (value.length > 13) value = value.slice(0, 13); // Limit to 13 digits
-
-        // Format as XXXXX-XXXXXXX-X
-        if (value.length > 5) value = value.slice(0, 5) + "-" + value.slice(5);
-        if (value.length > 13) value = value.slice(0, 13) + "-" + value.slice(13);
+        const value = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
 
         setEmployeeCnic(value);
     };
 
     // Handle form submission
     const handleAddEmployee = () => {
-        if (employeeName.trim() === "" || employeePhone.length !== 13 || employeeCnic.length !== 15 || designation.trim() === "" || salary.trim() === "") return;
+        if (employeeName.trim() === "" || employeePhone.length !== 13 || employeeCnic.length !== 20 || designation.trim() === "" || salary.trim() === "") {
+            notify.error("Please Fill All Fields Correctly!!!")
+
+            return;
+        }
 
         if (editingIndex !== null) {
             const updatedEmployees = [...employees];
@@ -74,54 +73,67 @@ const Employees = () => {
             {/* Form */}
             <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                        type="text"
-                        placeholder="Employee Name"
-                        value={employeeName}
-                        onChange={(e) => setEmployeeName(e.target.value)}
-                        className="input input-bordered w-full"
-                    />
-                    <input
-                        type="text"
-                        placeholder="Employee Phone (+92XXXXXXXXXX)"
-                        value={employeePhone}
-                        onChange={handlePhoneChange}
-                        className="input input-bordered w-full"
-                        maxLength={13} // +92XXXXXXXXXX (13 characters)
-                    />
-                    <input
-                        type="text"
-                        placeholder="Employee CNIC (XXXXX-XXXXXXX-X)"
-                        value={employeeCnic}
-                        onChange={handleCnicChange}
-                        className="input input-bordered w-full"
-                        maxLength={15} // CNIC format XXXXX-XXXXXXX-X (15 characters)
-                    />
-                    <input
-                        type="text"
-                        placeholder="Designation"
-                        value={designation}
-                        onChange={(e) => setDesignation(e.target.value)}
-                        className="input input-bordered w-full"
-                    />
+                    <label className="block mb-1 font-medium">Employee Name
+                        <input
+                            type="text"
+                            required
+                            placeholder="Employee Name"
+                            value={employeeName}
+                            onChange={(e) => setEmployeeName(e.target.value)}
+                            className="input input-bordered w-full"
+                        />
+                    </label>
+                    <label className="block mb-1 font-medium">Employee Phone
+                        <input
+                            type="text"
+                            placeholder="Employee Phone (+92XXXXXXXXXX)"
+                            value={employeePhone}
+                            onChange={handlePhoneChange}
+                            className="input input-bordered w-full"
+                            maxLength={13} // +92XXXXXXXXXX (13 characters)
+                        />
+                    </label>
+                    <label className="block mb-1 font-medium">Employee CNIC
+                        <input
+                            type="text"
+                            placeholder="Employee CNIC"
+                            value={employeeCnic}
+                            onChange={handleCnicChange}
+                            className="input input-bordered w-full"
+                            maxLength={20} // CNIC format XXXXX-XXXXXXX-X (15 characters)
+                        />
+                    </label>
+                    <label className="block mb-1 font-medium">Designation
+                        <input
+                            type="text"
+                            placeholder="Designation"
+                            value={designation}
+                            onChange={(e) => setDesignation(e.target.value)}
+                            className="input input-bordered w-full"
+                        />
+                    </label>
                     {/* Department Dropdown */}
-                    <select
-                        value={department}
-                        onChange={(e) => setDepartment(e.target.value)}
-                        className="select select-bordered w-full"
-                    >
-                        <option value="">Select Department</option>
-                        <option value="Driver">Driver</option>
-                        <option value="Manager">Manager</option>
-                        <option value="Engineer">Engineer</option>
-                    </select>
-                    <input
-                        type="text"
-                        placeholder="Salary"
-                        value={salary}
-                        onChange={(e) => setSalary(e.target.value)}
-                        className="input input-bordered w-full"
-                    />
+                    <label className="block mb-1 font-medium">Department
+                        <select
+                            value={department}
+                            onChange={(e) => setDepartment(e.target.value)}
+                            className="select select-bordered w-full"
+                        >
+                            <option value="">Select Department</option>
+                            <option value="Driver">Driver</option>
+                            <option value="Manager">Manager</option>
+                            <option value="Engineer">Engineer</option>
+                        </select>
+                    </label>
+                    <label className="block mb-1 font-medium">Salary
+                        <input
+                            type="text"
+                            placeholder="Salary"
+                            value={salary}
+                            onChange={(e) => setSalary(e.target.value)}
+                            className="input input-bordered w-full"
+                        />
+                    </label>
                 </div>
                 <button onClick={handleAddEmployee} className="btn btn-primary mt-4">
                     {editingIndex !== null ? "Update Employee" : "Add Employee"}
