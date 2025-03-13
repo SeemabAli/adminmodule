@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { notify } from "../../lib/notify";
 
-
 const DeliveryRoutes = () => {
-    const [routes, setRoutes] = useState<{ routeName: string; shortCode: string; haveToll: string; tollType?: string }[]>([]);
+    const [routes, setRoutes] = useState<
+        { routeName: string; shortCode: string; haveToll: string; tollType?: string; tollAmount?: string }[]
+    >([]);
     const [routeName, setRouteName] = useState("");
     const [shortCode, setShortCode] = useState("");
     const [haveToll, setHaveToll] = useState("Yes");
     const [tollType, setTollType] = useState("One Way");
+    const [tollAmount, setTollAmount] = useState("");
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
 
@@ -18,7 +20,18 @@ const DeliveryRoutes = () => {
             return;
         }
 
-        const newRoute = { routeName, shortCode, haveToll, tollType: haveToll === "Yes" ? tollType : undefined };
+        if (haveToll === "Yes" && tollAmount.trim() === "") {
+            notify.error("Toll Amount is required when Toll is Yes!");
+            return;
+        }
+
+        const newRoute = {
+            routeName,
+            shortCode,
+            haveToll,
+            tollType: haveToll === "Yes" ? tollType : undefined,
+            tollAmount: haveToll === "Yes" ? tollAmount : undefined,
+        };
 
         if (editingIndex !== null) {
             const updatedRoutes = [...routes];
@@ -40,6 +53,7 @@ const DeliveryRoutes = () => {
         setShortCode(routes[index].shortCode);
         setHaveToll(routes[index].haveToll);
         setTollType(routes[index].tollType || "One Way");
+        setTollAmount(routes[index].tollAmount || "");
         setEditingIndex(index);
     };
 
@@ -58,6 +72,7 @@ const DeliveryRoutes = () => {
         setShortCode("");
         setHaveToll("Yes");
         setTollType("One Way");
+        setTollAmount("");
         setEditingIndex(null);
     };
 
@@ -108,7 +123,7 @@ const DeliveryRoutes = () => {
                     </label>
 
                     {/* Have Toll - Radio Buttons */}
-                    <div className="flex gap-4 items-center">
+                    <div className="flex gap-4 items-center text-sm">
                         Have Toll?
                         <label className="flex items-center space-x-2">
                             <input
@@ -134,33 +149,47 @@ const DeliveryRoutes = () => {
                         </label>
                     </div>
 
-                    {/* Toll Type - One Way / Two Way (Only if Toll is Yes) */}
+                    {/* Toll Type - Only if Toll is Yes */}
                     {haveToll === "Yes" && (
-                        <div className="flex gap-4 items-center">
-                            Toll Type:
-                            <label className="flex items-center space-x-2">
+                        <>
+                            <div className="flex gap-4 items-center text-sm">
+                                Toll Type:
+                                <label className="flex items-center space-x-2">
+                                    <input
+                                        type="radio"
+                                        name="tollType"
+                                        value="One Way"
+                                        checked={tollType === "One Way"}
+                                        onChange={() => setTollType("One Way")}
+                                        className="radio"
+                                    />
+                                    <span>One Way</span>
+                                </label>
+                                <label className="flex items-center space-x-2">
+                                    <input
+                                        type="radio"
+                                        name="tollType"
+                                        value="Two Way"
+                                        checked={tollType === "Two Way"}
+                                        onChange={() => setTollType("Two Way")}
+                                        className="radio"
+                                    />
+                                    <span>Two Way</span>
+                                </label>
+                            </div>
+
+                            {/* Toll Amount */}
+                            <label className="block mb-1 font-medium">
+                                Toll Amount
                                 <input
-                                    type="radio"
-                                    name="tollType"
-                                    value="One Way"
-                                    checked={tollType === "One Way"}
-                                    onChange={() => setTollType("One Way")}
-                                    className="radio"
+                                    type="number"
+                                    placeholder="Enter Toll Amount"
+                                    value={tollAmount}
+                                    onChange={(e) => setTollAmount(e.target.value)}
+                                    className="input input-bordered w-full"
                                 />
-                                <span>One Way</span>
                             </label>
-                            <label className="flex items-center space-x-2">
-                                <input
-                                    type="radio"
-                                    name="tollType"
-                                    value="Two Way"
-                                    checked={tollType === "Two Way"}
-                                    onChange={() => setTollType("Two Way")}
-                                    className="radio"
-                                />
-                                <span>Two Way</span>
-                            </label>
-                        </div>
+                        </>
                     )}
                 </div>
                 <button onClick={handleSaveRoute} className="btn btn-info mt-4">
@@ -179,30 +208,29 @@ const DeliveryRoutes = () => {
                                 <th className="p-3">Short Code</th>
                                 <th className="p-3">Have Toll</th>
                                 <th className="p-3">Toll Type</th>
+                                <th className="p-3">Toll Amount</th>
                                 <th className="p-3">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredRoutes.map((route, index) => {
-                                const actualIndex = routes.findIndex((r) => r.routeName === route.routeName && r.shortCode === route.shortCode);
-                                return (
-                                    <tr key={index} className="border-b border-base-300 text-center">
-                                        <td className="p-3">{index + 1}</td>
-                                        <td className="p-3">{route.routeName}</td>
-                                        <td className="p-3">{route.shortCode}</td>
-                                        <td className="p-3">{route.haveToll}</td>
-                                        <td className="p-3">{route.haveToll === "Yes" ? route.tollType : "-"}</td>
-                                        <td className="p-3">
-                                            <button onClick={() => handleEditRoute(actualIndex)} className="btn btn-sm btn-secondary mr-2">
-                                                Edit
-                                            </button>
-                                            <button onClick={() => handleDeleteRoute(actualIndex)} className="btn btn-sm btn-error">
-                                                Delete
-                                            </button>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
+                            {filteredRoutes.map((route, index) => (
+                                <tr key={index} className="border-b border-base-300 text-center">
+                                    <td className="p-3">{index + 1}</td>
+                                    <td className="p-3">{route.routeName}</td>
+                                    <td className="p-3">{route.shortCode}</td>
+                                    <td className="p-3">{route.haveToll}</td>
+                                    <td className="p-3">{route.haveToll === "Yes" ? route.tollType : "-"}</td>
+                                    <td className="p-3">{route.haveToll === "Yes" ? route.tollAmount : "-"}</td>
+                                    <td className="p-3 flex justify-center">
+                                        <button onClick={() => handleEditRoute(index)} className="btn btn-sm btn-secondary mr-2">
+                                            Edit
+                                        </button>
+                                        <button onClick={() => handleDeleteRoute(index)} className="btn btn-sm btn-error">
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 </div>

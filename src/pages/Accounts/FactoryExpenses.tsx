@@ -60,6 +60,30 @@ const FactoryExpenseTypes = () => {
             setExpenses([...expenses, newExpense]);
         }
 
+        resetForm();
+    };
+
+    const handleEdit = (index: number) => {
+        const expense = expenses[index];
+        setExpenseName(expense.name);
+        setExpenseDate(expense.date);
+        setExpenseCategory(expense.type);
+        setExpenseType(expense.rangeTonFrom ? "Range Ton From" : expense.fixedAmount ? "Fixed Amount" : expense.fixedPerTon ? "Fixed/Ton" : "Percent/Ton");
+        setFixedAmount(expense.fixedAmount || "");
+        setFixedPerTon(expense.fixedPerTon || "");
+        setPercentPerTon(expense.percentPerTon || "");
+        setRangeTonFrom(expense.rangeTonFrom || "0-50 Tons");
+        setRangeTonValue(expense.rangeTonValue || "");
+        setExtraCharge(expense.extraCharge || "");
+        setEditingIndex(index);
+    };
+
+    const handleDelete = (index: number) => {
+        const updatedExpenses = expenses.filter((_, i) => i !== index);
+        setExpenses(updatedExpenses);
+    };
+
+    const resetForm = () => {
         setExpenseName("");
         setExpenseDate("");
         setExpenseCategory("General");
@@ -74,22 +98,22 @@ const FactoryExpenseTypes = () => {
     };
 
     return (
-        <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Factory Expense Types</h2>
+        <div className="p-4 md:p-6">
+            <h2 className="text-2xl font-bold mb-4 text-center">Factory Expense Types</h2>
 
-            {error && <div className="text-red-500 mb-4">{error}</div>}
+            {error && <div className="text-red-500 mb-4 text-center">{error}</div>}
 
             <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <label className="block mb-1 font-medium">
+                    <label className="block">
                         Expense Name
                         <input type="text" placeholder="Expense Name" value={expenseName} onChange={(e) => setExpenseName(e.target.value)} className="input input-bordered w-full" />
                     </label>
-                    <label className="block mb-1 font-medium">
+                    <label className="block">
                         Date
                         <input type="date" value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)} className="input input-bordered w-full" />
                     </label>
-                    <label className="block mb-1 font-medium">
+                    <label className="block">
                         Category
                         <select value={expenseCategory} onChange={(e) => setExpenseCategory(e.target.value)} className="select select-bordered w-full">
                             {expenseCategories.map((category, index) => (
@@ -97,7 +121,7 @@ const FactoryExpenseTypes = () => {
                             ))}
                         </select>
                     </label>
-                    <div className="col-span-2 flex gap-4 flex-wrap">
+                    <div className="col-span-2 flex gap-2 flex-wrap">
                         {["Fixed Amount", "Fixed/Ton", "Percent/Ton", "Range Ton From"].map((type) => (
                             <label key={type} className="flex items-center space-x-2">
                                 <input type="radio" name="expenseType" value={type} checked={expenseType === type} onChange={() => setExpenseType(type)} className="radio" />
@@ -105,15 +129,9 @@ const FactoryExpenseTypes = () => {
                             </label>
                         ))}
                     </div>
-                    {expenseType === "Fixed Amount" && (
-                        <input type="number" placeholder="Fixed Amount" value={fixedAmount} onChange={(e) => setFixedAmount(e.target.value === "" ? "" : parseFloat(e.target.value))} className="input input-bordered w-full" />
-                    )}
-                    {expenseType === "Fixed/Ton" && (
-                        <input type="number" placeholder="Fixed/Ton" value={fixedPerTon} onChange={(e) => setFixedPerTon(e.target.value === "" ? "" : parseFloat(e.target.value))} className="input input-bordered w-full" />
-                    )}
-                    {expenseType === "Percent/Ton" && (
-                        <input type="number" placeholder="Percent/Ton" value={percentPerTon} onChange={(e) => setPercentPerTon(e.target.value === "" ? "" : parseFloat(e.target.value))} className="input input-bordered w-full" />
-                    )}
+                    {expenseType === "Fixed Amount" && <input type="number" placeholder="Fixed Amount" value={fixedAmount} onChange={(e) => setFixedAmount(e.target.value === "" ? "" : parseFloat(e.target.value))} className="input input-bordered w-full" />}
+                    {expenseType === "Fixed/Ton" && <input type="number" placeholder="Fixed/Ton" value={fixedPerTon} onChange={(e) => setFixedPerTon(e.target.value === "" ? "" : parseFloat(e.target.value))} className="input input-bordered w-full" />}
+                    {expenseType === "Percent/Ton" && <input type="number" placeholder="Percent/Ton" value={percentPerTon} onChange={(e) => setPercentPerTon(e.target.value === "" ? "" : parseFloat(e.target.value))} className="input input-bordered w-full" />}
                     {expenseType === "Range Ton From" && (
                         <>
                             <select value={rangeTonFrom} onChange={(e) => setRangeTonFrom(e.target.value)} className="select select-bordered w-full">
@@ -125,45 +143,34 @@ const FactoryExpenseTypes = () => {
                         </>
                     )}
                 </div>
-                <p className="py-4 md:w-1/2">
-                    <label htmlFor="Extra Charges">
-                        <span className="block mb-1 font-medium">
-                            Extra Charges
-                        </span>
-                        <input type="number" placeholder="Extra Charges If Brand Change" value={extraCharge} onChange={(e) => setExtraCharge(e.target.value === "" ? "" : parseFloat(e.target.value))} className="input input-bordered w-full" />
-                    </label>
-                </p>
-                <button onClick={handleSaveExpense} className="btn btn-info mt-4">{editingIndex !== null ? "Update Expense" : "Save Expense"}</button>
+                <button onClick={handleSaveExpense} className="btn btn-info mt-4 w-full">{editingIndex !== null ? "Update Expense" : "Save Expense"}</button>
             </div>
 
             {expenses.length > 0 && (
                 <div className="overflow-x-auto">
                     <table className="table w-full bg-base-200 rounded-lg shadow-md">
                         <thead>
-                            <tr className="bg-base-300 text-base-content text-center">
+                            <tr className="bg-base-300 text-center">
                                 <th>#</th>
-                                <th>Expense Name</th>
+                                <th>Name</th>
                                 <th>Date</th>
                                 <th>Type</th>
                                 <th>Fixed Amount</th>
-                                <th>Fixed/Ton</th>
-                                <th>Percent/Ton</th>
-                                <th>Range</th>
-                                <th>Extra Charges</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {expenses.map((expense, index) => (
-                                <tr key={index} className="border-b border-base-300 text-center">
+                                <tr key={index} className="text-center">
                                     <td>{index + 1}</td>
                                     <td>{expense.name}</td>
                                     <td>{expense.date}</td>
                                     <td>{expense.type}</td>
                                     <td>{expense.fixedAmount || "N/A"}</td>
-                                    <td>{expense.fixedPerTon || "N/A"}</td>
-                                    <td>{expense.percentPerTon || "N/A"}</td>
-                                    <td>{expense.rangeTonFrom || "N/A"}</td>
-                                    <td>{expense.extraCharge}</td>
+                                    <td className="flex justify-center">
+                                        <button onClick={() => handleEdit(index)} className="btn btn-sm btn-secondary mx-1">Edit</button>
+                                        <button onClick={() => handleDelete(index)} className="btn btn-sm btn-error">Delete</button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>

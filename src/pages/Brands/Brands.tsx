@@ -131,23 +131,23 @@ const Brands = () => {
                 {step === 1 ? (
                     <>
                         <label className="block mb-1 font-medium" >Company Name</label>
-                        <input type="text" className="input input-bordered w-full mb-2" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
+                        <input type="text" placeholder="Enter Company Name" className="input input-bordered w-full mb-2" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
 
                         <label className="block mb-1 font-medium">Brand Name</label>
-                        <input type="text" className="input input-bordered w-full mb-2" value={brandName} onChange={(e) => setBrandName(e.target.value)} />
+                        <input type="text" placeholder="Enter Brand Name" className="input input-bordered w-full mb-2" value={brandName} onChange={(e) => setBrandName(e.target.value)} />
 
                         <label className="block mb-1 font-medium">Brand Short Code</label>
-                        <input type="text" className="input input-bordered w-full mb-2" value={brandShortCode} onChange={(e) => setBrandShortCode(e.target.value)} />
+                        <input type="text" placeholder="Enter Brand Short Code" className="input input-bordered w-full mb-2" value={brandShortCode} onChange={(e) => setBrandShortCode(e.target.value)} />
 
                         <button className="btn btn-info mt-4" onClick={handleNext}>Next</button>
                     </>
                 ) : (
                     <>
                         <label>KG per Bag</label>
-                        <input type="number" className="input input-bordered w-full mb-2" value={kgPerBag ?? ""} onChange={(e) => setKgPerBag(parseFloat(e.target.value))} />
+                        <input type="number" placeholder="Enter Weight" className="input input-bordered w-full mb-2" value={kgPerBag ?? ""} onChange={(e) => setKgPerBag(parseFloat(e.target.value))} />
 
                         <label>Commission per Bag</label>
-                        <input type="number" className="input input-bordered w-full mb-2" value={commission ?? ""} onChange={(e) => setCommission(parseFloat(e.target.value))} />
+                        <input type="number" placeholder="Enter Amount" className="input input-bordered w-full mb-2" value={commission ?? ""} onChange={(e) => setCommission(parseFloat(e.target.value))} />
 
                         <label>Taxes</label>
                         <div className="mb-2">
@@ -165,10 +165,10 @@ const Brands = () => {
                         </select>
 
                         <label>Freight</label>
-                        <input type="number" className="input input-bordered w-full mb-2" value={freight ?? ""} onChange={(e) => setFreight(parseFloat(e.target.value))} />
+                        <input type="number" placeholder="Enter Amount" className="input input-bordered w-full mb-2" value={freight ?? ""} onChange={(e) => setFreight(parseFloat(e.target.value))} />
 
                         <label>Given to Truck</label>
-                        <input type="number" className="input input-bordered w-full mb-2" value={givenToTruck ?? ""} onChange={(e) => setGivenToTruck(parseFloat(e.target.value))} />
+                        <input type="number" placeholder="Enter Amount" className="input input-bordered w-full mb-2" value={givenToTruck ?? ""} onChange={(e) => setGivenToTruck(parseFloat(e.target.value))} />
 
                         <div className="flex justify-between mt-4">
                             <button className="btn btn-secondary" onClick={handleBack}>Back</button>

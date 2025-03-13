@@ -229,19 +229,19 @@ const Customer = () => {
                 {/* Basic Information */}
                 <div>
                     <label className="block font-medium mb-1">Customer Name</label>
-                    <input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="input input-bordered w-full" />
+                    <input type="text" placeholder="Enter Full Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="input input-bordered w-full" />
                 </div>
                 <div>
                     <label className="block font-medium mb-1">A/C Title</label>
-                    <input type="text" value={acTitle} onChange={(e) => setAcTitle(e.target.value)} className="input input-bordered w-full" />
+                    <input type="text" placeholder="Enter Account Title" value={acTitle} onChange={(e) => setAcTitle(e.target.value)} className="input input-bordered w-full" />
                 </div>
                 <div>
                     <label className="block font-medium mb-1">Dealing Person</label>
-                    <input type="text" value={dealingPerson} onChange={(e) => setDealingPerson(e.target.value)} className="input input-bordered w-full" />
+                    <input type="text" placeholder="Enter Name" value={dealingPerson} onChange={(e) => setDealingPerson(e.target.value)} className="input input-bordered w-full" />
                 </div>
                 <div>
                     <label className="block font-medium mb-1">Reference</label>
-                    <input type="text" value={reference} onChange={(e) => setReference(e.target.value)} className="input input-bordered w-full" />
+                    <input type="text" placeholder="Enter Name" value={reference} onChange={(e) => setReference(e.target.value)} className="input input-bordered w-full" />
                 </div>
 
                 {/* CNIC Images */}
@@ -267,13 +267,13 @@ const Customer = () => {
                 {/* NTN */}
                 <div>
                     <label className="block font-medium mb-1">NTN#</label>
-                    <input type="text" value={ntn} onChange={(e) => setNtn(e.target.value)} className="input input-bordered w-full" />
+                    <input type="text" placeholder="Enter Number" value={ntn} onChange={(e) => setNtn(e.target.value)} className="input input-bordered w-full" />
                 </div>
 
                 {/* Route */}
                 <div>
                     <label className="block font-medium mb-1">Route</label>
-                    <input type="text" value={route} onChange={(e) => setRoute(e.target.value)} className="input input-bordered w-full" />
+                    <input type="text" placeholder="Enter Route" value={route} onChange={(e) => setRoute(e.target.value)} className="input input-bordered w-full" />
                 </div>
 
                 {/* Credit Limit */}
@@ -281,6 +281,7 @@ const Customer = () => {
                     <label className="block font-medium mb-1">Credit Limit</label>
                     <input
                         type="number"
+                        placeholder="Enter Credit Limit"
                         value={creditLimit}
                         onChange={(e) => setCreditLimit(e.target.value)}
                         className="input input-bordered w-full"
@@ -292,6 +293,7 @@ const Customer = () => {
                     <label className="block font-medium mb-1">Ledger Details</label>
                     <textarea
                         value={ledgerDetails}
+                        placeholder="Enter Ledger Details"
                         onChange={(e) => setLedgerDetails(e.target.value)}
                         className="textarea textarea-bordered w-full"
                     />
