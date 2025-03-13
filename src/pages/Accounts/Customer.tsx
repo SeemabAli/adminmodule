@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { notify } from "../../lib/notify";
 
-interface Brand {
-    name: string;
-    quantity: number;
-}
-
 interface Phone {
     number: string;
     status: "Ptcl" | "Mobile" | "Whatsapp";
@@ -14,6 +9,10 @@ interface Phone {
 interface PostDatedCheque {
     dueDate: string;
     details: string;
+    image: string;
+}
+
+interface Signature {
     image: string;
 }
 
@@ -31,7 +30,7 @@ interface Customer {
     creditLimit: number;
     postDatedCheques: PostDatedCheque[];
     ledgerDetails: string;
-    brands: Brand[];
+    signatures: Signature[];
 }
 
 const Customer = () => {
@@ -52,11 +51,12 @@ const Customer = () => {
     const [route, setRoute] = useState("");
     const [creditLimit, setCreditLimit] = useState("");
     const [postDatedCheques, setPostDatedCheques] = useState<PostDatedCheque[]>([]);
+    const [signatures, setSignatures] = useState<Signature[]>([]);
     const [chequeDueDate, setChequeDueDate] = useState("");
+    const [signatureImage, setSignatureImage] = useState("");
     const [chequeDetails, setChequeDetails] = useState("");
     const [chequeImage, setChequeImage] = useState("");
     const [ledgerDetails, setLedgerDetails] = useState("");
-    const [brands, setBrands] = useState<Brand[]>([]);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
     const handleAddPhone = () => {
@@ -89,12 +89,22 @@ const Customer = () => {
         setChequeImage("");
     };
 
+    const handleAddSignature = () => {
+        if (!signatureImage) return;
+        setSignatures([...signatures, { image: signatureImage }]);
+        setSignatureImage("");
+    };
+
+    const handleRemoveSignature = (index: number) => {
+        setSignatures(signatures.filter((_, i) => i !== index));
+    };
+
     const handleRemoveCheque = (index: number) => {
         setPostDatedCheques(postDatedCheques.filter((_, i) => i !== index));
     };
 
     const handleSave = () => {
-        if (!customerName || !acTitle || !route || brands.length === 0) {
+        if (!customerName || !acTitle || !route) {
             notify.error("Please compelete all fields correctly");
             return;
         };
@@ -113,7 +123,7 @@ const Customer = () => {
             creditLimit: Number(creditLimit),
             postDatedCheques,
             ledgerDetails,
-            brands,
+            signatures
         };
 
         if (editingIndex !== null) {
@@ -139,7 +149,7 @@ const Customer = () => {
         setCreditLimit("");
         setPostDatedCheques([]);
         setLedgerDetails("");
-        setBrands([]);
+        setSignatures([]);
 
         notify.success("Customer added");
     };
@@ -159,7 +169,7 @@ const Customer = () => {
         setCreditLimit(customer.creditLimit.toString());
         setPostDatedCheques(customer.postDatedCheques);
         setLedgerDetails(customer.ledgerDetails);
-        setBrands(customer.brands);
+        setSignatures(customer.signatures || []);
         setEditingIndex(index);
     };
 
@@ -195,6 +205,17 @@ const Customer = () => {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setChequeImage(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSignatureImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setSignatureImage(reader.result as string);
             };
             reader.readAsDataURL(file);
         }
@@ -276,6 +297,50 @@ const Customer = () => {
                     />
                 </div>
 
+                {/* Signature Section */}
+                <div>
+                    <div className="flex flex-col gap-2">
+                    <h3 className="text-xl font-semibold mb-2">Signatures</h3>
+                    <div className="flex gap-4 flex-wrap mb-2">
+                        <div className="flex-1">
+                            <input
+                                type="file"
+                                onChange={handleSignatureImageUpload}
+                                className="file-input file-input-bordered w-full"
+                                accept="image/*"
+                            />
+                        </div>
+                        <button onClick={handleAddSignature} className="btn btn-info">Add Signature</button>
+                    </div>
+                    {signatures.length > 0 && (
+                        <div className="overflow-x-auto">
+                            <table className="table w-full">
+                                <thead>
+                                    <tr>
+                                        <th>Image</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {signatures.map((signature, index) => (
+                                        <tr key={index}>
+                                            <td>
+                                                {signature.image && (
+                                                    <img src={signature.image} alt="Signature" className="w-16 h-12 object-cover rounded" />
+                                                )}
+                                            </td>
+                                            <td>
+                                                <button onClick={() => handleRemoveSignature(index)} className="btn btn-sm btn-error">Remove</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                    </div>
+                </div>
+
                 {/* Phone Numbers Section */}
                 <div className="md:col-span-2">
                     <h3 className="text-xl font-semibold mb-2">Phone Numbers</h3>
@@ -296,7 +361,7 @@ const Customer = () => {
                             <option value="Mobile">Mobile</option>
                             <option value="Whatsapp">Whatsapp</option>
                         </select>
-                        <button onClick={handleAddPhone} className="btn btn-primary">Add</button>
+                        <button onClick={handleAddPhone} className="btn btn-info">Add</button>
                     </div>
                     {phones.length > 0 && (
                         <div className="overflow-x-auto">
@@ -342,7 +407,7 @@ const Customer = () => {
                             onChange={(e) => setAddressMap(e.target.value)}
                             className="input input-bordered"
                         />
-                        <button onClick={handleAddAddress} className="btn btn-primary">Add Address</button>
+                        <button onClick={handleAddAddress} className="btn btn-info">Add Address</button>
                     </div>
                     {addresses.length > 0 && (
                         <div className="overflow-x-auto">
@@ -402,7 +467,7 @@ const Customer = () => {
                                 accept="image/*"
                             />
                         </div>
-                        <button onClick={handleAddCheque} className="btn btn-primary">Add Cheque</button>
+                        <button onClick={handleAddCheque} className="btn btn-info">Add Cheque</button>
                     </div>
                     {postDatedCheques.length > 0 && (
                         <div className="overflow-x-auto">
@@ -437,7 +502,7 @@ const Customer = () => {
                 </div>
 
                 <div className="md:col-span-2">
-                    <button onClick={handleSave} className="btn btn-primary">
+                    <button onClick={handleSave} className="btn btn-info">
                         {editingIndex !== null ? "Update Customer" : "Save Customer"}
                     </button>
                 </div>
@@ -465,7 +530,7 @@ const Customer = () => {
                                     <td>{customer.route}</td>
                                     <td>{customer.creditLimit}</td>
                                     <td className="flex justify-center gap-2">
-                                        <button onClick={() => handleEdit(index)} className="btn btn-sm btn-warning">Edit</button>
+                                        <button onClick={() => handleEdit(index)} className="btn btn-sm btn-secondary">Edit</button>
                                         <button onClick={() => handleDelete(index)} className="btn btn-sm btn-error">Delete</button>
                                     </td>
                                 </tr>

@@ -334,7 +334,7 @@ const BankAccounts = () => {
                     </label>
                 </div>
                 <div className="flex mt-4">
-                    <button onClick={handleSaveBankAccount} className="btn btn-primary">
+                    <button onClick={handleSaveBankAccount} className="btn btn-info">
                         {editingAccountId ? "Update Account" : "Save Account"}
                     </button>
                     {editingAccountId && (
@@ -384,7 +384,7 @@ const BankAccounts = () => {
                                     <td className="p-3">
                                         <button
                                             onClick={() => handleEditBankAccount(account.id)}
-                                            className="btn btn-xs btn-warning mr-1"
+                                            className="btn btn-xs btn-secondary mr-1"
                                         >
                                             Edit
                                         </button>
@@ -461,7 +461,7 @@ const BankAccounts = () => {
                             </select>
                         </div>
                         <div className="flex mt-4">
-                            <button onClick={handleSaveCheque} className="btn btn-primary">
+                            <button onClick={handleSaveCheque} className="btn btn-info">
                                 {editingChequeId ? "Update Cheque Book" : "Add Cheque Book"}
                             </button>
                             {editingChequeId && (
@@ -520,7 +520,7 @@ const BankAccounts = () => {
                                                 <td className="p-3">
                                                     <button
                                                         onClick={() => handleEditCheque(cheque.id)}
-                                                        className="btn btn-xs btn-warning mr-1"
+                                                        className="btn btn-xs btn-error mr-1"
                                                     >
                                                         Edit
                                                     </button>

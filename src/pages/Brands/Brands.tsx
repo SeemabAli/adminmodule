@@ -139,7 +139,7 @@ const Brands = () => {
                         <label className="block mb-1 font-medium">Brand Short Code</label>
                         <input type="text" className="input input-bordered w-full mb-2" value={brandShortCode} onChange={(e) => setBrandShortCode(e.target.value)} />
 
-                        <button className="btn btn-primary mt-4" onClick={handleNext}>Next</button>
+                        <button className="btn btn-info mt-4" onClick={handleNext}>Next</button>
                     </>
                 ) : (
                     <>
@@ -172,7 +172,7 @@ const Brands = () => {
 
                         <div className="flex justify-between mt-4">
                             <button className="btn btn-secondary" onClick={handleBack}>Back</button>
-                            <button className="btn btn-primary" onClick={handleSaveBrand}>{isInEditMode ? "Update Brand" : "Save Brand"}</button>
+                            <button className="btn btn-info" onClick={handleSaveBrand}>{isInEditMode ? "Update Brand" : "Save Brand"}</button>
                         </div>
                     </>
                 )}
@@ -208,7 +208,7 @@ const Brands = () => {
                                     <td>{brand.freight}</td>
                                     <td>{brand.givenToTruck}</td>
                                     <td>
-                                        <button onClick={() => handleEditBrand(index)} className="btn btn-sm btn-warning">
+                                        <button onClick={() => handleEditBrand(index)} className="btn btn-sm btn-secondary">
                                             Edit
                                         </button>
                                     </td>

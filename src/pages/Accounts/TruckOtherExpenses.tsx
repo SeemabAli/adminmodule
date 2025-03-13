@@ -66,59 +66,59 @@ const TruckOtherExpense = () => {
                     {/* Expense Name */}
                     <label className="block mb-1 font-medium">
                         Expense Name
-                    <input
-                        type="text"
-                        placeholder="Expense Name"
-                        value={expenseName}
-                        onChange={(e) => setExpenseName(e.target.value)}
-                        className="input input-bordered w-full"
-                    />
+                        <input
+                            type="text"
+                            placeholder="Expense Name"
+                            value={expenseName}
+                            onChange={(e) => setExpenseName(e.target.value)}
+                            className="input input-bordered w-full"
+                        />
                     </label>
                     {/* Expense Date */}
                     <label className="block mb-1 font-medium">
                         Date
-                    <input
-                        type="date"
-                        value={expenseDate}
-                        onChange={(e) => setExpenseDate(e.target.value)}
-                        className="input input-bordered w-full"
-                    />
+                        <input
+                            type="date"
+                            value={expenseDate}
+                            onChange={(e) => setExpenseDate(e.target.value)}
+                            className="input input-bordered w-full"
+                        />
                     </label>
 
                     {/* Trip Amounts */}
                     <label className="block mb-1 font-medium">
                         1st Trip
-                    <input
-                        type="number"
-                        placeholder="1st Trip Amount"
-                        value={firstTrip ?? ""}
-                        onChange={(e) => setFirstTrip(e.target.value ? parseFloat(e.target.value) : null)}
-                        className="input input-bordered w-full"
-                    />
+                        <input
+                            type="number"
+                            placeholder="1st Trip Amount"
+                            value={firstTrip ?? ""}
+                            onChange={(e) => setFirstTrip(e.target.value ? parseFloat(e.target.value) : null)}
+                            className="input input-bordered w-full"
+                        />
                     </label>
                     <label className="block mb-1 font-medium">
                         2nd Trip
-                    <input
-                        type="number"
-                        placeholder="2nd Trip Amount"
-                        value={secondTrip ?? ""}
-                        onChange={(e) => setSecondTrip(e.target.value ? parseFloat(e.target.value) : null)}
-                        className="input input-bordered w-full"
-                    />
+                        <input
+                            type="number"
+                            placeholder="2nd Trip Amount"
+                            value={secondTrip ?? ""}
+                            onChange={(e) => setSecondTrip(e.target.value ? parseFloat(e.target.value) : null)}
+                            className="input input-bordered w-full"
+                        />
                     </label>
                     <label className="block mb-1 font-medium">
                         3nd Trip
-                    <input
-                        type="number"
-                        placeholder="3rd Trip Amount"
-                        value={thirdTrip ?? ""}
-                        onChange={(e) => setThirdTrip(e.target.value ? parseFloat(e.target.value) : null)}
-                        className="input input-bordered w-full"
-                    />
+                        <input
+                            type="number"
+                            placeholder="3rd Trip Amount"
+                            value={thirdTrip ?? ""}
+                            onChange={(e) => setThirdTrip(e.target.value ? parseFloat(e.target.value) : null)}
+                            className="input input-bordered w-full"
+                        />
                     </label>
                 </div>
 
-                <button onClick={handleSaveExpense} className="btn btn-primary mt-4">
+                <button onClick={handleSaveExpense} className="btn btn-info mt-4">
                     {editingIndex !== null ? "Update Expense" : "Save Expense"}
                 </button>
             </div>
@@ -150,7 +150,7 @@ const TruckOtherExpense = () => {
                                     <td className="p-3">
                                         <button
                                             onClick={() => handleEditExpense(index)}
-                                            className="btn btn-sm btn-warning"
+                                            className="btn btn-sm btn-secondary"
                                         >
                                             Edit
                                         </button>

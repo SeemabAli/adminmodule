@@ -80,40 +80,40 @@ const TruckInformation = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <label className="block mb-1 font-medium">
                         Truck Number
-                    <input
-                        type="text"
-                        name="truckNumber"
-                        placeholder="Truck Number"
-                        value={formData.truckNumber}
-                        onChange={handleChange}
-                        className="input input-bordered w-full"
-                    />
+                        <input
+                            type="text"
+                            name="truckNumber"
+                            placeholder="Truck Number"
+                            value={formData.truckNumber}
+                            onChange={handleChange}
+                            className="input input-bordered w-full"
+                        />
                     </label>
                     <label className="block mb-1 font-medium">
                         Driver Name
-                    <input
-                        type="text"
-                        name="defaultDriver"
-                        placeholder="Default Driver"
-                        value={formData.defaultDriver}
-                        onChange={handleChange}
-                        className="input input-bordered w-full"
-                    />
+                        <input
+                            type="text"
+                            name="defaultDriver"
+                            placeholder="Default Driver"
+                            value={formData.defaultDriver}
+                            onChange={handleChange}
+                            className="input input-bordered w-full"
+                        />
                     </label>
                     <label className="block mb-1 font-medium">
                         Route
-                    <select
-                        name="defaultRoute"
-                        value={formData.defaultRoute}
-                        onChange={handleChange}
-                        className="select select-bordered w-full"
-                    >
-                        {routes.map((route, index) => (
-                            <option key={index} value={route}>
-                                {route}
-                            </option>
-                        ))}
-                    </select>
+                        <select
+                            name="defaultRoute"
+                            value={formData.defaultRoute}
+                            onChange={handleChange}
+                            className="select select-bordered w-full"
+                        >
+                            {routes.map((route, index) => (
+                                <option key={index} value={route}>
+                                    {route}
+                                </option>
+                            ))}
+                        </select>
                     </label>
 
                     {/* Truck Type Radio Buttons */}
@@ -142,7 +142,7 @@ const TruckInformation = () => {
                         </label>
                     </div>
                 </div>
-                <button onClick={handleSaveTruck} className="btn btn-primary mt-4">
+                <button onClick={handleSaveTruck} className="btn btn-info mt-4">
                     {editingIndex !== null ? "Update Truck" : "Save Truck"}
                 </button>
             </div>
@@ -170,7 +170,7 @@ const TruckInformation = () => {
                                     <td className="p-3">{truck.defaultRoute}</td>
                                     <td className="p-3">{truck.truckType}</td>
                                     <td className="p-3">
-                                        <button onClick={() => handleEditTruck(index)} className="btn btn-sm btn-warning mr-2">
+                                        <button onClick={() => handleEditTruck(index)} className="btn btn-sm btn-secondary mr-2">
                                             Edit
                                         </button>
                                         <button onClick={() => handleDeleteTruck(index)} className="btn btn-sm btn-error">

@@ -135,7 +135,7 @@ const Employees = () => {
                         />
                     </label>
                 </div>
-                <button onClick={handleAddEmployee} className="btn btn-primary mt-4">
+                <button onClick={handleAddEmployee} className="btn btn-info mt-4">
                     {editingIndex !== null ? "Update Employee" : "Add Employee"}
                 </button>
             </div>
@@ -169,7 +169,7 @@ const Employees = () => {
                                     <td className="p-3">
                                         <button
                                             onClick={() => handleEdit(index)}
-                                            className="btn btn-sm btn-warning"
+                                            className="btn btn-sm btn-secondary"
                                         >
                                             Edit
                                         </button>

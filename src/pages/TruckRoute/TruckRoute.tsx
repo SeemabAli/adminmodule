@@ -85,7 +85,7 @@ const TruckRoute = () => {
                     </label>
                 </div>
 
-                <button onClick={handleSaveRoute} className="btn btn-primary mt-4">
+                <button onClick={handleSaveRoute} className="btn btn-info mt-4">
                     {editingIndex !== null ? "Update Route" : "Save Route"}
                 </button>
             </div>
@@ -109,7 +109,7 @@ const TruckRoute = () => {
                                     <td>{route.name}</td>
                                     <td>{route.shortCode}</td>
                                     <td>
-                                        <button onClick={() => handleEditRoute(index)} className="btn btn-sm btn-warning">
+                                        <button onClick={() => handleEditRoute(index)} className="btn btn-sm btn-secondary">
                                             Edit
                                         </button>
                                     </td>

@@ -100,14 +100,14 @@ export const Header = ({ handleLogout }: NavbarProps) => {
             <div className="container mx-auto flex justify-between items-center">
                 <Link to="/" className="flex items-center gap-3">
                     <img src={blue} alt="Logo" className="h-10 w-auto" />
-                    <h1 className="text-2xl font-bold hover:text-primary">MB & CO</h1>
+                    <h1 className="text-2xl font-bold hover:text-info">MB & CO</h1>
                 </Link>
 
                 {/* Desktop Menu */}
                 <div className="hidden md:flex items-center gap-4">
                     <div className="dropdown relative">
                         <button
-                            className="btn btn-ghost flex items-center gap-2 hover:text-primary"
+                            className="btn btn-ghost flex items-center gap-2 hover:text-info"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setAccountDropdownOpen((prev) => !prev);
@@ -130,8 +130,8 @@ export const Header = ({ handleLogout }: NavbarProps) => {
                         )}
                     </div>
 
-                    <Link to="/brands" className="btn btn-ghost hover:text-primary" onClick={handleDropdownItemClick}>Brands</Link>
-                    <Link to="/truck-route" className="btn btn-ghost hover:text-primary" onClick={handleDropdownItemClick}>Truck Route</Link>
+                    <Link to="/brands" className="btn btn-ghost hover:text-info" onClick={handleDropdownItemClick}>Brands</Link>
+                    <Link to="/truck-route" className="btn btn-ghost hover:text-info" onClick={handleDropdownItemClick}>Truck Route</Link>
 
                     <button onClick={toggleTheme} className="btn btn-ghost">
                         {theme === "corporate" ? <FiMoon size={20} /> : <FiSun size={20} />}

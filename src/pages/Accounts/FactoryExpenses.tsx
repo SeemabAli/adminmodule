@@ -83,19 +83,19 @@ const FactoryExpenseTypes = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <label className="block mb-1 font-medium">
                         Expense Name
-                    <input type="text" placeholder="Expense Name" value={expenseName} onChange={(e) => setExpenseName(e.target.value)} className="input input-bordered w-full" />
+                        <input type="text" placeholder="Expense Name" value={expenseName} onChange={(e) => setExpenseName(e.target.value)} className="input input-bordered w-full" />
                     </label>
                     <label className="block mb-1 font-medium">
                         Date
-                    <input type="date" value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)} className="input input-bordered w-full" />
+                        <input type="date" value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)} className="input input-bordered w-full" />
                     </label>
                     <label className="block mb-1 font-medium">
                         Category
-                    <select value={expenseCategory} onChange={(e) => setExpenseCategory(e.target.value)} className="select select-bordered w-full">
-                        {expenseCategories.map((category, index) => (
-                            <option key={index} value={category}>{category}</option>
-                        ))}
-                    </select>
+                        <select value={expenseCategory} onChange={(e) => setExpenseCategory(e.target.value)} className="select select-bordered w-full">
+                            {expenseCategories.map((category, index) => (
+                                <option key={index} value={category}>{category}</option>
+                            ))}
+                        </select>
                     </label>
                     <div className="col-span-2 flex gap-4 flex-wrap">
                         {["Fixed Amount", "Fixed/Ton", "Percent/Ton", "Range Ton From"].map((type) => (
@@ -128,12 +128,12 @@ const FactoryExpenseTypes = () => {
                 <p className="py-4 md:w-1/2">
                     <label htmlFor="Extra Charges">
                         <span className="block mb-1 font-medium">
-                        Extra Charges
+                            Extra Charges
                         </span>
                         <input type="number" placeholder="Extra Charges If Brand Change" value={extraCharge} onChange={(e) => setExtraCharge(e.target.value === "" ? "" : parseFloat(e.target.value))} className="input input-bordered w-full" />
                     </label>
                 </p>
-                <button onClick={handleSaveExpense} className="btn btn-primary mt-4">{editingIndex !== null ? "Update Expense" : "Save Expense"}</button>
+                <button onClick={handleSaveExpense} className="btn btn-info mt-4">{editingIndex !== null ? "Update Expense" : "Save Expense"}</button>
             </div>
 
             {expenses.length > 0 && (

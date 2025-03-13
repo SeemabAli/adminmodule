@@ -74,37 +74,37 @@ const DeliveryRoutes = () => {
             {/* Search Bar */}
             <label className="block mb-1 font-medium">
                 Search
-            <input
-                type="text"
-                placeholder="Search by Route Name or Short Code"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="input input-bordered w-full mb-4"
-            />
-        </label>
+                <input
+                    type="text"
+                    placeholder="Search by Route Name or Short Code"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="input input-bordered w-full mb-4"
+                />
+            </label>
 
             {/* Route Form */}
             <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
                 <div className="grid grid-cols-1 gap-4">
                     <label className="block mb-1 font-medium">
                         Route Name
-                    <input
-                        type="text"
-                        placeholder="Route Name"
-                        value={routeName}
-                        onChange={(e) => setRouteName(e.target.value)}
-                        className="input input-bordered w-full"
-                    />
+                        <input
+                            type="text"
+                            placeholder="Route Name"
+                            value={routeName}
+                            onChange={(e) => setRouteName(e.target.value)}
+                            className="input input-bordered w-full"
+                        />
                     </label>
                     <label className="block mb-1 font-medium">
                         Route Short Code
-                    <input
-                        type="text"
-                        placeholder="Route Short Code"
-                        value={shortCode}
-                        onChange={(e) => setShortCode(e.target.value)}
-                        className="input input-bordered w-full"
-                    />
+                        <input
+                            type="text"
+                            placeholder="Route Short Code"
+                            value={shortCode}
+                            onChange={(e) => setShortCode(e.target.value)}
+                            className="input input-bordered w-full"
+                        />
                     </label>
 
                     {/* Have Toll - Radio Buttons */}
@@ -163,7 +163,7 @@ const DeliveryRoutes = () => {
                         </div>
                     )}
                 </div>
-                <button onClick={handleSaveRoute} className="btn btn-primary mt-4">
+                <button onClick={handleSaveRoute} className="btn btn-info mt-4">
                     {editingIndex !== null ? "Update Route" : "Save Route"}
                 </button>
             </div>
@@ -193,7 +193,7 @@ const DeliveryRoutes = () => {
                                         <td className="p-3">{route.haveToll}</td>
                                         <td className="p-3">{route.haveToll === "Yes" ? route.tollType : "-"}</td>
                                         <td className="p-3">
-                                            <button onClick={() => handleEditRoute(actualIndex)} className="btn btn-sm btn-warning mr-2">
+                                            <button onClick={() => handleEditRoute(actualIndex)} className="btn btn-sm btn-secondary mr-2">
                                                 Edit
                                             </button>
                                             <button onClick={() => handleDeleteRoute(actualIndex)} className="btn btn-sm btn-error">

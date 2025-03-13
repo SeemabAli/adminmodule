@@ -113,7 +113,7 @@ const CompanyAccounts = () => {
                 </div>
                 <button
                     onClick={handleAddCompany}
-                    className="btn btn-primary mt-4"
+                    className="btn btn-info mt-4"
                     disabled={!!errors.name || !!errors.address}
                 >
                     {editingIndex !== null ? "Update Company" : "Add Company"}
@@ -139,13 +139,13 @@ const CompanyAccounts = () => {
                                     <td className="p-3 flex gap-2 justify-center">
                                         <button
                                             onClick={() => handleEdit(index)}
-                                            className="btn btn-sm btn-accent"
+                                            className="btn btn-sm btn-secondary"
                                         >
                                             Edit
                                         </button>
                                         <button
                                             onClick={() => handleDelete(index)}
-                                            className="btn btn-sm btn-neutral"
+                                            className="btn btn-sm btn-error"
                                         >
                                             Delete
                                         </button>

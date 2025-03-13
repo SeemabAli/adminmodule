@@ -85,7 +85,7 @@ export const Login = () => {
                     {/* Login Button */}
                     <button
                         type="submit"
-                        className="btn btn-primary w-full text-lg py-3 rounded-lg hover:scale-105 transition-all"
+                        className="btn btn-info w-full text-lg py-3 rounded-lg hover:scale-105 transition-all"
                     >
                         Login
                     </button>

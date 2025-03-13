@@ -81,7 +81,7 @@ const TaxAccounts = () => {
                 />
 
                 {/* Save Button */}
-                <button onClick={handleSave} className="btn btn-primary mt-4">
+                <button onClick={handleSave} className="btn btn-info mt-4">
                     Save
                 </button>
             </div>
