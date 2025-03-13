@@ -459,6 +459,6 @@ const Icon = ({ name }: IconProps) => {
     return icons[name];
 };
 
-export default ContactSection;
+
 
 

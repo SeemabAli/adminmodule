@@ -14,7 +14,7 @@ import Brands from "./pages/Brands/Brands";
 import TruckRoute from "./pages/TruckRoute/TruckRoute";
 import Customer from "./pages/Accounts/Customer";
 import { Route, createBrowserRouter, createRoutesFromElements, RouterProvider } from "react-router";
-import Home from "@/pages/home/Home";
+import {Home} from "@/pages/home/Home";
 
 
 
