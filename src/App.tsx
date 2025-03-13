@@ -1,7 +1,7 @@
 import { Toaster } from "react-hot-toast";
 import { RootLayout } from "./layouts/root/RootLayout";
 import { AuthLayout } from "./layouts/auth/Auth";
-import Login from "./pages/auth/Login";
+import { Login } from "./pages/auth/Login";
 import CompanyAccounts from "./pages/Accounts/CompanyAccounts";
 import Employees from "./pages/Accounts/Employees";
 import BankAccounts from "./pages/Accounts/BankAccounts";
