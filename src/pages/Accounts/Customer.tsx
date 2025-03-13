@@ -57,8 +57,6 @@ const Customer = () => {
     const [chequeImage, setChequeImage] = useState("");
     const [ledgerDetails, setLedgerDetails] = useState("");
     const [brands, setBrands] = useState<Brand[]>([]);
-    const [brandName, setBrandName] = useState("");
-    const [brandQuantity, setBrandQuantity] = useState("");
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
     const handleAddPhone = () => {
@@ -93,17 +91,6 @@ const Customer = () => {
 
     const handleRemoveCheque = (index: number) => {
         setPostDatedCheques(postDatedCheques.filter((_, i) => i !== index));
-    };
-
-    const handleAddBrand = () => {
-        if (!brandName || !brandQuantity) return;
-        setBrands([...brands, { name: brandName, quantity: Number(brandQuantity) }]);
-        setBrandName("");
-        setBrandQuantity("");
-    };
-
-    const handleRemoveBrand = (index: number) => {
-        setBrands(brands.filter((_, i) => i !== index));
     };
 
     const handleSave = () => {
@@ -440,52 +427,6 @@ const Customer = () => {
                                             </td>
                                             <td>
                                                 <button onClick={() => handleRemoveCheque(index)} className="btn btn-sm btn-error">Remove</button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
-
-                {/* Brands Section */}
-                <div className="md:col-span-2">
-                    <h3 className="text-xl font-semibold mb-2">Brands</h3>
-                    <div className="flex gap-4 flex-wrap mb-2">
-                        <input
-                            type="text"
-                            placeholder="Brand Name"
-                            value={brandName}
-                            onChange={(e) => setBrandName(e.target.value)}
-                            className="input input-bordered "
-                        />
-                        <input
-                            type="number"
-                            placeholder="Quantity"
-                            value={brandQuantity}
-                            onChange={(e) => setBrandQuantity(e.target.value)}
-                            className="input input-bordered w-32"
-                        />
-                        <button onClick={handleAddBrand} className="btn btn-primary">Add</button>
-                    </div>
-                    {brands.length > 0 && (
-                        <div className="overflow-x-auto">
-                            <table className="table w-full">
-                                <thead>
-                                    <tr>
-                                        <th>Brand Name</th>
-                                        <th>Quantity</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {brands.map((brand, index) => (
-                                        <tr key={index}>
-                                            <td>{brand.name}</td>
-                                            <td>{brand.quantity}</td>
-                                            <td>
-                                                <button onClick={() => handleRemoveBrand(index)} className="btn btn-sm btn-error">Remove</button>
                                             </td>
                                         </tr>
                                     ))}

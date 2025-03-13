@@ -1,6 +1,7 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Navbar from "./layouts/Navbar";
-import Footer from "./layouts/Footer";
+import { Toaster } from "react-hot-toast";
+import { RootLayout } from "./layouts/root/RootLayout";
+import { AuthLayout } from "./layouts/auth/Auth";
+import Login from "./pages/auth/Login";
 import CompanyAccounts from "./pages/Accounts/CompanyAccounts";
 import Employees from "./pages/Accounts/Employees";
 import BankAccounts from "./pages/Accounts/BankAccounts";
@@ -11,48 +12,42 @@ import FactoryExpenses from "./pages/Accounts/FactoryExpenses";
 import TruckOtherExpenses from "./pages/Accounts/TruckOtherExpenses";
 import Brands from "./pages/Brands/Brands";
 import TruckRoute from "./pages/TruckRoute/TruckRoute";
-import { LandingPage } from "./pages/Hero";
-import { Toaster } from "react-hot-toast";
 import Customer from "./pages/Accounts/Customer";
+import { Route, createBrowserRouter, createRoutesFromElements, RouterProvider } from "react-router";
+import Home from "@/pages/home/Home";
 
-const AppRouter = () => {
+
+
+const router = createBrowserRouter(
+  createRoutesFromElements([
+
+    <Route path="/" element={<RootLayout />} >
+      <Route index element={<Home />} />
+      <Route path="brands" element={<Brands />} />
+      <Route path="company-accounts" element={<CompanyAccounts />} />
+      <Route path="employees" element={<Employees />} />
+      <Route path="bank-accounts" element={<BankAccounts />} />
+      <Route path="truck-information" element={<TruckInformation />} />
+      <Route path="delivery-routes" element={<DeliveryRoutes />} />
+      <Route path="tax-accounts" element={<TaxAccounts />} />
+      <Route path="factory-expenses" element={<FactoryExpenses />} />
+      <Route path="truck-other-expenses" element={<TruckOtherExpenses />} />
+      <Route path="truck-route" element={<TruckRoute />} />
+      <Route path="customer" element={<Customer />} />
+    </Route >,
+
+    <Route path="/login" element={<AuthLayout />}>
+      <Route index element={<Login />} />
+    </Route>
+  ])
+)
+
+
+export const App = () => {
   return (
     <div>
-      <Toaster
-        position="top-center"
-        reverseOrder={false}
-      />
-
-
-      <Router>
-        <div className="flex flex-col min-h-screen">
-          <Navbar />
-          <main className="flex-grow p-4 pb-0 pt-16">
-            <Routes>
-              {/* Accounts Section */}
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/accounts/company-accounts" element={<CompanyAccounts />} />
-              <Route path="/accounts/employees" element={<Employees />} />
-              <Route path="/accounts/customer" element={<Customer />} />
-              <Route path="/accounts/bank-accounts" element={<BankAccounts />} />
-              <Route path="/accounts/truck-information" element={<TruckInformation />} />
-              <Route path="/accounts/delivery-routes" element={<DeliveryRoutes />} />
-              <Route path="/accounts/tax-accounts" element={<TaxAccounts />} />
-              <Route path="/accounts/factory-expenses" element={<FactoryExpenses />} />
-              <Route path="/accounts/truck-other-expenses" element={<TruckOtherExpenses />} />
-
-              {/* Brands Section */}
-              <Route path="/brands" element={<Brands />} />
-
-              {/* Truck Route Section */}
-              <Route path="/truck-route" element={<TruckRoute />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
-      </Router>
+      <Toaster />
+      <RouterProvider router={router} />
     </div>
-  );
-};
-
-export default AppRouter;
+  )
+}

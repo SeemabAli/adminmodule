@@ -1,8 +1,9 @@
 
 import { FiUser, FiSettings, FiCheckCircle, FiTruck, FiDollarSign, FiBarChart2, FiCalendar, FiShield, FiMessageSquare } from "react-icons/fi";
-import logo from "../assets/logo.png";
 
-export const LandingPage = () => {
+import logo from "@/assets/logo.png";
+
+export const Home = () => {
     return (
         <div className="min-h-screen bg-gray-50">
             <Hero />
@@ -10,7 +11,7 @@ export const LandingPage = () => {
             <Benefits />
             <Services />
             <Testimonials />
-            <FAQ />
+            <FAQ /> 
             <ContactSection />
         </div>
     );
