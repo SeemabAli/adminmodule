@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { notify } from "@/lib/notify.tsx";
+
 
 interface Tax {
     taxName: string;
@@ -25,7 +27,7 @@ const TaxAccounts = () => {
 
         const numericTaxValue = Number(taxValue);
         if (isNaN(numericTaxValue) || numericTaxValue < 0) {
-            alert("Please enter a valid tax value.");
+            notify.error("Please enter a valid tax value.");
             return;
         }
 
@@ -34,8 +36,12 @@ const TaxAccounts = () => {
     };
 
     const handleDelete = (index: number) => {
-        setTaxes((prev) => prev.filter((_, i) => i !== index));
+        notify.confirmDelete(() => {
+            setTaxes((prev) => prev.filter((_, i) => i !== index));
+            notify.success("Tax deleted successfully!");
+        });
     };
+
 
     const resetForm = () => {
         setTaxName("");

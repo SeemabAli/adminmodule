@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { notify } from "../../lib/notify";
+import { notify } from "../../lib/notify.tsx";
 import logo from "../../assets/logo.png";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 

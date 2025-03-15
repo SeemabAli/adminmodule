@@ -1,3 +1,5 @@
+import { notify } from "@/lib/notify";
+import { formatNumberWithCommas } from "@/utils/CommaSeparator.ts";
 import { useState } from "react";
 
 const FactoryExpenseTypes = () => {
@@ -13,8 +15,9 @@ const FactoryExpenseTypes = () => {
         extraCharge: number;
     }[]>([]);
 
+    const today = new Date().toISOString().split('T')[0];
     const [expenseName, setExpenseName] = useState("");
-    const [expenseDate, setExpenseDate] = useState("");
+    const [expenseDate, setExpenseDate] = useState(today);
     const [expenseCategory, setExpenseCategory] = useState("General");
     const [expenseType, setExpenseType] = useState("Fixed Amount");
     const [fixedAmount, setFixedAmount] = useState<number | "">("");
@@ -79,9 +82,12 @@ const FactoryExpenseTypes = () => {
     };
 
     const handleDelete = (index: number) => {
-        const updatedExpenses = expenses.filter((_, i) => i !== index);
-        setExpenses(updatedExpenses);
+        notify.confirmDelete(() => {
+            setExpenses((prev) => prev.filter((_, i) => i !== index));
+            notify.success("Expense deleted successfully!");
+        });
     };
+
 
     const resetForm = () => {
         setExpenseName("");
@@ -99,7 +105,7 @@ const FactoryExpenseTypes = () => {
 
     return (
         <div className="p-4 md:p-6">
-            <h2 className="text-2xl font-bold mb-4 text-center">Factory Expense Types</h2>
+            <h2 className="text-2xl font-bold mb-4">Factory Expense Types</h2>
 
             {error && <div className="text-red-500 mb-4 text-center">{error}</div>}
 
@@ -129,21 +135,80 @@ const FactoryExpenseTypes = () => {
                             </label>
                         ))}
                     </div>
-                    {expenseType === "Fixed Amount" && <input type="number" placeholder="Fixed Amount" value={fixedAmount} onChange={(e) => setFixedAmount(e.target.value === "" ? "" : parseFloat(e.target.value))} className="input input-bordered w-full" />}
-                    {expenseType === "Fixed/Ton" && <input type="number" placeholder="Fixed/Ton" value={fixedPerTon} onChange={(e) => setFixedPerTon(e.target.value === "" ? "" : parseFloat(e.target.value))} className="input input-bordered w-full" />}
-                    {expenseType === "Percent/Ton" && <input type="number" placeholder="Percent/Ton" value={percentPerTon} onChange={(e) => setPercentPerTon(e.target.value === "" ? "" : parseFloat(e.target.value))} className="input input-bordered w-full" />}
+                    {expenseType === "Fixed Amount" && (
+                        <input
+                            type="text"
+                            placeholder="Fixed Amount"
+                            value={fixedAmount === "" ? "" : formatNumberWithCommas(fixedAmount)}
+                            onChange={(e) => {
+                                const value = e.target.value.replace(/,/g, ""); // Remove commas for parsing
+                                setFixedAmount(value === "" ? "" : parseFloat(value));
+                            }}
+                            className="input input-bordered w-full"
+                        />
+                    )}
+
+                    {expenseType === "Fixed/Ton" && (
+                        <input
+                            type="text"
+                            placeholder="Fixed/Ton"
+                            value={fixedPerTon === "" ? "" : formatNumberWithCommas(fixedPerTon)}
+                            onChange={(e) => {
+                                const value = e.target.value.replace(/,/g, "");
+                                setFixedPerTon(value === "" ? "" : parseFloat(value));
+                            }}
+                            className="input input-bordered w-full"
+                        />
+                    )}
+
+                    {expenseType === "Percent/Ton" && (
+                        <input
+                            type="text"
+                            placeholder="Percent/Ton"
+                            value={percentPerTon === "" ? "" : formatNumberWithCommas(percentPerTon)}
+                            onChange={(e) => {
+                                const value = e.target.value.replace(/,/g, "");
+                                setPercentPerTon(value === "" ? "" : parseFloat(value));
+                            }}
+                            className="input input-bordered w-full"
+                        />
+                    )}
+
                     {expenseType === "Range Ton From" && (
                         <>
-                            <select value={rangeTonFrom} onChange={(e) => setRangeTonFrom(e.target.value)} className="select select-bordered w-full">
+                            <select
+                                value={rangeTonFrom}
+                                onChange={(e) => setRangeTonFrom(e.target.value)}
+                                className="select select-bordered w-full"
+                            >
                                 {rangeOptions.map((range, index) => (
                                     <option key={index} value={range}>{range}</option>
                                 ))}
                             </select>
-                            <input type="number" placeholder="Enter Value" value={rangeTonValue} onChange={(e) => setRangeTonValue(e.target.value === "" ? "" : parseFloat(e.target.value))} className="input input-bordered w-full" />
+                            <input
+                                type="text"
+                                placeholder="Enter Value"
+                                value={rangeTonValue === "" ? "" : formatNumberWithCommas(rangeTonValue)}
+                                onChange={(e) => {
+                                    const value = e.target.value.replace(/,/g, "");
+                                    setRangeTonValue(value === "" ? "" : parseFloat(value));
+                                }}
+                                className="input input-bordered w-full"
+                            />
                         </>
                     )}
+                    <input
+                        type="text"
+                        placeholder="Extra Charge"
+                        value={extraCharge === "" ? "" : formatNumberWithCommas(extraCharge)}
+                        onChange={(e) => {
+                            const value = e.target.value.replace(/,/g, "");
+                            setExtraCharge(value === "" ? "" : parseFloat(value));
+                        }}
+                        className="input input-bordered w-full"
+                    />
                 </div>
-                <button onClick={handleSaveExpense} className="btn btn-info mt-4 w-full">{editingIndex !== null ? "Update Expense" : "Save Expense"}</button>
+                <button onClick={handleSaveExpense} className="btn btn-info mt-4">{editingIndex !== null ? "Update Expense" : "Save Expense"}</button>
             </div>
 
             {expenses.length > 0 && (

@@ -1,4 +1,6 @@
+import { formatNumberWithCommas } from "@/utils/CommaSeparator.ts";
 import { useState } from "react";
+import { notify } from "@/lib/notify.tsx";
 
 interface BankAccount {
     id: string;
@@ -45,10 +47,6 @@ const BankAccounts = () => {
     });
     const [editingChequeId, setEditingChequeId] = useState<string | null>(null);
 
-    const formatNumberWithCommas = (num: string) => {
-        return num.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    };
-
     const handleBankInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setBankFormData({
@@ -67,7 +65,7 @@ const BankAccounts = () => {
         const { bankName, accountTitle, accountNumber, openingBalance } = bankFormData;
 
         if (accountTitle.trim() === "" || accountNumber.trim() === "" || openingBalance.trim() === "") {
-            alert("Please fill in all required fields");
+            notify.error("Please fill in all required fields");
             return;
         }
 
@@ -119,13 +117,15 @@ const BankAccounts = () => {
 
     // Handle delete bank account
     const handleDeleteBankAccount = (accountId: string) => {
-        if (confirm("Are you sure you want to delete this bank account?")) {
+        notify.confirmDelete(() => {
             setBankAccounts(bankAccounts.filter((account) => account.id !== accountId));
             if (selectedAccountId === accountId) {
                 setSelectedAccountId(null);
             }
-        }
+            notify.success("Bank account deleted successfully!");
+        });
     };
+
 
     // Handle selecting an account for cheque management
     const handleSelectAccount = (accountId: string) => {
@@ -155,7 +155,7 @@ const BankAccounts = () => {
         const { chequeFrom, chequeTo, status } = chequeFormData;
 
         if (chequeFrom.trim() === "" || chequeTo.trim() === "") {
-            alert("Please fill in all required fields");
+            notify.error("Please fill in all required fields");
             return;
         }
 
@@ -163,12 +163,12 @@ const BankAccounts = () => {
         const toNum = parseInt(chequeTo);
 
         if (isNaN(fromNum) || isNaN(toNum)) {
-            alert("Cheque numbers must be valid numbers");
+            notify.error("Cheque numbers must be valid numbers");
             return;
         }
 
         if (fromNum > toNum) {
-            alert("'Cheque From' must be less than or equal to 'Cheque To'");
+            notify.error("'Cheque From' must be less than or equal to 'Cheque To'");
             return;
         }
 
@@ -229,7 +229,7 @@ const BankAccounts = () => {
 
     // Handle delete cheque
     const handleDeleteCheque = (chequeId: string) => {
-        if (confirm("Are you sure you want to delete this cheque record?")) {
+        notify.confirmDelete(() => {
             setBankAccounts(
                 bankAccounts.map((account) => {
                     if (account.id === selectedAccountId) {
@@ -250,8 +250,9 @@ const BankAccounts = () => {
                     status: "active",
                 });
             }
-        }
+        });
     };
+
 
     // Get total cheques count for an account
     const getChequesCount = (accountId: string) => {
@@ -348,9 +349,7 @@ const BankAccounts = () => {
                                     openingBalance: "",
                                 });
                             }}
-                            className="btn btn-outline ml-2"
                         >
-                            Cancel
                         </button>
                     )}
                 </div>
@@ -520,7 +519,7 @@ const BankAccounts = () => {
                                                 <td className="p-3">
                                                     <button
                                                         onClick={() => handleEditCheque(cheque.id)}
-                                                        className="btn btn-xs btn-error mr-1"
+                                                        className="btn btn-xs btn-secondary mr-1"
                                                     >
                                                         Edit
                                                     </button>

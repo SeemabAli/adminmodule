@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { notify } from "../../lib/notify";
+import { notify } from "../../lib/notify.tsx";
+import { formatNumberWithCommas } from "@/utils/CommaSeparator.ts";
 
 const DeliveryRoutes = () => {
     const [routes, setRoutes] = useState<
@@ -30,7 +31,7 @@ const DeliveryRoutes = () => {
             shortCode,
             haveToll,
             tollType: haveToll === "Yes" ? tollType : undefined,
-            tollAmount: haveToll === "Yes" ? tollAmount : undefined,
+            tollAmount: haveToll === "Yes" ? formatNumberWithCommas(tollAmount) : undefined, // Apply formatting
         };
 
         if (editingIndex !== null) {
@@ -59,12 +60,12 @@ const DeliveryRoutes = () => {
 
     // Delete Route
     const handleDeleteRoute = (index: number) => {
-        const confirmDelete = window.confirm("Are you sure you want to delete this route?");
-        if (confirmDelete) {
+        notify.confirmDelete(() => {
             setRoutes(routes.filter((_, i) => i !== index));
             notify.success("Route deleted successfully!");
-        }
+        });
     };
+
 
     // Reset Form Fields
     const resetForm = () => {
@@ -182,10 +183,10 @@ const DeliveryRoutes = () => {
                             <label className="block mb-1 font-medium">
                                 Toll Amount
                                 <input
-                                    type="number"
+                                    type="text"
                                     placeholder="Enter Toll Amount"
                                     value={tollAmount}
-                                    onChange={(e) => setTollAmount(e.target.value)}
+                                    onChange={(e) => setTollAmount(formatNumberWithCommas(e.target.value))}
                                     className="input input-bordered w-full"
                                 />
                             </label>

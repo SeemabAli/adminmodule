@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { notify } from "../../lib/notify";
+import { notify } from "../../lib/notify.tsx";
 
 interface Phone {
     number: string;
@@ -30,6 +30,7 @@ interface Customer {
     creditLimit: number;
     postDatedCheques: PostDatedCheque[];
     ledgerDetails: string;
+    ledgerNumber: number;
     signatures: Signature[];
 }
 
@@ -57,6 +58,7 @@ const Customer = () => {
     const [chequeDetails, setChequeDetails] = useState("");
     const [chequeImage, setChequeImage] = useState("");
     const [ledgerDetails, setLedgerDetails] = useState("");
+    const [ledgerNumber, setLedgerNumber] = useState("");
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
     const handleAddPhone = () => {
@@ -123,6 +125,7 @@ const Customer = () => {
             creditLimit: Number(creditLimit),
             postDatedCheques,
             ledgerDetails,
+            ledgerNumber: Number(ledgerNumber),
             signatures
         };
 
@@ -149,9 +152,10 @@ const Customer = () => {
         setCreditLimit("");
         setPostDatedCheques([]);
         setLedgerDetails("");
+        setLedgerNumber("");
         setSignatures([]);
 
-        notify.success("Customer added");
+        notify.success("Customer saved successfully.");
     };
 
     const handleEdit = (index: number) => {
@@ -170,12 +174,19 @@ const Customer = () => {
         setPostDatedCheques(customer.postDatedCheques);
         setLedgerDetails(customer.ledgerDetails);
         setSignatures(customer.signatures || []);
+        setLedgerNumber(customer.ledgerNumber.toString());
         setEditingIndex(index);
+
+        notify.success("Customer updated successfully.");
     };
 
     const handleDelete = (index: number) => {
-        setCustomers((prev) => prev.filter((_, i) => i !== index));
+        notify.confirmDelete(() => {
+            setCustomers((prev) => prev.filter((_, i) => i !== index));
+            notify.success("Customer deleted successfully.");
+        });
     };
+
 
     const handleCnicFrontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -288,6 +299,18 @@ const Customer = () => {
                     />
                 </div>
 
+                {/* Ledger Number */}
+                <div>
+                    <label className="block font-medium mb-1">Ledger Number</label>
+                    <input
+                        type="text"
+                        value={ledgerNumber}
+                        placeholder="Enter Ledger Details"
+                        onChange={(e) => setLedgerNumber(e.target.value)}
+                        className="input input-bordered w-full"
+                    />
+                </div>
+
                 {/* Ledger Details */}
                 <div>
                     <label className="block font-medium mb-1">Ledger Details</label>
@@ -302,7 +325,7 @@ const Customer = () => {
                 {/* Signature Section */}
                 <div>
                     <div className="flex flex-col gap-2">
-                    <h3 className="text-xl font-semibold mb-2">Signatures</h3>
+                    <h3 className="text-xl font-semibold mb-2">Signature</h3>
                     <div className="flex gap-4 flex-wrap mb-2">
                         <div className="flex-1">
                             <input

@@ -1,3 +1,4 @@
+import { notify } from "@/lib/notify";
 import { useState } from "react";
 
 const TruckRoute = () => {
@@ -42,6 +43,15 @@ const TruckRoute = () => {
         setEditingIndex(index);
     };
 
+    // Delete Route
+    const handleDeleteRoute = (index: number) => {
+        notify.confirmDelete(() => {
+            setRoutes((prev) => prev.filter((_, i) => i !== index));
+            notify.success("Route deleted successfully!");
+        });
+    };
+
+
     // Filtered routes based on search query
     const filteredRoutes = routes.filter((route) =>
         route.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -65,23 +75,23 @@ const TruckRoute = () => {
             <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Route Name & Short Code */}
-                    <label className="block mb-1 font-medium">Salary
-                    <input
-                        type="text"
-                        placeholder="Route Name"
-                        value={routeName}
-                        onChange={(e) => setRouteName(e.target.value)}
-                        className="input input-bordered w-full"
-                    />
+                    <label className="block mb-1 font-medium">Route Name
+                        <input
+                            type="text"
+                            placeholder="Route Name"
+                            value={routeName}
+                            onChange={(e) => setRouteName(e.target.value)}
+                            className="input input-bordered w-full"
+                        />
                     </label>
-                    <label className="block mb-1 font-medium">Salary
-                    <input
-                        type="text"
-                        placeholder="Route Short Code"
-                        value={routeShortCode}
-                        onChange={(e) => setRouteShortCode(e.target.value)}
-                        className="input input-bordered w-full"
-                    />
+                    <label className="block mb-1 font-medium">Short Code
+                        <input
+                            type="text"
+                            placeholder="Route Short Code"
+                            value={routeShortCode}
+                            onChange={(e) => setRouteShortCode(e.target.value)}
+                            className="input input-bordered w-full"
+                        />
                     </label>
                 </div>
 
@@ -108,9 +118,12 @@ const TruckRoute = () => {
                                     <td>{index + 1}</td>
                                     <td>{route.name}</td>
                                     <td>{route.shortCode}</td>
-                                    <td>
+                                    <td className="space-x-2">
                                         <button onClick={() => handleEditRoute(index)} className="btn btn-sm btn-secondary">
                                             Edit
+                                        </button>
+                                        <button onClick={() => handleDeleteRoute(index)} className="btn btn-sm btn-error">
+                                            Delete
                                         </button>
                                     </td>
                                 </tr>

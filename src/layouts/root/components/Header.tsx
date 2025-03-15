@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { FiMenu, FiX, FiSun, FiMoon, FiChevronDown, FiLogOut } from "react-icons/fi";
-import { notify } from "../../../lib/notify";
+import { notify } from "../../../lib/notify.tsx";
 import blue from "../../../assets/blue.png";
 import { Link, useNavigate } from "react-router";
 
@@ -119,6 +119,7 @@ export const Header = ({ handleLogout }: NavbarProps) => {
                             <ul className="absolute left-0 mt-2 w-52 menu p-2 shadow bg-base-300 rounded-box">
                                 <li><Link to="/company-accounts" onClick={handleDropdownItemClick}>Company Accounts</Link></li>
                                 <li><Link to="/customer" onClick={handleDropdownItemClick}>Customer</Link></li>
+                                <li><Link to="/purchase" onClick={handleDropdownItemClick}>Purchase</Link></li>
                                 <li><Link to="/employees" onClick={handleDropdownItemClick}>Employees</Link></li>
                                 <li><Link to="/bank-accounts" onClick={handleDropdownItemClick}>Bank Accounts</Link></li>
                                 <li><Link to="/truck-information" onClick={handleDropdownItemClick}>Truck Information</Link></li>
@@ -167,6 +168,7 @@ export const Header = ({ handleLogout }: NavbarProps) => {
                             <ul className="menu bg-base-200 rounded-box mt-2 p-2 shadow">
                                 <li><Link to="/company-accounts" onClick={closeMenu}>Company Accounts</Link></li>
                                 <li><Link to="/customer" onClick={closeMenu}>Customer</Link></li>
+                                <li><Link to="/purchase" onClick={handleDropdownItemClick}>Purchase</Link></li>
                                 <li><Link to="/employees" onClick={closeMenu}>Employees</Link></li>
                                 <li><Link to="/bank-accounts" onClick={closeMenu}>Bank Accounts</Link></li>
                                 <li><Link to="/truck-information" onClick={closeMenu}>Truck Information</Link></li>

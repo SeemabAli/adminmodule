@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { notify } from "../../lib/notify";
+import { notify } from "../../lib/notify.tsx";
+import { formatNumberWithCommas } from "@/utils/CommaSeparator.ts";
 
 const Employees = () => {
     const [employees, setEmployees] = useState<
@@ -23,29 +24,77 @@ const Employees = () => {
 
     // Handle CNIC Input (Auto-format XXXXX-XXXXXXX-X)
     const handleCnicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
-
+        let value = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
+        if (value.length > 20) value = value.slice(0, 20);
         setEmployeeCnic(value);
     };
 
-    // Handle form submission
+    // Handle form submission (Add/Edit Employee)
     const handleAddEmployee = () => {
-        if (employeeName.trim() === "" || employeePhone.length !== 13 || employeeCnic.length !== 20 || designation.trim() === "" || salary.trim() === "") {
-            notify.error("Please Fill All Fields Correctly!!!")
+        // Debugging logs
+        console.log({
+            name: employeeName.trim(),
+            phone: employeePhone,
+            cnic: employeeCnic,
+            designation: designation.trim(),
+            department: department.trim(),
+            salary: salary.trim(),
+        });
+
+        // Fix Phone Number Validation (Must be exactly +92XXXXXXXXXX)
+        const phoneRegex = /^\+92\d{10}$/;
+        if (!phoneRegex.test(employeePhone)) {
+            notify.error("Invalid phone number!");
             return;
         }
 
-        if (editingIndex !== null) {
-            const updatedEmployees = [...employees];
-            updatedEmployees[editingIndex] = { name: employeeName, phone: employeePhone, cnic: employeeCnic, designation, department, salary };
-            setEmployees(updatedEmployees);
-            setEditingIndex(null);
-            notify.success("")
-        } else {
-            setEmployees([...employees, { name: employeeName, phone: employeePhone, cnic: employeeCnic, designation, department, salary }]);
+        // Fix CNIC Validation (XXXXX-XXXXXXX-X)
+        // const cnicRegex = /^\d{5}-\d{7}-\d{1}$/;
+        // if (!cnicRegex.test(employeeCnic)) {
+        //     notify.error("Invalid CNIC format!");
+        //     return;
+        // }
+
+        // Fix Salary Formatting (Remove all commas before storing)
+        const salaryWithoutCommas = salary.replace(/,/g, "");
+        if (isNaN(Number(salaryWithoutCommas))) {
+            notify.error("Invalid salary amount!");
+            return;
         }
 
-        // Clear inputs
+        // Ensure all fields are filled
+        if (
+            employeeName.trim() === "" ||
+            designation.trim() === "" ||
+            department.trim() === "" ||
+            salary.trim() === ""
+        ) {
+            notify.error("Please fill all fields correctly!");
+            return;
+        }
+
+        // Create Employee Object
+        const newEmployee = {
+            name: employeeName.trim(),
+            phone: employeePhone,
+            cnic: employeeCnic,
+            designation: designation.trim(),
+            department: department.trim(),
+            salary: salaryWithoutCommas, // Store salary without commas
+        };
+
+        if (editingIndex !== null) {
+            const updatedEmployees = [...employees];
+            updatedEmployees[editingIndex] = newEmployee;
+            setEmployees(updatedEmployees);
+            setEditingIndex(null);
+            notify.success("Employee updated successfully!");
+        } else {
+            setEmployees([...employees, newEmployee]);
+            notify.success("Employee added successfully!");
+        }
+
+        // Clear Fields
         setEmployeeName("");
         setEmployeePhone("+92");
         setEmployeeCnic("");
@@ -54,7 +103,8 @@ const Employees = () => {
         setSalary("");
     };
 
-    // Handle edit button click
+
+    // Handle Edit
     const handleEdit = (index: number) => {
         const employee = employees[index];
         setEmployeeName(employee.name);
@@ -62,9 +112,18 @@ const Employees = () => {
         setEmployeeCnic(employee.cnic);
         setDesignation(employee.designation);
         setDepartment(employee.department);
-        setSalary(employee.salary);
+        setSalary(formatNumberWithCommas(employee.salary));
         setEditingIndex(index);
     };
+
+    // Handle Delete
+    const handleDelete = (index: number) => {
+        notify.confirmDelete(() => {
+            setEmployees(employees.filter((_, i) => i !== index));
+            notify.success("Employee deleted successfully!");
+        });
+    };
+
 
     return (
         <div className="p-6">
@@ -90,7 +149,7 @@ const Employees = () => {
                             value={employeePhone}
                             onChange={handlePhoneChange}
                             className="input input-bordered w-full"
-                            maxLength={13} // +92XXXXXXXXXX (13 characters)
+                            maxLength={13}
                         />
                     </label>
                     <label className="block mb-1 font-medium">Employee CNIC
@@ -100,26 +159,26 @@ const Employees = () => {
                             value={employeeCnic}
                             onChange={handleCnicChange}
                             className="input input-bordered w-full"
-                            maxLength={20} // CNIC format XXXXX-XXXXXXX-X (15 characters)
+                            maxLength={20}
                         />
                     </label>
-                    <label className="block mb-1 font-medium">Designation
+                    <label className="block mb-1 font-medium">Department
                         <input
                             type="text"
-                            placeholder="Designation"
-                            value={designation}
-                            onChange={(e) => setDesignation(e.target.value)}
+                            placeholder="Department"
+                            value={department}
+                            onChange={(e) => setDepartment(e.target.value)}
                             className="input input-bordered w-full"
                         />
                     </label>
-                    {/* Department Dropdown */}
-                    <label className="block mb-1 font-medium">Department
+                    {/* Designation Dropdown */}
+                    <label className="block mb-1 font-medium">Designation
                         <select
-                            value={department}
-                            onChange={(e) => setDepartment(e.target.value)}
+                            value={designation}
+                            onChange={(e) => setDesignation(e.target.value)}
                             className="select select-bordered w-full"
                         >
-                            <option value="">Select Department</option>
+                            <option value="">Select Designation</option>
                             <option value="Driver">Driver</option>
                             <option value="Manager">Manager</option>
                             <option value="Engineer">Engineer</option>
@@ -130,7 +189,11 @@ const Employees = () => {
                             type="text"
                             placeholder="Salary"
                             value={salary}
-                            onChange={(e) => setSalary(e.target.value)}
+                            onChange={(e) => {
+                                const rawValue = e.target.value.replace(/,/g, ""); // Remove commas
+                                if (!/^\d*$/.test(rawValue)) return; // Prevent non-numeric input
+                                setSalary(rawValue ? formatNumberWithCommas(rawValue) : "");
+                            }}
                             className="input input-bordered w-full"
                         />
                     </label>
@@ -165,14 +228,10 @@ const Employees = () => {
                                     <td className="p-3">{employee.cnic}</td>
                                     <td className="p-3">{employee.designation}</td>
                                     <td className="p-3">{employee.department}</td>
-                                    <td className="p-3">{employee.salary}</td>
-                                    <td className="p-3">
-                                        <button
-                                            onClick={() => handleEdit(index)}
-                                            className="btn btn-sm btn-secondary"
-                                        >
-                                            Edit
-                                        </button>
+                                    <td className="p-3">{formatNumberWithCommas(employee.salary)}</td>
+                                    <td className="p-3 flex gap-2 justify-center">
+                                        <button onClick={() => handleEdit(index)} className="btn btn-sm btn-secondary">Edit</button>
+                                        <button onClick={() => handleDelete(index)} className="btn btn-sm btn-error">Delete</button>
                                     </td>
                                 </tr>
                             ))}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { notify } from "@/lib/notify.tsx";
 
 interface Truck {
     truckNumber: string;
@@ -37,7 +38,7 @@ const TruckInformation = () => {
         const { truckNumber, defaultDriver, truckType } = formData;
 
         if (!truckNumber.trim() || !defaultDriver.trim() || !truckType) {
-            alert("All fields are required!");
+            notify.error("All fields are required!");
             return;
         }
 
@@ -61,9 +62,12 @@ const TruckInformation = () => {
 
     // Delete truck entry
     const handleDeleteTruck = (index: number) => {
-        const updatedTrucks = trucks.filter((_, i) => i !== index);
-        setTrucks(updatedTrucks);
+        notify.confirmDelete(() => {
+            setTrucks((prev) => prev.filter((_, i) => i !== index));
+            notify.success("Truck deleted successfully!");
+        });
     };
+
 
     // Reset form fields
     const resetForm = () => {

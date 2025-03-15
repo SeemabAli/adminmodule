@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { notify } from "../../lib/notify";
+import { notify } from "../../lib/notify.tsx";
 
 const Brands = () => {
     const [brands, setBrands] = useState<{
@@ -114,6 +114,14 @@ const Brands = () => {
         );
     };
 
+    const handleDeleteBrand = (index: number) => {
+        notify.confirmDelete(() => {
+            setBrands((prev) => prev.filter((_, i) => i !== index));
+            notify.success("Brand deleted successfully!");
+        });
+    };
+
+
     return (
         <div className="p-6">
             <h2 className="text-2xl font-bold mb-4">Brand Management</h2>
@@ -210,6 +218,9 @@ const Brands = () => {
                                     <td>
                                         <button onClick={() => handleEditBrand(index)} className="btn btn-sm btn-secondary">
                                             Edit
+                                        </button>
+                                        <button onClick={() => handleDeleteBrand(index)} className="btn btn-sm btn-error ml-2">
+                                            Delete
                                         </button>
                                     </td>
                                 </tr>

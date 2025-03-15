@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { z } from "zod";
-import { notify } from "../../lib/notify";
+import { notify } from "../../lib/notify.tsx";
 import Input from "../../components/Input";
 
 // Define validation schema
@@ -75,15 +75,17 @@ const CompanyAccounts = () => {
     };
 
     const handleDelete = (index: number) => {
-        try {
-            const updatedCompanies = companies.filter((_, i) => i !== index);
-            setCompanies(updatedCompanies);
-            notify.success("Company deleted successfully.");
-        } catch (error) {
-            console.error("Error deleting company:", error);
-            notify.error("An unexpected error occurred while deleting.");
-        }
+        notify.confirmDelete(() => {
+            try {
+                setCompanies(companies.filter((_, i) => i !== index));
+                notify.success("Company deleted successfully.");
+            } catch (error) {
+                console.error("Error deleting company:", error);
+                notify.error("An unexpected error occurred while deleting.");
+            }
+        });
     };
+
 
     return (
         <div className="p-6">

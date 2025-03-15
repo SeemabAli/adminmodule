@@ -15,6 +15,7 @@ import TruckRoute from "./pages/TruckRoute/TruckRoute";
 import Customer from "./pages/Accounts/Customer";
 import { Route, createBrowserRouter, createRoutesFromElements, RouterProvider } from "react-router";
 import {Home} from "@/pages/home/Home";
+import { Purchase } from "./pages/Accounts/Purchase";
 
 
 
@@ -34,6 +35,7 @@ const router = createBrowserRouter(
       <Route path="truck-other-expenses" element={<TruckOtherExpenses />} />
       <Route path="truck-route" element={<TruckRoute />} />
       <Route path="customer" element={<Customer />} />
+      <Route path="purchase" element={<Purchase />} />
     </Route >,
 
     <Route path="/login" element={<AuthLayout />}>

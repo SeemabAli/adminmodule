@@ -1,3 +1,5 @@
+import { formatNumberWithCommas } from "@/utils/CommaSeparator.ts";
+import { notify } from "@/lib/notify.tsx";
 import { useState } from "react";
 
 const TruckOtherExpense = () => {
@@ -9,11 +11,12 @@ const TruckOtherExpense = () => {
         date: string;
     }[]>([]);
 
+    const today = new Date().toISOString().split('T')[0];
     const [expenseName, setExpenseName] = useState("");
     const [firstTrip, setFirstTrip] = useState<number | null>(null);
     const [secondTrip, setSecondTrip] = useState<number | null>(null);
     const [thirdTrip, setThirdTrip] = useState<number | null>(null);
-    const [expenseDate, setExpenseDate] = useState("");
+    const [expenseDate, setExpenseDate] = useState(today);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
     // Save or Update Expense
@@ -56,6 +59,14 @@ const TruckOtherExpense = () => {
         setEditingIndex(index);
     };
 
+    const handleDeleteExpense = (index: number) => {
+        notify.confirmDelete(() => {
+            setExpenses((prev) => prev.filter((_, i) => i !== index));
+            notify.success("Expense deleted successfully!");
+        });
+    };
+
+
     return (
         <div className="p-6">
             <h2 className="text-2xl font-bold mb-4">Truck Other Expenses</h2>
@@ -89,30 +100,39 @@ const TruckOtherExpense = () => {
                     <label className="block mb-1 font-medium">
                         1st Trip
                         <input
-                            type="number"
+                            type="text"
                             placeholder="1st Trip Amount"
-                            value={firstTrip ?? ""}
-                            onChange={(e) => setFirstTrip(e.target.value ? parseFloat(e.target.value) : null)}
+                            value={firstTrip === null ? "" : formatNumberWithCommas(firstTrip)}
+                            onChange={(e) => {
+                                const value = e.target.value.replace(/,/g, "");
+                                setFirstTrip(value === "" ? null : parseFloat(value));
+                            }}
                             className="input input-bordered w-full"
                         />
                     </label>
                     <label className="block mb-1 font-medium">
                         2nd Trip
                         <input
-                            type="number"
+                            type="text"
                             placeholder="2nd Trip Amount"
-                            value={secondTrip ?? ""}
-                            onChange={(e) => setSecondTrip(e.target.value ? parseFloat(e.target.value) : null)}
+                            value={secondTrip === null ? "" : formatNumberWithCommas(secondTrip)}
+                            onChange={(e) => {
+                                const value = e.target.value.replace(/,/g, "");
+                                setSecondTrip(value === "" ? null : parseFloat(value));
+                            }}
                             className="input input-bordered w-full"
                         />
                     </label>
                     <label className="block mb-1 font-medium">
-                        3nd Trip
+                        3rd Trip
                         <input
-                            type="number"
+                            type="text"
                             placeholder="3rd Trip Amount"
-                            value={thirdTrip ?? ""}
-                            onChange={(e) => setThirdTrip(e.target.value ? parseFloat(e.target.value) : null)}
+                            value={thirdTrip === null ? "" : formatNumberWithCommas(thirdTrip)}
+                            onChange={(e) => {
+                                const value = e.target.value.replace(/,/g, "");
+                                setThirdTrip(value === "" ? null : parseFloat(value));
+                            }}
                             className="input input-bordered w-full"
                         />
                     </label>
@@ -153,6 +173,12 @@ const TruckOtherExpense = () => {
                                             className="btn btn-sm btn-secondary"
                                         >
                                             Edit
+                                        </button>
+                                        <button
+                                            onClick={() => handleDeleteExpense(index)}
+                                            className="btn btn-sm btn-error ml-2"
+                                        >
+                                            Delete
                                         </button>
                                     </td>
                                 </tr>
