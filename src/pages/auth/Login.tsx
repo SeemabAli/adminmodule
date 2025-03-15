@@ -28,7 +28,7 @@ export const Login = () => {
 
     return (
         <div className="flex justify-center items-center min-h-screen bg-base-200">
-            <div className="card w-full max-w-md bg-white shadow-lg rounded-2xl p-8">
+            <div className="card w-full max-w-md bg-white shadow-lg rounded-2xl p-8 mx-[20px]">
 
                 {/* Logo & Branding */}
                 <div className="flex flex-col items-center mb-6">
