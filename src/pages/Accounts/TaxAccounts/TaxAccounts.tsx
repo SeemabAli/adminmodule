@@ -1,5 +1,10 @@
 import { useState } from "react";
 import { notify } from "@/lib/notify";
+import { FormField } from "@/common/components/ui/form/FormField";
+import { useForm } from "react-hook-form";
+import { Button } from "@/common/components/ui/Button";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { taxSchema } from "./tax.schema";
 
 interface Tax {
   taxName: string;
@@ -25,6 +30,17 @@ const TaxAccounts = () => {
     "On Bank Payments to Company",
     "On Retail/Sale Price",
   ];
+
+  const {
+    register,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(taxSchema),
+    defaultValues: {
+      taxName: "",
+      taxRate: 0,
+    },
+  });
 
   const handleTaxChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedValue = e.target.value;
@@ -100,29 +116,32 @@ const TaxAccounts = () => {
 
       {/* Tax Form */}
       <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
-        <label className="block font-medium mb-1">Tax Name</label>
-        <input
+        <label className="block font-medium">Tax Name</label>
+        <FormField
           type="text"
           placeholder="Enter Tax Name"
           value={taxName}
           onChange={(e) => {
             setTaxName(e.target.value);
           }}
-          className="input input-bordered w-full mb-4"
+          name="taxName"
+          label=""
+          register={register}
+          errorMessage={errors.taxName?.message}
         />
 
         {/* Tax Type Dropdown */}
         <label className="block font-medium mb-1">Select Tax Type</label>
         <select
           onChange={handleTaxChange}
-          className="select select-bordered w-full mb-4"
+          className="select select-bordered w-full mb-4 relative right-2"
           defaultValue=""
         >
           <option value="" disabled>
             Select a Tax Type
           </option>
           {taxOptions.map((tax) => (
-            <option key={tax} value={tax}>
+            <option key={tax} value={tax} className="option">
               {tax}
             </option>
           ))}
@@ -184,20 +203,28 @@ const TaxAccounts = () => {
           </label>
         </div>
 
-        <input
+        <FormField
           type="number"
           placeholder="Enter Tax Rate"
           value={taxRate}
           onChange={(e) => {
             setTaxRate(e.target.value);
           }}
-          className="input input-bordered w-full"
+          name="taxRate"
+          label=""
+          register={register}
+          errorMessage={errors.taxRate?.message}
         />
 
         {/* Save Button */}
-        <button onClick={handleSave} className="btn btn-info mt-4">
+        <Button
+          onClick={handleSave}
+          shape="info"
+          pending={isSubmitting}
+          className="mt-4"
+        >
           {editIndex !== null ? "Update" : "Save"}
-        </button>
+        </Button>
       </div>
 
       {/* Display Tax Entries */}

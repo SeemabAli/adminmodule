@@ -1,6 +1,11 @@
 import { useState } from "react";
-import { notify } from "../../lib/notify";
+import { notify } from "../../../lib/notify";
 import { formatNumberWithCommas } from "@/utils/CommaSeparator";
+import { FormField } from "@/common/components/ui/form/FormField";
+import { useForm } from "react-hook-form";
+import { Button } from "@/common/components/ui/Button";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { deliveryRouteSchema } from "./deliveryRoute.schema";
 
 const DeliveryRoutes = () => {
   const [routes, setRoutes] = useState<
@@ -20,6 +25,17 @@ const DeliveryRoutes = () => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const {
+    register,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(deliveryRouteSchema),
+    defaultValues: {
+      routeName: "",
+      routeShortCode: "",
+      tollAmount: 0,
+    },
+  });
   // Save or Update Route
   const handleSaveRoute = () => {
     if (routeName.trim() === "" || shortCode.trim() === "") {
@@ -115,26 +131,32 @@ const DeliveryRoutes = () => {
         <div className="grid grid-cols-1 gap-4">
           <label className="block mb-1 font-medium">
             Route Name
-            <input
+            <FormField
               type="text"
               placeholder="Route Name"
               value={routeName}
               onChange={(e) => {
                 setRouteName(e.target.value);
               }}
-              className="input input-bordered w-full"
+              name="routeName"
+              label=""
+              register={register}
+              errorMessage={errors.routeName?.message}
             />
           </label>
           <label className="block mb-1 font-medium">
             Route Short Code
-            <input
+            <FormField
               type="text"
               placeholder="Route Short Code"
               value={shortCode}
               onChange={(e) => {
                 setShortCode(e.target.value);
               }}
-              className="input input-bordered w-full"
+              name="routeShortCode"
+              label=""
+              register={register}
+              errorMessage={errors.routeShortCode?.message}
             />
           </label>
 
@@ -205,22 +227,30 @@ const DeliveryRoutes = () => {
               {/* Toll Amount */}
               <label className="block mb-1 font-medium">
                 Toll Amount
-                <input
+                <FormField
                   type="text"
                   placeholder="Enter Toll Amount"
                   value={tollAmount}
                   onChange={(e) => {
                     setTollAmount(formatNumberWithCommas(e.target.value));
                   }}
-                  className="input input-bordered w-full"
+                  name="tollAmount"
+                  label=""
+                  register={register}
+                  errorMessage={errors.tollAmount?.message}
                 />
               </label>
             </>
           )}
         </div>
-        <button onClick={handleSaveRoute} className="btn btn-info mt-4">
+        <Button
+          onClick={handleSaveRoute}
+          shape="info"
+          pending={isSubmitting}
+          className="mt-4"
+        >
           {editingIndex !== null ? "Update Route" : "Save Route"}
-        </button>
+        </Button>
       </div>
 
       {/* Routes Table */}

@@ -25,7 +25,7 @@ export function FormField<T extends FieldValues>({
 }: Props<T>) {
   return (
     <p className={`w-full ${className}`}>
-      <label className="form-control w-full relative">
+      <label className="form-control w-full relative top-1 right-2">
         <span className="label block">
           <span
             className={`label-text font-semibold ${errorMessage ? "text-red-500" : "text-gray-700"}`}
@@ -36,7 +36,7 @@ export function FormField<T extends FieldValues>({
 
         <span className="relative w-full">
           <input
-            className={`input input-bordered w-full pr-10 ${
+            className={`input input-bordered w-full mb-2 ${
               errorMessage ? "border-red-500" : "text-gray-700"
             }`}
             {...register(name)}

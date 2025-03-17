@@ -19,7 +19,7 @@ export const Button = ({
 }: ButtonProps) => {
   return (
     <button
-      className={`btn ${shape === "primary" ? "btn-primary" : shape === "secondary" ? "btn-secondary" : shape === "accent" ? "btn-accent" : "btn-neutral"} ${outline ? "btn-outline" : ""} ${className}`}
+      className={`btn ${shape === "primary" ? "btn-primary" : shape === "secondary" ? "btn-secondary" : shape === "accent" ? "btn-accent" : shape === "info" ? "btn-info" : "btn-neutral"} ${outline ? "btn-outline" : ""} ${className}`}
       onClick={onClick}
       {...buttonAttributes}
       disabled={pending}

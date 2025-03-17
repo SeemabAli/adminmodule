@@ -1,5 +1,10 @@
 import { useState } from "react";
 import { notify } from "@/lib/notify";
+import { FormField } from "@/common/components/ui/form/FormField";
+import { useForm } from "react-hook-form";
+import { Button } from "@/common/components/ui/Button";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { brandSchema } from "./brand.schema";
 
 type Brand = {
   name: string;
@@ -37,6 +42,19 @@ const Brands = () => {
       givenToTruck: number | null;
     }[]
   >([]);
+
+  const {
+    register,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(brandSchema),
+    defaultValues: {
+      brandName: "",
+      brandShortCode: "",
+      weight: 0,
+      commission: 0,
+    },
+  });
 
   // Dummy Data
   const taxTypes = ["WHT", "GST", "Sales Tax", "Income Tax"];
@@ -228,25 +246,31 @@ const Brands = () => {
             </select>
 
             <label className="block mb-1 font-medium">Brand Name</label>
-            <input
+            <FormField
               type="text"
               placeholder="Enter Brand Name"
-              className="input input-bordered w-full mb-2"
               value={brandName}
               onChange={(e) => {
                 setBrandName(e.target.value);
               }}
+              name="brandName"
+              label=""
+              register={register}
+              errorMessage={errors.brandName?.message}
             />
 
             <label className="block mb-1 font-medium">Brand Short Code</label>
-            <input
+            <FormField
               type="text"
               placeholder="Enter Brand Short Code"
-              className="input input-bordered w-full mb-2"
               value={brandShortCode}
               onChange={(e) => {
                 setBrandShortCode(e.target.value);
               }}
+              name="brandShortCode"
+              label=""
+              register={register}
+              errorMessage={errors.brandShortCode?.message}
             />
 
             <button className="btn btn-info mt-4" onClick={handleNext}>
@@ -256,25 +280,31 @@ const Brands = () => {
         ) : (
           <>
             <label>KG per Bag</label>
-            <input
+            <FormField
               type="number"
               placeholder="Enter Weight"
-              className="input input-bordered w-full mb-2"
               value={kgPerBag ?? ""}
               onChange={(e) => {
                 setKgPerBag(parseFloat(e.target.value));
               }}
+              name="weight"
+              label=""
+              register={register}
+              errorMessage={errors.weight?.message}
             />
 
             <label>Commission per Bag</label>
-            <input
+            <FormField
               type="number"
               placeholder="Enter Amount"
-              className="input input-bordered w-full mb-1"
               value={commission ?? ""}
               onChange={(e) => {
                 setCommission(parseFloat(e.target.value));
               }}
+              name="commission"
+              label=""
+              register={register}
+              errorMessage={errors.commission?.message}
             />
             <label className="flex items-center gap-2 mb-2 text-sm">
               <input
@@ -379,9 +409,13 @@ const Brands = () => {
               <button className="btn btn-secondary" onClick={handleBack}>
                 Back
               </button>
-              <button className="btn btn-info" onClick={handleSaveBrand}>
+              <Button
+                shape="info"
+                pending={isSubmitting}
+                onClick={handleSaveBrand}
+              >
                 {isInEditMode ? "Update Brand" : "Save Brand"}
-              </button>
+              </Button>
             </div>
           </>
         )}

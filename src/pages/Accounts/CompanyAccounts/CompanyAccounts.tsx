@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { notify } from "../../lib/notify";
+import { notify } from "@/lib/notify";
+import { FormField } from "@/common/components/ui/form/FormField";
+import { useForm } from "react-hook-form";
+import { Button } from "@/common/components/ui/Button";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { companySchema } from "./company.schema";
 
 const CompanyAccounts = () => {
   const [companies, setCompanies] = useState<
@@ -8,6 +13,16 @@ const CompanyAccounts = () => {
   const [companyName, setCompanyName] = useState("");
   const [companyAddress, setCompanyAddress] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const {
+    register,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(companySchema),
+    defaultValues: {
+      companyName: "",
+      companyAddress: "",
+    },
+  });
 
   const handleAddCompany = () => {
     if (!companyName.trim() || !companyAddress.trim()) {
@@ -54,30 +69,43 @@ const CompanyAccounts = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="block mb-1 font-medium">
             Company Name
-            <input
+            <FormField
               placeholder="Enter Name"
               value={companyName}
               onChange={(e) => {
                 setCompanyName(e.target.value);
               }}
               className="input input-bordered w-full"
+              name={"companyName"}
+              label={""}
+              register={register}
+              errorMessage={errors.companyName?.message}
             />
           </label>
           <label className="block mb-1 font-medium">
             Company Address
-            <input
+            <FormField
               placeholder="Enter Address"
               value={companyAddress}
               onChange={(e) => {
                 setCompanyAddress(e.target.value);
               }}
               className="input input-bordered w-full"
+              name={"companyAddress"}
+              label={""}
+              register={register}
+              errorMessage={errors.companyAddress?.message}
             />
           </label>
         </div>
-        <button onClick={handleAddCompany} className="btn btn-info mt-4">
+        <Button
+          onClick={handleAddCompany}
+          shape="info"
+          pending={isSubmitting}
+          className="mt-4"
+        >
           {editingIndex !== null ? "Update Company" : "Add Company"}
-        </button>
+        </Button>
       </div>
       {companies.length > 0 ? (
         <div className="overflow-x-auto">
