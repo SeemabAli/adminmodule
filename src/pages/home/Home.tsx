@@ -40,7 +40,7 @@ const Hero = () => {
         </div>
 
         <h1 className="text-4xl md:text-5xl font-bold animate-fade-in">
-          MB&CO Cement Factory Management
+          MB&CO Distribution Management
         </h1>
         <p className="mt-4 text-lg text-base-content">
           Streamlining cement production, employee management, and

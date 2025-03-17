@@ -8,9 +8,11 @@ type Brand = {
   commission: number;
   lessCommission: boolean;
   taxes: string[];
-  routeShortCode: string;
-  freight: number;
-  givenToTruck: number;
+  routes: {
+    routeShortCode: string;
+    freight: number;
+    givenToTruck: number;
+  }[];
   companyName: string;
 };
 
@@ -23,18 +25,23 @@ const Brands = () => {
   const [kgPerBag, setKgPerBag] = useState<number | null>(null);
   const [commission, setCommission] = useState<number | null>(null);
   const [lessCommission, setLessCommission] = useState(false);
-  const [routeShortCode, setRouteShortCode] = useState("");
-  const [freight, setFreight] = useState<number | null>(null);
-  const [givenToTruck, setGivenToTruck] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [taxes, setTaxes] = useState<string[]>([]);
   const [step, setStep] = useState(1);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [isInEditMode, setIsInEditMode] = useState(false);
+  const [routeInputs, setRouteInputs] = useState<
+    {
+      routeShortCode: string;
+      freight: number | null;
+      givenToTruck: number | null;
+    }[]
+  >([]);
 
   // Dummy Data
-  const taxTypes = ["WHT", "GST", "Sales Tax"];
+  const taxTypes = ["WHT", "GST", "Sales Tax", "Income Tax"];
   const routeShortCodes = ["RTE001", "RTE002", "RTE003", "RTE004"];
+  const companyNames = ["Company A", "Company B", "Company C", "Company D"];
 
   const handleNext = () => {
     if (!companyName || !brandName || !brandShortCode) return;
@@ -45,16 +52,49 @@ const Brands = () => {
     setStep(1);
   };
 
+  // Initialize route inputs when moving to step 2
+  const initializeRouteInputs = () => {
+    // Initialize with empty values if in add mode
+    if (!isInEditMode) {
+      setRouteInputs(
+        routeShortCodes.map((route) => ({
+          routeShortCode: route,
+          freight: null,
+          givenToTruck: null,
+        })),
+      );
+    }
+  };
+
+  // Handle route input change
+  const handleRouteInputChange = (
+    index: number,
+    field: "freight" | "givenToTruck",
+    value: number,
+  ) => {
+    const updatedRouteInputs = [...routeInputs];
+    if (updatedRouteInputs[index]) {
+      updatedRouteInputs[index][field] = value;
+    }
+    setRouteInputs(updatedRouteInputs);
+  };
+
   // Save or Update Brand
   const handleSaveBrand = () => {
-    if (
-      !kgPerBag ||
-      !commission ||
-      routeShortCode === "" ||
-      !freight ||
-      !givenToTruck
-    ) {
+    if (!kgPerBag || !commission || taxes.length === 0) {
       notify.error("Please complete all fields correctly");
+      return;
+    }
+
+    // Filter out routes that have both freight and givenToTruck values
+    const validRoutes = routeInputs.filter(
+      (route) => route.freight !== null && route.givenToTruck !== null,
+    );
+
+    if (validRoutes.length === 0) {
+      notify.error(
+        "Please add at least one route with freight and given to truck values",
+      );
       return;
     }
 
@@ -66,9 +106,11 @@ const Brands = () => {
       commission,
       lessCommission,
       taxes,
-      routeShortCode,
-      freight,
-      givenToTruck,
+      routes: validRoutes as {
+        routeShortCode: string;
+        freight: number;
+        givenToTruck: number;
+      }[],
     };
 
     if (editingIndex !== null) {
@@ -76,6 +118,7 @@ const Brands = () => {
       updatedBrands[editingIndex] = newBrand;
       setBrands(updatedBrands);
       setEditingIndex(null);
+      setIsInEditMode(false);
     } else {
       setBrands([...brands, newBrand]);
     }
@@ -88,9 +131,7 @@ const Brands = () => {
     setCommission(null);
     setLessCommission(false);
     setTaxes([]);
-    setRouteShortCode("");
-    setFreight(null);
-    setGivenToTruck(null);
+    setRouteInputs([]);
     setStep(1);
   };
 
@@ -106,11 +147,25 @@ const Brands = () => {
     setCommission(brand.commission);
     setLessCommission(brand.lessCommission);
     setTaxes([...brand.taxes]);
-    setRouteShortCode(brand.routeShortCode);
-    setFreight(brand.freight);
-    setGivenToTruck(brand.givenToTruck);
+
+    // Map the brand's routes to the routeInputs state
+    const initializedRouteInputs = routeShortCodes.map((code) => {
+      const existingRoute = brand.routes.find((r) => r.routeShortCode === code);
+      return {
+        routeShortCode: code,
+        freight: existingRoute ? existingRoute.freight : null,
+        givenToTruck: existingRoute ? existingRoute.givenToTruck : null,
+      };
+    });
+
+    setRouteInputs(initializedRouteInputs);
     setEditingIndex(index);
     setStep(2);
+  };
+
+  // Remove tax from selected taxes
+  const handleRemoveTax = (taxToRemove: string) => {
+    setTaxes(taxes.filter((tax) => tax !== taxToRemove));
   };
 
   // Filtered brands based on search query
@@ -133,6 +188,11 @@ const Brands = () => {
     });
   };
 
+  // Initialize route inputs when switching to step 2
+  if (step === 2 && routeInputs.length === 0) {
+    initializeRouteInputs();
+  }
+
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-4">Brand Management</h2>
@@ -152,15 +212,20 @@ const Brands = () => {
         {step === 1 ? (
           <>
             <label className="block mb-1 font-medium">Company Name</label>
-            <input
-              type="text"
-              placeholder="Enter Company Name"
-              className="input input-bordered w-full mb-2"
+            <select
+              className="select select-bordered w-full mb-2"
               value={companyName}
               onChange={(e) => {
                 setCompanyName(e.target.value);
               }}
-            />
+            >
+              <option value="">Select Company</option>
+              {companyNames.map((company) => (
+                <option key={company} value={company}>
+                  {company}
+                </option>
+              ))}
+            </select>
 
             <label className="block mb-1 font-medium">Brand Name</label>
             <input
@@ -205,66 +270,110 @@ const Brands = () => {
             <input
               type="number"
               placeholder="Enter Amount"
-              className="input input-bordered w-full mb-2"
+              className="input input-bordered w-full mb-1"
               value={commission ?? ""}
               onChange={(e) => {
                 setCommission(parseFloat(e.target.value));
               }}
             />
-
+            <label className="flex items-center gap-2 mb-2 text-sm">
+              <input
+                type="checkbox"
+                checked={lessCommission}
+                onChange={(e) => {
+                  setLessCommission(e.target.checked);
+                }}
+              />
+              Less Commission at Purchase Time
+            </label>
             <label>Taxes</label>
-            <div className="mb-2">
-              {taxTypes.map((tax) => (
-                <label key={tax} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={taxes.includes(tax)}
-                    onChange={() => {
-                      handleTaxChange(tax);
-                    }}
-                  />{" "}
-                  {tax}
-                </label>
-              ))}
-            </div>
-
-            <label>Route Short Code</label>
             <select
               className="select select-bordered w-full mb-2"
-              value={routeShortCode}
+              value=""
               onChange={(e) => {
-                setRouteShortCode(e.target.value);
+                if (e.target.value) {
+                  handleTaxChange(e.target.value);
+                }
               }}
             >
-              <option value="">Select Route</option>
-              {routeShortCodes.map((route) => (
-                <option key={route} value={route}>
-                  {route}
+              <option value="">Select Taxes</option>
+              {taxTypes.map((tax) => (
+                <option key={tax} value={tax} disabled={taxes.includes(tax)}>
+                  {tax}
                 </option>
               ))}
             </select>
 
-            <label>Freight</label>
-            <input
-              type="number"
-              placeholder="Enter Amount"
-              className="input input-bordered w-full mb-2"
-              value={freight ?? ""}
-              onChange={(e) => {
-                setFreight(parseFloat(e.target.value));
-              }}
-            />
+            {/* Display selected taxes */}
+            {taxes.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {taxes.map((tax) => (
+                  <div key={tax} className="badge badge-info gap-2">
+                    {tax}
+                    <button
+                      className="btn-xs btn-circle"
+                      onClick={() => {
+                        handleRemoveTax(tax);
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
-            <label>Given to Truck</label>
-            <input
-              type="number"
-              placeholder="Enter Amount"
-              className="input input-bordered w-full mb-2"
-              value={givenToTruck ?? ""}
-              onChange={(e) => {
-                setGivenToTruck(parseFloat(e.target.value));
-              }}
-            />
+            <label className="block mb-2 font-medium">
+              Add Freight & Given to Truck
+            </label>
+            <div className="overflow-x-auto mb-4">
+              <table className="table w-full">
+                <thead>
+                  <tr className="bg-base-300">
+                    <th>Route</th>
+                    <th>Freight</th>
+                    <th>Given to Truck</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {routeInputs.map((route, index) => (
+                    <tr key={index}>
+                      <td>{route.routeShortCode}</td>
+                      <td>
+                        <input
+                          type="number"
+                          placeholder="Enter Freight"
+                          className="input input-bordered input-sm w-full"
+                          value={route.freight ?? ""}
+                          onChange={(e) => {
+                            handleRouteInputChange(
+                              index,
+                              "freight",
+                              parseFloat(e.target.value),
+                            );
+                          }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          placeholder="Enter Amount"
+                          className="input input-bordered input-sm w-full"
+                          value={route.givenToTruck ?? ""}
+                          onChange={(e) => {
+                            handleRouteInputChange(
+                              index,
+                              "givenToTruck",
+                              parseFloat(e.target.value),
+                            );
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
             <div className="flex justify-between mt-4">
               <button className="btn btn-secondary" onClick={handleBack}>
@@ -279,19 +388,19 @@ const Brands = () => {
       </div>
       {/* Brands Table */}
       {filteredBrands.length > 0 ? (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto mt-4">
           <table className="table w-full bg-base-200 rounded-lg shadow-md">
             <thead>
               <tr className="bg-base-300 text-base-content text-center">
                 <th>#</th>
                 <th>Brand Name</th>
                 <th>Short Code</th>
+                <th>Company</th>
                 <th>KG/Bag</th>
                 <th>Commission</th>
+                <th>Less Comm.</th> {/* New column */}
                 <th>Tax</th>
-                <th>Route</th>
-                <th>Freight</th>
-                <th>Given to Truck</th>
+                <th>Routes</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -304,12 +413,13 @@ const Brands = () => {
                   <td>{index + 1}</td>
                   <td>{brand.name}</td>
                   <td>{brand.shortCode}</td>
+                  <td>{brand.companyName}</td>
                   <td>{brand.kgPerBag}</td>
                   <td>{brand.commission}</td>
-                  <td>{brand.taxes.toString()}</td>
-                  <td>{brand.routeShortCode}</td>
-                  <td>{brand.freight}</td>
-                  <td>{brand.givenToTruck}</td>
+                  <td>{brand.lessCommission ? "Yes" : "No"}</td>{" "}
+                  {/* New column */}
+                  <td>{brand.taxes.join(", ")}</td>
+                  <td>{brand.routes.length} routes</td>
                   <td>
                     <button
                       onClick={() => {

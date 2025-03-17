@@ -18,7 +18,13 @@ const TaxAccounts = () => {
   );
   const [editIndex, setEditIndex] = useState<number | null>(null);
 
-  const taxOptions: string[] = ["Tax 1", "Tax 2", "Tax 3", "Tax 4"];
+  const taxOptions: string[] = [
+    "On Purchase Price",
+    "On Commission (Next Month)",
+    "On Commission (Same Month)",
+    "On Bank Payments to Company",
+    "On Retail/Sale Price",
+  ];
 
   const handleTaxChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedValue = e.target.value;
