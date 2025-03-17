@@ -156,7 +156,9 @@ const TruckRoute = () => {
           </table>
         </div>
       ) : (
-        <p className="text-gray-500 text-center">No routes added yet.</p>
+        <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6 text-center text-gray-500">
+          No routes added yet.
+        </div>
       )}
     </div>
   );

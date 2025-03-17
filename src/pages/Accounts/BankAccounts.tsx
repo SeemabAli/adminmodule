@@ -436,7 +436,7 @@ const BankAccounts = () => {
         </div>
       ) : (
         <div className="bg-base-200 p-6 rounded-lg shadow-md mb-6 text-center">
-          <p className="text-gray-500">No bank accounts added yet.</p>
+          No bank accounts added yet.
         </div>
       )}
 
@@ -582,9 +582,9 @@ const BankAccounts = () => {
               </table>
             </div>
           ) : (
-            <p className="text-gray-500 text-center p-4">
-              No cheque books added for this account yet.
-            </p>
+            <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6 text-center text-gray-500">
+              No Cheques added yet.
+            </div>
           )}
         </div>
       )}

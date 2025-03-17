@@ -208,7 +208,9 @@ const TruckInformation = () => {
           </table>
         </div>
       ) : (
-        <p className="text-gray-500 text-center">No trucks added yet.</p>
+        <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6 text-center text-gray-500">
+          No trucks added yet.
+        </div>
       )}
     </div>
   );

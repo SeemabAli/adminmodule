@@ -60,6 +60,7 @@ const CompanyAccounts = () => {
               onChange={(e) => {
                 setCompanyName(e.target.value);
               }}
+              className="input input-bordered w-full"
             />
           </label>
           <label className="block mb-1 font-medium">
@@ -70,6 +71,7 @@ const CompanyAccounts = () => {
               onChange={(e) => {
                 setCompanyAddress(e.target.value);
               }}
+              className="input input-bordered w-full"
             />
           </label>
         </div>
@@ -121,7 +123,9 @@ const CompanyAccounts = () => {
           </table>
         </div>
       ) : (
-        <p className="text-gray-500 text-center">No companies added yet.</p>
+        <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6 text-center text-gray-500">
+          No companies added yet.
+        </div>
       )}
     </div>
   );

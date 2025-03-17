@@ -278,7 +278,9 @@ const DeliveryRoutes = () => {
           </table>
         </div>
       ) : (
-        <p className="text-gray-500 text-center">No routes found.</p>
+        <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6 text-center text-gray-500">
+          No routes found.
+        </div>
       )}
     </div>
   );
