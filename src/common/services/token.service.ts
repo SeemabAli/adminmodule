@@ -1,7 +1,8 @@
 import { axiosPublic } from "@/api/axios";
 
 type RefreshTokenResponse = {
-  access_token: string;
+  accessToken: string;
+  roles: number[];
 };
 
 export async function refreshAuthToken() {
@@ -10,6 +11,5 @@ export async function refreshAuthToken() {
     url: "/auth/refresh-token",
     withCredentials: true,
   });
-  const newAuthToken = response.data.access_token;
-  return newAuthToken;
+  return response.data;
 }

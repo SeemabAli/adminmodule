@@ -4,56 +4,56 @@ import { FormField } from "@/common/components/ui/form/FormField";
 import { useForm } from "react-hook-form";
 import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { companySchema } from "./company.schema";
+import { companySchema, type Company } from "./company.schema";
 
 const CompanyAccounts = () => {
-  const [companies, setCompanies] = useState<
-    { name: string; address: string }[]
-  >([]);
-  const [companyName, setCompanyName] = useState("");
-  const [companyAddress, setCompanyAddress] = useState("");
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
   const {
     register,
     formState: { errors, isSubmitting },
+    handleSubmit,
+    setValue,
+    setFocus,
+    getValues,
+    reset,
   } = useForm({
     resolver: zodResolver(companySchema),
     defaultValues: {
-      companyName: "",
-      companyAddress: "",
+      name: "",
+      address: "",
     },
   });
 
-  const handleAddCompany = () => {
-    if (!companyName.trim() || !companyAddress.trim()) {
-      notify.error("Please fill in all fields.");
-      return;
-    }
+  const handleAddCompany = async (newCompany: Company) => {
+    setCompanies([...companies, newCompany]);
+    reset();
+    return Promise.resolve(newCompany);
+  };
 
-    if (editingIndex !== null) {
-      const updatedCompanies = [...companies];
-      updatedCompanies[editingIndex] = {
-        name: companyName,
-        address: companyAddress,
-      };
-      setCompanies(updatedCompanies);
-      notify.success("Company updated successfully.");
-      setEditingIndex(null);
-    } else {
-      setCompanies([
-        ...companies,
-        { name: companyName, address: companyAddress },
-      ]);
-      notify.success("Company added successfully.");
-    }
+  const onCompanyUpdate = async (updatedCompanyIndex: number) => {
+    const updatedCompanies = companies.map((company, index) => {
+      if (index === updatedCompanyIndex) {
+        return getValues();
+      }
+      return company;
+    });
 
-    setCompanyName("");
-    setCompanyAddress("");
+    setCompanies(updatedCompanies);
+    setEditingIndex(null);
+    reset();
+    return Promise.resolve(updatedCompanies);
   };
 
   const handleEdit = (index: number) => {
-    setCompanyName(companies.find((_, i) => i === index)?.name ?? "");
-    setCompanyAddress(companies.find((_, i) => i === index)?.address ?? "");
+    const targetCompany = companies.find((_, i) => i === index);
+    // Don't update fields if company is not present in the list of companies
+    if (!targetCompany) return;
+
+    setValue("name", targetCompany.name);
+    setValue("address", targetCompany.address);
+    setFocus("name");
     setEditingIndex(index);
   };
 
@@ -66,38 +66,30 @@ const CompanyAccounts = () => {
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-4">Company Accounts</h2>
       <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="block mb-1 font-medium">
-            Company Name
-            <FormField
-              placeholder="Enter Name"
-              value={companyName}
-              onChange={(e) => {
-                setCompanyName(e.target.value);
-              }}
-              name={"companyName"}
-              label={""}
-              register={register}
-              errorMessage={errors.companyName?.message}
-            />
-          </label>
-          <label className="block mb-1 font-medium">
-            Company Address
-            <FormField
-              placeholder="Enter Address"
-              value={companyAddress}
-              onChange={(e) => {
-                setCompanyAddress(e.target.value);
-              }}
-              name={"companyAddress"}
-              label={""}
-              register={register}
-              errorMessage={errors.companyAddress?.message}
-            />
-          </label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <FormField
+            placeholder="Enter Name"
+            name={"name"}
+            label={"Company Name"}
+            register={register}
+            errorMessage={errors.name?.message}
+          />
+          <FormField
+            placeholder="Enter Address"
+            name={"address"}
+            label={"Company Address"}
+            register={register}
+            errorMessage={errors.address?.message}
+          />
         </div>
         <Button
-          onClick={handleAddCompany}
+          onClick={
+            editingIndex !== null
+              ? handleSubmit(() => {
+                  void onCompanyUpdate(editingIndex);
+                })
+              : handleSubmit(handleAddCompany)
+          }
           shape="info"
           pending={isSubmitting}
           className="mt-4"
@@ -127,10 +119,10 @@ const CompanyAccounts = () => {
                   <td className="p-3">{company.address}</td>
                   <td className="p-3 flex gap-2 justify-center">
                     <button
+                      className="btn btn-sm btn-secondary"
                       onClick={() => {
                         handleEdit(index);
                       }}
-                      className="btn btn-sm btn-secondary"
                     >
                       Edit
                     </button>

@@ -2,7 +2,7 @@ import type { RegisterUserData, SignInUserData } from "../schema/auth.schema";
 import { sendApiRequest } from "@/common/services/api.service";
 
 type SignInResponse = {
-  access_token: string;
+  accessToken: string;
 };
 
 export type UserProfile = Omit<RegisterUserData, "password">;

@@ -229,7 +229,9 @@ const Brands = () => {
       <div className="bg-base-200 p-4 rounded-lg shadow-md">
         {step === 1 ? (
           <>
-            <label className="block mb-1 font-medium">Company Name</label>
+            <label className="block mb-1 font-medium relative w-full top-1 right-2 text-gray-700 ">
+              Company Name
+            </label>
             <select
               className="select select-bordered w-full mb-2 right-2"
               value={companyName}
@@ -244,8 +246,6 @@ const Brands = () => {
                 </option>
               ))}
             </select>
-
-            <label className="block mb-1 font-medium">Brand Name</label>
             <FormField
               type="text"
               placeholder="Enter Brand Name"
@@ -254,12 +254,10 @@ const Brands = () => {
                 setBrandName(e.target.value);
               }}
               name="brandName"
-              label=""
+              label="Brand Name"
               register={register}
               errorMessage={errors.brandName?.message}
             />
-
-            <label className="block mb-1 font-medium">Brand Short Code</label>
             <FormField
               type="text"
               placeholder="Enter Brand Short Code"
@@ -268,7 +266,7 @@ const Brands = () => {
                 setBrandShortCode(e.target.value);
               }}
               name="brandShortCode"
-              label=""
+              label="Brand Short Code"
               register={register}
               errorMessage={errors.brandShortCode?.message}
             />
@@ -279,7 +277,6 @@ const Brands = () => {
           </>
         ) : (
           <>
-            <label>KG per Bag</label>
             <FormField
               type="number"
               placeholder="Enter Weight"
@@ -288,12 +285,11 @@ const Brands = () => {
                 setKgPerBag(parseFloat(e.target.value));
               }}
               name="weight"
-              label=""
+              label="KG Per Bag"
               register={register}
               errorMessage={errors.weight?.message}
             />
 
-            <label>Commission per Bag</label>
             <FormField
               type="number"
               placeholder="Enter Amount"
@@ -302,7 +298,7 @@ const Brands = () => {
                 setCommission(parseFloat(e.target.value));
               }}
               name="commission"
-              label=""
+              label="Commission Per Bag"
               register={register}
               errorMessage={errors.commission?.message}
             />
@@ -316,9 +312,11 @@ const Brands = () => {
               />
               Less Commission at Purchase Time
             </label>
-            <label>Taxes</label>
+            <label className="block mb-1 font-medium relative w-full top-1 right-2 text-gray-700">
+              Taxes
+            </label>
             <select
-              className="select select-bordered w-full mb-2"
+              className="select select-bordered w-full mb-2 right-2"
               value=""
               onChange={(e) => {
                 if (e.target.value) {

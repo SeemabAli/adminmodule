@@ -40,6 +40,7 @@ export default tseslint.config(
       ],
       "@typescript-eslint/array-type": ["error", { default: "array" }],
       "@typescript-eslint/consistent-type-definitions": "off",
+      "@typescript-eslint/no-misused-promises": "off"
     },
   },
   {

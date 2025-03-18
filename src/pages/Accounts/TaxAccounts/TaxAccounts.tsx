@@ -116,7 +116,6 @@ const TaxAccounts = () => {
 
       {/* Tax Form */}
       <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
-        <label className="block font-medium">Tax Name</label>
         <FormField
           type="text"
           placeholder="Enter Tax Name"
@@ -125,13 +124,15 @@ const TaxAccounts = () => {
             setTaxName(e.target.value);
           }}
           name="taxName"
-          label=""
+          label="Tax Name"
           register={register}
           errorMessage={errors.taxName?.message}
         />
 
         {/* Tax Type Dropdown */}
-        <label className="block font-medium mb-1">Select Tax Type</label>
+        <label className="block w-full relative mb-1 font-medium top-1 right-2">
+          Select Tax Type
+        </label>
         <select
           onChange={handleTaxChange}
           className="select select-bordered w-full mb-4 relative right-2"
@@ -174,7 +175,7 @@ const TaxAccounts = () => {
 
         {/* Tax Rate Selection */}
         <label className="block font-medium mb-1">Tax Rate</label>
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-4 mb-1">
           <label className="flex items-center space-x-2">
             <input
               type="radio"
@@ -184,7 +185,7 @@ const TaxAccounts = () => {
               onChange={() => {
                 setRateType("Percentage");
               }}
-              className="radio"
+              className="radio-info"
             />
             <span>Percentage</span>
           </label>
@@ -197,7 +198,7 @@ const TaxAccounts = () => {
               onChange={() => {
                 setRateType("Fixed/Bag");
               }}
-              className="radio"
+              className="radio-info"
             />
             <span>Fixed/Bag</span>
           </label>

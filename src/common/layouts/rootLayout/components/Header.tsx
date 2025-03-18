@@ -10,6 +10,9 @@ import {
 import blue from "@/assets/blue.png";
 import { Link, useNavigate } from "react-router";
 import { notify } from "@/lib/notify";
+import { ROLES } from "@/common/constants/roles.constants";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/app/store/store";
 
 type Theme = "corporate" | "business";
 
@@ -24,6 +27,8 @@ export const Header = ({ handleLogout }: NavbarProps) => {
   const [mobileAccountDropdownOpen, setMobileAccountDropdownOpen] =
     useState(false);
   const navigate = useNavigate();
+
+  const userRoles = useSelector((state: RootState) => state.auth.roles);
 
   useEffect(() => {
     try {
@@ -105,6 +110,97 @@ export const Header = ({ handleLogout }: NavbarProps) => {
     }
   };
 
+  type NavLink = {
+    path: string;
+    title: string;
+    allowedRoles: number[];
+    inDropdown: boolean;
+  };
+
+  const allNavLinks: NavLink[] = [
+    {
+      path: "/company-accounts",
+      title: "Company Accounts",
+      allowedRoles: [ROLES.ADMIN],
+      inDropdown: true,
+    },
+    {
+      path: "/delivery-routes",
+      allowedRoles: [ROLES.ADMIN],
+      title: "Delivery Routes",
+      inDropdown: true,
+    },
+    {
+      path: "/tax-accounts",
+      allowedRoles: [ROLES.ADMIN],
+      title: "Tax Accounts",
+      inDropdown: true,
+    },
+    {
+      path: "/purchase",
+      allowedRoles: [ROLES.ADMIN],
+      title: "Purchase",
+      inDropdown: true,
+    },
+    {
+      path: "/bank-accounts",
+      allowedRoles: [ROLES.ADMIN],
+      title: "Bank Accounts",
+      inDropdown: true,
+    },
+    {
+      path: "/employees",
+      allowedRoles: [ROLES.ADMIN],
+      title: "Employees",
+      inDropdown: true,
+    },
+    {
+      path: "/truck-information",
+      allowedRoles: [ROLES.ADMIN],
+      title: "Truck Information",
+      inDropdown: true,
+    },
+    {
+      path: "/factory-expenses",
+      allowedRoles: [ROLES.ADMIN],
+      title: "Factory Expenses",
+      inDropdown: true,
+    },
+    {
+      path: "/truck-other-expenses",
+      allowedRoles: [ROLES.ADMIN],
+      title: "Truck Other Expenses",
+      inDropdown: true,
+    },
+    {
+      path: "/customer",
+      allowedRoles: [ROLES.OWNER],
+      title: "Customer",
+      inDropdown: true,
+    },
+    {
+      path: "/brands",
+      allowedRoles: [ROLES.ADMIN],
+      title: "Brands",
+      inDropdown: false,
+    },
+    {
+      path: "/truck-route",
+      allowedRoles: [ROLES.OWNER],
+      title: "Truck Route",
+      inDropdown: false,
+    },
+  ];
+
+  if (!userRoles) return null;
+
+  const roleBasedNavLinks = allNavLinks.filter(({ allowedRoles }) =>
+    allowedRoles.some((role) => userRoles.includes(role)),
+  );
+
+  const dropdownLinks = roleBasedNavLinks.filter((link) => link.inDropdown);
+  const topNavLinks = roleBasedNavLinks.filter((link) => !link.inDropdown);
+
   return (
     <nav className="bg-base-100 shadow-md p-4 fixed top-0 left-0 w-full z-10">
       <div className="container mx-auto flex justify-between items-center">
@@ -130,86 +226,27 @@ export const Header = ({ handleLogout }: NavbarProps) => {
             </button>
             {accountDropdownOpen && (
               <ul className="absolute left-0 mt-2 w-52 menu p-2 shadow bg-base-300 rounded-box">
-                <li>
-                  <Link
-                    to="/company-accounts"
-                    onClick={handleDropdownItemClick}
-                  >
-                    Company Accounts
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/customer" onClick={handleDropdownItemClick}>
-                    Customer
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/purchase" onClick={handleDropdownItemClick}>
-                    Purchase
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/employees" onClick={handleDropdownItemClick}>
-                    Employees
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/bank-accounts" onClick={handleDropdownItemClick}>
-                    Bank Accounts
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/truck-information"
-                    onClick={handleDropdownItemClick}
-                  >
-                    Truck Information
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/delivery-routes" onClick={handleDropdownItemClick}>
-                    Delivery Routes
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/tax-accounts" onClick={handleDropdownItemClick}>
-                    Tax Accounts
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/factory-expenses"
-                    onClick={handleDropdownItemClick}
-                  >
-                    Factory Expenses
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/truck-other-expenses"
-                    onClick={handleDropdownItemClick}
-                  >
-                    Truck Other Expenses
-                  </Link>
-                </li>
+                {dropdownLinks.map((link, index) => (
+                  <li key={index}>
+                    <Link to={link.path} onClick={handleDropdownItemClick}>
+                      {link.title}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             )}
           </div>
 
-          <Link
-            to="/brands"
-            className="btn btn-ghost hover:text-info"
-            onClick={handleDropdownItemClick}
-          >
-            Brands
-          </Link>
-          <Link
-            to="/truck-route"
-            className="btn btn-ghost hover:text-info"
-            onClick={handleDropdownItemClick}
-          >
-            Truck Route
-          </Link>
+          {topNavLinks.map((link, index) => (
+            <Link
+              key={index}
+              to={link.path}
+              className="btn btn-ghost hover:text-info"
+              onClick={handleDropdownItemClick}
+            >
+              {link.title}
+            </Link>
+          ))}
 
           <button onClick={toggleTheme} className="btn btn-ghost">
             {theme === "corporate" ? <FiMoon size={20} /> : <FiSun size={20} />}
@@ -259,73 +296,26 @@ export const Header = ({ handleLogout }: NavbarProps) => {
             </button>
             {mobileAccountDropdownOpen && (
               <ul className="menu bg-base-200 rounded-box mt-2 p-2 shadow">
-                <li>
-                  <Link to="/company-accounts" onClick={closeMenu}>
-                    Company Accounts
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/customer" onClick={closeMenu}>
-                    Customer
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/purchase" onClick={handleDropdownItemClick}>
-                    Purchase
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/employees" onClick={closeMenu}>
-                    Employees
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/bank-accounts" onClick={closeMenu}>
-                    Bank Accounts
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/truck-information" onClick={closeMenu}>
-                    Truck Information
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/delivery-routes" onClick={closeMenu}>
-                    Delivery Routes
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/tax-accounts" onClick={closeMenu}>
-                    Tax Accounts
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/factory-expenses" onClick={closeMenu}>
-                    Factory Expenses
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/truck-other-expenses" onClick={closeMenu}>
-                    Truck Other Expenses
-                  </Link>
-                </li>
+                {dropdownLinks.map((link, index) => (
+                  <li key={index}>
+                    <Link to={link.path} onClick={closeMenu}>
+                      {link.title}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             )}
 
-            <Link
-              to="/brands"
-              className="btn btn-ghost flex justify-start py-2"
-              onClick={closeMenu}
-            >
-              Brands
-            </Link>
-            <Link
-              to="/truck-route"
-              className="btn btn-ghost flex justify-start py-2"
-              onClick={closeMenu}
-            >
-              Truck Route
-            </Link>
+            {topNavLinks.map((link, index) => (
+              <Link
+                key={index}
+                to={link.path}
+                className="btn btn-ghost flex justify-start py-2"
+                onClick={closeMenu}
+              >
+                {link.title}
+              </Link>
+            ))}
 
             <button
               onClick={toggleTheme}

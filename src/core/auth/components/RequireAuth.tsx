@@ -1,35 +1,26 @@
 import type { RootState } from "@/app/store/store";
-import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Navigate, Outlet } from "react-router";
-import { authActions } from "../auth.slice";
-import { useService } from "@/common/hooks/custom/useService";
-import { refreshAuthToken } from "@/common/services/token.service";
-import { FullPageLoader } from "@/common/components/ui/FullPageLoader";
+import { useSelector } from "react-redux";
+import { Navigate, Outlet, useLocation } from "react-router";
 
-export interface NavigationState {
-  from?: {
-    pathname: string;
-  };
-}
+type RequireAuthProps = {
+  allowedRoles: number[];
+};
 
-export const RequireAuth = () => {
-  const dispatch = useDispatch();
-  const authToken = useSelector((state: RootState) => state.auth.token);
+export const RequireAuth = ({ allowedRoles }: RequireAuthProps) => {
+  const authState = useSelector((state: RootState) => state.auth);
+  const location = useLocation();
 
-  const { isLoading, error, data } = useService(
-    authToken ? () => Promise.resolve(authToken) : refreshAuthToken,
+  const hasAllowedRole = !!authState.roles?.some((role) =>
+    allowedRoles.includes(role),
   );
 
-  useEffect(() => {
-    if (data) {
-      dispatch(authActions.setToken(data));
-    }
-  }, [data, dispatch]);
+  // show the content if user has one of the allowed roles
+  if (hasAllowedRole) return <Outlet />;
 
-  if (isLoading) return <FullPageLoader />;
+  // if user doesn't have any allowed roles but has access token redirect to unAuth page
+  if (authState.accessToken)
+    return <Navigate to="/unauthorized" state={{ from: location }} replace />;
 
-  if (error) return <Navigate to="/login" />;
-
-  return <Outlet />;
+  // Redirect to login to user is missing both access token and allowed roles
+  return <Navigate to="/login" state={{ from: location }} />;
 };

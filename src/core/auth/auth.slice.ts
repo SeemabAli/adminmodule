@@ -1,22 +1,19 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 export type AuthState = {
-  token: string | null;
+  accessToken?: string;
+  roles?: number[];
 };
 
-const initialState: AuthState = {
-  token: null,
-};
+const initialState: AuthState = {};
 
 const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    setToken: (state, action: PayloadAction<string>) => {
-      state.token = action.payload;
-    },
-    deleteToken: (state) => {
-      state.token = null;
+    setAuth: (state, action: PayloadAction<AuthState>) => {
+      state.accessToken = action.payload.accessToken;
+      state.roles = action.payload.roles;
     },
   },
 });

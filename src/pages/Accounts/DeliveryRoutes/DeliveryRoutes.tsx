@@ -128,37 +128,31 @@ const DeliveryRoutes = () => {
 
       {/* Route Form */}
       <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
-        <div className="grid grid-cols-1 gap-4">
-          <label className="block mb-1 font-medium">
-            Route Name
-            <FormField
-              type="text"
-              placeholder="Route Name"
-              value={routeName}
-              onChange={(e) => {
-                setRouteName(e.target.value);
-              }}
-              name="routeName"
-              label=""
-              register={register}
-              errorMessage={errors.routeName?.message}
-            />
-          </label>
-          <label className="block mb-1 font-medium">
-            Route Short Code
-            <FormField
-              type="text"
-              placeholder="Route Short Code"
-              value={shortCode}
-              onChange={(e) => {
-                setShortCode(e.target.value);
-              }}
-              name="routeShortCode"
-              label=""
-              register={register}
-              errorMessage={errors.routeShortCode?.message}
-            />
-          </label>
+        <div className="grid grid-cols-1 gap-2">
+          <FormField
+            type="text"
+            placeholder="Route Name"
+            value={routeName}
+            onChange={(e) => {
+              setRouteName(e.target.value);
+            }}
+            name="routeName"
+            label="Route Name"
+            register={register}
+            errorMessage={errors.routeName?.message}
+          />
+          <FormField
+            type="text"
+            placeholder="Route Short Code"
+            value={shortCode}
+            onChange={(e) => {
+              setShortCode(e.target.value);
+            }}
+            name="routeShortCode"
+            label="Route Short Code"
+            register={register}
+            errorMessage={errors.routeShortCode?.message}
+          />
 
           {/* Have Toll - Radio Buttons */}
           <div className="flex gap-4 items-center text-sm">
@@ -172,7 +166,7 @@ const DeliveryRoutes = () => {
                 onChange={() => {
                   setHaveToll("Yes");
                 }}
-                className="radio"
+                className="radio-info"
               />
               <span>Yes</span>
             </label>
@@ -185,7 +179,7 @@ const DeliveryRoutes = () => {
                 onChange={() => {
                   setHaveToll("No");
                 }}
-                className="radio"
+                className="radio-info"
               />
               <span>No</span>
             </label>
@@ -205,7 +199,7 @@ const DeliveryRoutes = () => {
                     onChange={() => {
                       setTollType("One Way");
                     }}
-                    className="radio"
+                    className="radio-info"
                   />
                   <span>One Way</span>
                 </label>
@@ -218,28 +212,25 @@ const DeliveryRoutes = () => {
                     onChange={() => {
                       setTollType("Two Way");
                     }}
-                    className="radio"
+                    className="radio-info"
                   />
                   <span>Two Way</span>
                 </label>
               </div>
 
               {/* Toll Amount */}
-              <label className="block mb-1 font-medium">
-                Toll Amount
-                <FormField
-                  type="text"
-                  placeholder="Enter Toll Amount"
-                  value={tollAmount}
-                  onChange={(e) => {
-                    setTollAmount(formatNumberWithCommas(e.target.value));
-                  }}
-                  name="tollAmount"
-                  label=""
-                  register={register}
-                  errorMessage={errors.tollAmount?.message}
-                />
-              </label>
+              <FormField
+                type="text"
+                placeholder="Enter Toll Amount"
+                value={tollAmount}
+                onChange={(e) => {
+                  setTollAmount(formatNumberWithCommas(e.target.value));
+                }}
+                name="tollAmount"
+                label="Toll Amount"
+                register={register}
+                errorMessage={errors.tollAmount?.message}
+              />
             </>
           )}
         </div>

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-misused-promises */
 import { notify } from "@/lib/notify";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { useNavigate } from "react-router";
@@ -37,8 +36,8 @@ export const SigninPage = () => {
 
   const onSubmit: SubmitHandler<SignInUserData> = async function (data) {
     try {
-      const { access_token } = await signInUser(data);
-      dispatch(authActions.setToken(access_token));
+      const userAuthData = await signInUser(data);
+      dispatch(authActions.setAuth(userAuthData));
       notify.success("Sign in successful");
       await navigate("/");
     } catch (error) {

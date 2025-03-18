@@ -30,7 +30,7 @@ function createPrivateAxiosInstance() {
   // attaches access token in every request header
   axiosPrivate.interceptors.request.use((config) => {
     if (!config.headers.Authorization) {
-      config.headers.Authorization = `Bearer ${store.getState().auth.token ?? ""}`;
+      config.headers.Authorization = `Bearer ${store.getState().auth.accessToken ?? ""}`;
     }
     return config;
   });
@@ -46,13 +46,13 @@ function createPrivateAxiosInstance() {
         prevRequest.sent = true;
         logger.info("Access token expired");
         try {
-          const token = await refreshAuthToken();
-          prevRequest.headers.Authorization = `Bearer ${token}`;
+          const { accessToken } = await refreshAuthToken();
+          prevRequest.headers.Authorization = `Bearer ${accessToken}`;
           return await axiosPrivate.request(prevRequest);
         } catch (error: unknown) {
           logger.error(error, "AxiosPrivateInterceptor");
           // remove auth token from store if refresh token fails
-          store.dispatch(authActions.deleteToken());
+          store.dispatch(authActions.setAuth({}));
           if (error instanceof Error) {
             return Promise.reject(error);
           }
