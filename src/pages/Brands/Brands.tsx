@@ -213,7 +213,7 @@ const Brands = () => {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Brand Management</h2>
+      <h2 className="text-2xl font-bold">Brand Management</h2>
 
       {/* Search Bar */}
       <input
@@ -231,7 +231,7 @@ const Brands = () => {
           <>
             <label className="block mb-1 font-medium">Company Name</label>
             <select
-              className="select select-bordered w-full mb-2"
+              className="select select-bordered w-full mb-2 right-2"
               value={companyName}
               onChange={(e) => {
                 setCompanyName(e.target.value);

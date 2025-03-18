@@ -75,7 +75,6 @@ const CompanyAccounts = () => {
               onChange={(e) => {
                 setCompanyName(e.target.value);
               }}
-              className="input input-bordered w-full"
               name={"companyName"}
               label={""}
               register={register}
@@ -90,7 +89,6 @@ const CompanyAccounts = () => {
               onChange={(e) => {
                 setCompanyAddress(e.target.value);
               }}
-              className="input input-bordered w-full"
               name={"companyAddress"}
               label={""}
               register={register}
