@@ -24,32 +24,30 @@ export function FormField<T extends FieldValues>({
   ...rest
 }: Props<T>) {
   return (
-    <p className={`w-full ${className}`}>
-      <label className="form-control w-full relative top-1 right-2">
-        <span className="label block">
-          <span className={`label-text font-semibold text-gray-700`}>
-            {label}
-          </span>
-        </span>
-
-        <span className="relative w-full">
-          <input
-            className={`input input-bordered w-full mb-2 ${
-              errorMessage ? "border-red-500" : "text-gray-700"
-            }`}
-            {...register(name)}
-            {...rest}
-          />
-          {children && (
-            <span className="absolute inset-y-0 right-3 flex items-center">
-              {children}
-            </span>
-          )}
-        </span>
+    <div className={`form-control w-full ${className}`}>
+      {/* Label */}
+      <label className="label">
+        <span className="label-text text-base-content">{label}</span>
       </label>
-      {errorMessage && (
-        <small className="mt-0.5 block text-red-500">{errorMessage}</small>
+
+      {/* Input Field */}
+      <input
+        {...register(name)}
+        className="input input-bordered w-full bg-base-100 text-base-content focus:outline-none focus:ring-2 focus:ring-primary"
+        {...rest}
+      />
+
+      {/* Slot for Additional Content (Like Icons) */}
+      {children && (
+        <span className="absolute inset-y-0 right-10 top-63 flex items-center">
+          {children}
+        </span>
       )}
-    </p>
+
+      {/* Error Message */}
+      {errorMessage && (
+        <span className="text-error text-sm mt-1">{errorMessage}</span>
+      )}
+    </div>
   );
 }

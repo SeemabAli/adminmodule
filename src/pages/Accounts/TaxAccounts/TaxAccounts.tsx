@@ -1,11 +1,11 @@
 import { useState } from "react";
 
-interface Tax {
+type Tax = {
   taxName: string;
   taxRate: number;
   rateType: string;
   appliedTaxes: string[];
-}
+};
 import { notify } from "@/lib/notify";
 import { FormField } from "@/common/components/ui/form/FormField";
 import { useForm } from "react-hook-form";
@@ -17,6 +17,7 @@ const TaxAccounts = () => {
   const [taxes, setTaxes] = useState<Tax[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [selectedTaxes, setSelectedTaxes] = useState<string[]>([]);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   const taxOptions: string[] = [
     "On Purchase Price",
@@ -62,15 +63,21 @@ const TaxAccounts = () => {
       return Promise.reject();
     }
 
+    if (!selectedOption) {
+      notify.error("Please select a rate type.");
+      return Promise.reject();
+    }
+
     const newTax: Tax = {
       ...formData,
-      rateType: "",
-      appliedTaxes: [],
+      rateType: selectedOption,
+      appliedTaxes: [...selectedTaxes],
     };
 
     setTaxes([...taxes, newTax]);
     reset();
     setSelectedTaxes([]);
+    setSelectedOption(null);
     notify.success("Tax added successfully!");
     return Promise.resolve(newTax);
   };
@@ -81,13 +88,18 @@ const TaxAccounts = () => {
       return Promise.reject();
     }
 
+    if (!selectedOption) {
+      notify.error("Please select a rate type.");
+      return Promise.reject();
+    }
+
     const formData = getValues();
     const updatedTaxes = taxes.map((tax, index) => {
       if (index === updatedTaxIndex) {
         return {
           ...formData,
-          rateType: tax.rateType,
-          appliedTaxes: selectedTaxes,
+          rateType: selectedOption,
+          appliedTaxes: [...selectedTaxes],
         };
       }
       return tax;
@@ -97,16 +109,23 @@ const TaxAccounts = () => {
     setEditingIndex(null);
     reset();
     setSelectedTaxes([]);
+    setSelectedOption(null);
     notify.success("Tax updated successfully!");
     return Promise.resolve(updatedTaxes);
   };
 
+  const handleRadioChange = (value: string) => {
+    setSelectedOption((prev) => (prev === value ? null : value));
+  };
+
   const handleEdit = (index: number) => {
-    const targetTax = taxes.find((_, i) => i === index);
+    const targetTax = taxes[index];
     if (!targetTax) return;
 
     setValue("taxName", targetTax.taxName);
     setValue("taxRate", targetTax.taxRate);
+    setSelectedOption(targetTax.rateType);
+    setSelectedTaxes([...targetTax.appliedTaxes]);
     setFocus("taxName");
     setEditingIndex(index);
   };
@@ -139,13 +158,18 @@ const TaxAccounts = () => {
             <select
               onChange={handleTaxChange}
               className="select select-bordered w-full mb-1"
-              defaultValue=""
+              value=""
             >
               <option value="" disabled>
                 Select a Tax Type
               </option>
               {taxOptions.map((tax) => (
-                <option key={tax} value={tax} className="option">
+                <option
+                  key={tax}
+                  value={tax}
+                  disabled={selectedTaxes.includes(tax)}
+                  className="option"
+                >
                   {tax}
                 </option>
               ))}
@@ -182,24 +206,39 @@ const TaxAccounts = () => {
             <label className="block font-medium mb-1">Tax Rate Type</label>
             <div className="flex items-center gap-4 mb-2">
               <label className="flex items-center space-x-2">
-                <input type="radio" value="Percentage" className="radio-info" />
+                <input
+                  type="radio"
+                  value="Percentage"
+                  checked={selectedOption === "Percentage"}
+                  onChange={() => {
+                    handleRadioChange("Percentage");
+                  }}
+                  className="radio-info"
+                />
                 <span>Percentage</span>
               </label>
               <label className="flex items-center space-x-2">
-                <input type="radio" value="Fixed/Bag" className="radio-info" />
+                <input
+                  type="radio"
+                  value="Fixed/Bag"
+                  checked={selectedOption === "Fixed/Bag"}
+                  onChange={() => {
+                    handleRadioChange("Fixed/Bag");
+                  }}
+                  className="radio-info"
+                />
                 <span>Fixed/Bag</span>
               </label>
             </div>
+            <FormField
+              type="number"
+              placeholder="Enter Tax Rate"
+              name="taxRate"
+              label="Tax Rate"
+              register={register}
+              errorMessage={errors.taxRate?.message}
+            />
           </div>
-
-          <FormField
-            type="number"
-            placeholder="Enter Tax Rate"
-            name="taxRate"
-            label="Tax Rate"
-            register={register}
-            errorMessage={errors.taxRate?.message}
-          />
         </div>
 
         <Button
@@ -239,7 +278,7 @@ const TaxAccounts = () => {
                 >
                   <td className="p-3">{index + 1}</td>
                   <td className="p-3">{tax.taxName}</td>
-                  <td className="p-3">{tax.appliedTaxes}</td>
+                  <td className="p-3">{tax.appliedTaxes.join(", ")}</td>
                   <td className="p-3">{tax.rateType}</td>
                   <td className="p-3">{tax.taxRate}</td>
                   <td className="p-3 flex gap-2 justify-center">

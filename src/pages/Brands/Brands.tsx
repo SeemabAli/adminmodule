@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { notify } from "@/lib/notify";
 import { FormField } from "@/common/components/ui/form/FormField";
 import { useForm } from "react-hook-form";
 import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { brandSchema } from "./brand.schema";
+import { brandSchema, type BrandFormData } from "./brand.schema";
 
 type Brand = {
   name: string;
@@ -23,18 +23,13 @@ type Brand = {
 
 const Brands = () => {
   const [brands, setBrands] = useState<Brand[]>([]);
-
-  const [brandName, setBrandName] = useState("");
-  const [brandShortCode, setBrandShortCode] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [kgPerBag, setKgPerBag] = useState<number | null>(null);
-  const [commission, setCommission] = useState<number | null>(null);
   const [lessCommission, setLessCommission] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [taxes, setTaxes] = useState<string[]>([]);
   const [step, setStep] = useState(1);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [isInEditMode, setIsInEditMode] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState("");
   const [routeInputs, setRouteInputs] = useState<
     {
       routeShortCode: string;
@@ -46,7 +41,11 @@ const Brands = () => {
   const {
     register,
     formState: { errors, isSubmitting },
-  } = useForm({
+    reset,
+    setValue,
+    getValues,
+    trigger,
+  } = useForm<BrandFormData>({
     resolver: zodResolver(brandSchema),
     defaultValues: {
       brandName: "",
@@ -61,8 +60,15 @@ const Brands = () => {
   const routeShortCodes = ["RTE001", "RTE002", "RTE003", "RTE004"];
   const companyNames = ["Company A", "Company B", "Company C", "Company D"];
 
-  const handleNext = () => {
-    if (!companyName || !brandName || !brandShortCode) return;
+  const handleNext = async () => {
+    // Validate first step fields
+    const isValid = await trigger(["brandName", "brandShortCode"]);
+    if (!isValid || !selectedCompany) {
+      if (!selectedCompany) {
+        notify.error("Please select a company");
+      }
+      return;
+    }
     setStep(2);
   };
 
@@ -71,6 +77,7 @@ const Brands = () => {
   };
 
   // Initialize route inputs when moving to step 2
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const initializeRouteInputs = () => {
     // Initialize with empty values if in add mode
     if (!isInEditMode) {
@@ -98,9 +105,13 @@ const Brands = () => {
   };
 
   // Save or Update Brand
-  const handleSaveBrand = () => {
-    if (!kgPerBag || !commission || taxes.length === 0) {
-      notify.error("Please complete all fields correctly");
+  const handleSaveBrand = async () => {
+    // Validate second step fields
+    const isValid = await trigger(["weight", "commission"]);
+    if (!isValid || taxes.length === 0) {
+      if (taxes.length === 0) {
+        notify.error("Please select at least one tax");
+      }
       return;
     }
 
@@ -116,12 +127,13 @@ const Brands = () => {
       return;
     }
 
-    const newBrand = {
-      name: brandName,
-      shortCode: brandShortCode,
-      companyName,
-      kgPerBag,
-      commission,
+    const formValues = getValues();
+    const newBrand: Brand = {
+      name: formValues.brandName,
+      shortCode: formValues.brandShortCode,
+      kgPerBag: formValues.weight,
+      commission: formValues.commission,
+      companyName: selectedCompany,
       lessCommission,
       taxes,
       routes: validRoutes as {
@@ -142,27 +154,32 @@ const Brands = () => {
     }
 
     // Reset Fields & Return to Step 1
-    setBrandName("");
-    setBrandShortCode("");
-    setCompanyName("");
-    setKgPerBag(null);
-    setCommission(null);
+    reset();
+    setSelectedCompany("");
     setLessCommission(false);
     setTaxes([]);
     setRouteInputs([]);
     setStep(1);
+    notify.success(
+      isInEditMode
+        ? "Brand updated successfully!"
+        : "Brand added successfully!",
+    );
   };
 
   // Edit Brand
   const handleEditBrand = (index: number) => {
     setIsInEditMode(true);
-    const brand = brands.find((_, i) => i === index);
+    const brand = brands[index];
     if (!brand) return;
-    setBrandName(brand.name);
-    setBrandShortCode(brand.shortCode);
-    setCompanyName(brand.companyName);
-    setKgPerBag(brand.kgPerBag);
-    setCommission(brand.commission);
+
+    // Set form values
+    setValue("brandName", brand.name);
+    setValue("brandShortCode", brand.shortCode);
+    setValue("weight", brand.kgPerBag);
+    setValue("commission", brand.commission);
+
+    setSelectedCompany(brand.companyName);
     setLessCommission(brand.lessCommission);
     setTaxes([...brand.taxes]);
 
@@ -178,7 +195,7 @@ const Brands = () => {
 
     setRouteInputs(initializedRouteInputs);
     setEditingIndex(index);
-    setStep(2);
+    setStep(1);
   };
 
   // Remove tax from selected taxes
@@ -207,9 +224,11 @@ const Brands = () => {
   };
 
   // Initialize route inputs when switching to step 2
-  if (step === 2 && routeInputs.length === 0) {
-    initializeRouteInputs();
-  }
+  useEffect(() => {
+    if (step === 2 && routeInputs.length === 0) {
+      initializeRouteInputs();
+    }
+  }, [initializeRouteInputs, routeInputs.length, step]);
 
   return (
     <div className="p-6">
@@ -229,14 +248,14 @@ const Brands = () => {
       <div className="bg-base-200 p-4 rounded-lg shadow-md">
         {step === 1 ? (
           <>
-            <label className="block mb-1 font-medium relative w-full top-1 right-2 text-gray-700 ">
+            <label className="block mb-1 font-medium relative w-full top-1 left-0.5">
               Company Name
             </label>
             <select
-              className="select select-bordered w-full mb-2 right-2"
-              value={companyName}
+              className="select select-bordered w-full mb-2 left-0.5"
+              value={selectedCompany}
               onChange={(e) => {
-                setCompanyName(e.target.value);
+                setSelectedCompany(e.target.value);
               }}
             >
               <option value="">Select Company</option>
@@ -249,10 +268,6 @@ const Brands = () => {
             <FormField
               type="text"
               placeholder="Enter Brand Name"
-              value={brandName}
-              onChange={(e) => {
-                setBrandName(e.target.value);
-              }}
               name="brandName"
               label="Brand Name"
               register={register}
@@ -261,10 +276,6 @@ const Brands = () => {
             <FormField
               type="text"
               placeholder="Enter Brand Short Code"
-              value={brandShortCode}
-              onChange={(e) => {
-                setBrandShortCode(e.target.value);
-              }}
               name="brandShortCode"
               label="Brand Short Code"
               register={register}
@@ -280,10 +291,6 @@ const Brands = () => {
             <FormField
               type="number"
               placeholder="Enter Weight"
-              value={kgPerBag ?? ""}
-              onChange={(e) => {
-                setKgPerBag(parseFloat(e.target.value));
-              }}
               name="weight"
               label="KG Per Bag"
               register={register}
@@ -293,10 +300,6 @@ const Brands = () => {
             <FormField
               type="number"
               placeholder="Enter Amount"
-              value={commission ?? ""}
-              onChange={(e) => {
-                setCommission(parseFloat(e.target.value));
-              }}
               name="commission"
               label="Commission Per Bag"
               register={register}
@@ -312,11 +315,11 @@ const Brands = () => {
               />
               Less Commission at Purchase Time
             </label>
-            <label className="block mb-1 font-medium relative w-full top-1 right-2 text-gray-700">
+            <label className="block mb-1 font-medium relative w-full top-1 left-0.5">
               Taxes
             </label>
             <select
-              className="select select-bordered w-full mb-2 right-2"
+              className="select select-bordered w-full mb-2 left-0.5"
               value=""
               onChange={(e) => {
                 if (e.target.value) {
@@ -377,7 +380,7 @@ const Brands = () => {
                             handleRouteInputChange(
                               index,
                               "freight",
-                              parseFloat(e.target.value),
+                              parseFloat(e.target.value) || 0,
                             );
                           }}
                         />
@@ -392,7 +395,7 @@ const Brands = () => {
                             handleRouteInputChange(
                               index,
                               "givenToTruck",
-                              parseFloat(e.target.value),
+                              parseFloat(e.target.value) || 0,
                             );
                           }}
                         />
@@ -430,7 +433,7 @@ const Brands = () => {
                 <th>Company</th>
                 <th>KG/Bag</th>
                 <th>Commission</th>
-                <th>Less Comm.</th> {/* New column */}
+                <th>Less Comm.</th>
                 <th>Tax</th>
                 <th>Routes</th>
                 <th>Actions</th>
@@ -448,11 +451,10 @@ const Brands = () => {
                   <td>{brand.companyName}</td>
                   <td>{brand.kgPerBag}</td>
                   <td>{brand.commission}</td>
-                  <td>{brand.lessCommission ? "Yes" : "No"}</td>{" "}
-                  {/* New column */}
+                  <td>{brand.lessCommission ? "Yes" : "No"}</td>
                   <td>{brand.taxes.join(", ")}</td>
                   <td>{brand.routes.length} routes</td>
-                  <td>
+                  <td className="flex gap-2 justify-center">
                     <button
                       onClick={() => {
                         handleEditBrand(index);

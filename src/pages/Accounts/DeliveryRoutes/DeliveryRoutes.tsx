@@ -13,7 +13,15 @@ import { FormField } from "@/common/components/ui/form/FormField";
 import { useForm } from "react-hook-form";
 import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { deliveryRouteSchema } from "./deliveryRoute.schema";
+import { z } from "zod";
+
+const deliveryRouteSchema = z.object({
+  routeName: z.string(),
+  shortCode: z.string(),
+  haveToll: z.string(),
+  tollType: z.string().optional(),
+  tollAmount: z.string().optional(),
+});
 
 const DeliveryRoutes = () => {
   const [routes, setRoutes] = useState<DeliveryRoute[]>([]);
@@ -42,7 +50,7 @@ const DeliveryRoutes = () => {
     defaultValues: {
       routeName: "",
       shortCode: "",
-      haveToll: "Yes",
+      haveToll: "No",
       tollType: "One Way",
       tollAmount: "",
     },

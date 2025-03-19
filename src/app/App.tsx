@@ -8,8 +8,8 @@ import TaxAccounts from "@/pages/Accounts/TaxAccounts/TaxAccounts";
 import FactoryExpenses from "@/pages/Accounts/FactoryExpenses";
 import TruckOtherExpenses from "@/pages/Accounts/TruckOtherExpenses";
 import Brands from "@/pages/Brands/Brands";
-// import TruckRoute from "@/pages/TruckRoute/TruckRoute";
-// import Customer from "@/pages/Accounts/Customer";
+import TruckRoute from "@/pages/TruckRoute/TruckRoute";
+import Customer from "@/pages/Accounts/Customer";
 import {
   Route,
   createBrowserRouter,
@@ -48,6 +48,8 @@ const router = createBrowserRouter(
           <Route path="factory-expenses" element={<FactoryExpenses />} />
           <Route path="truck-other-expenses" element={<TruckOtherExpenses />} />
           <Route path="purchase" element={<Purchase />} />
+          <Route path="customer" element={<Customer />} />
+          <Route path="truck-route" element={<TruckRoute />} />
         </Route>
 
         {/* Home Access */}
