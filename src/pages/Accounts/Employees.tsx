@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { notify } from "../../lib/notify";
 import { formatNumberWithCommas } from "@/utils/CommaSeparator";
 
@@ -7,19 +7,25 @@ const Employees = () => {
     {
       name: string;
       phone: string;
+      email: string;
       cnic: string;
       designation: string;
       department: string;
       salary: string;
+      documents: File | null;
+      documentUrl: string;
     }[]
   >([]);
   const [employeeName, setEmployeeName] = useState("");
   const [employeePhone, setEmployeePhone] = useState("+92");
+  const [employeeEmail, setEmployeeEmail] = useState("");
   const [employeeCnic, setEmployeeCnic] = useState("");
   const [designation, setDesignation] = useState("");
   const [department, setDepartment] = useState("");
   const [salary, setSalary] = useState("");
+  const [documents, setDocuments] = useState<File | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Handle Phone Input (Always starts with +92 and allows only 10 digits)
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,22 +42,49 @@ const Employees = () => {
     setEmployeeCnic(value);
   };
 
+  // Handle Email Input
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmployeeEmail(e.target.value);
+  };
+
+  // Handle PDF Upload
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      const file = e.target.files[0];
+      // Check if file is PDF
+      if (file.type !== "application/pdf") {
+        notify.error("Please upload a PDF file!");
+        return;
+      }
+      setDocuments(file);
+    }
+  };
+
   // Handle form submission (Add/Edit Employee)
   const handleAddEmployee = () => {
     // Debugging logs
     console.log({
       name: employeeName.trim(),
       phone: employeePhone,
+      email: employeeEmail.trim(),
       cnic: employeeCnic,
       designation: designation.trim(),
       department: department.trim(),
       salary: salary.trim(),
+      documents: documents,
     });
 
     // Fix Phone Number Validation (Must be exactly +92XXXXXXXXXX)
     const phoneRegex = /^\+92\d{10}$/;
     if (!phoneRegex.test(employeePhone)) {
       notify.error("Invalid phone number!");
+      return;
+    }
+
+    // Email Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(employeeEmail)) {
+      notify.error("Invalid email address!");
       return;
     }
 
@@ -72,6 +105,7 @@ const Employees = () => {
     // Ensure all fields are filled
     if (
       employeeName.trim() === "" ||
+      employeeEmail.trim() === "" ||
       designation.trim() === "" ||
       department.trim() === "" ||
       salary.trim() === ""
@@ -80,14 +114,29 @@ const Employees = () => {
       return;
     }
 
+    // Generate document URL if file exists
+    let documentUrl = "";
+    if (documents) {
+      documentUrl = URL.createObjectURL(documents);
+    } else if (editingIndex !== null && employees[editingIndex]?.documents) {
+      documentUrl = employees[editingIndex].documentUrl;
+    }
+
     // Create Employee Object
     const newEmployee = {
       name: employeeName.trim(),
       phone: employeePhone,
+      email: employeeEmail.trim(),
       cnic: employeeCnic,
       designation: designation.trim(),
       department: department.trim(),
       salary: salaryWithoutCommas, // Store salary without commas
+      documents:
+        documents ??
+        (editingIndex !== null && employees[editingIndex]
+          ? employees[editingIndex].documents
+          : null),
+      documentUrl: documentUrl,
     };
 
     if (editingIndex !== null) {
@@ -104,10 +153,15 @@ const Employees = () => {
     // Clear Fields
     setEmployeeName("");
     setEmployeePhone("+92");
+    setEmployeeEmail("");
     setEmployeeCnic("");
     setDesignation("");
     setDepartment("");
     setSalary("");
+    setDocuments(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   // Handle Edit
@@ -116,10 +170,12 @@ const Employees = () => {
     if (!employee) return;
     setEmployeeName(employee.name);
     setEmployeePhone(employee.phone);
+    setEmployeeEmail(employee.email);
     setEmployeeCnic(employee.cnic);
     setDesignation(employee.designation);
     setDepartment(employee.department);
     setSalary(formatNumberWithCommas(employee.salary));
+    setDocuments(employee.documents);
     setEditingIndex(index);
   };
 
@@ -129,6 +185,21 @@ const Employees = () => {
       setEmployees(employees.filter((_, i) => i !== index));
       notify.success("Employee deleted successfully!");
     });
+  };
+
+  // Handle Download PDF
+  const handleDownloadPDF = (index: number) => {
+    const employee = employees[index];
+    if (employee?.documents && employee.documentUrl) {
+      const link = document.createElement("a");
+      link.href = employee.documentUrl;
+      link.download = `${employee.name.replace(/\s+/g, "_")}_documents.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      notify.error("No document available for download!");
+    }
   };
 
   return (
@@ -160,6 +231,16 @@ const Employees = () => {
               onChange={handlePhoneChange}
               className="input input-bordered w-full"
               maxLength={13}
+            />
+          </label>
+          <label className="block mb-1 font-medium">
+            Employee Email
+            <input
+              type="email"
+              placeholder="Employee Email"
+              value={employeeEmail}
+              onChange={handleEmailChange}
+              className="input input-bordered w-full"
             />
           </label>
           <label className="block mb-1 font-medium">
@@ -215,6 +296,21 @@ const Employees = () => {
               className="input input-bordered w-full"
             />
           </label>
+          <label className="block mb-1 font-medium">
+            Documents (PDF)
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="application/pdf"
+              onChange={handleFileChange}
+              className="file-input file-input-bordered w-full"
+            />
+            {documents && (
+              <span className="text-sm text-success">
+                File selected: {documents.name}
+              </span>
+            )}
+          </label>
         </div>
         <button onClick={handleAddEmployee} className="btn btn-info mt-4">
           {editingIndex !== null ? "Update Employee" : "Add Employee"}
@@ -230,10 +326,12 @@ const Employees = () => {
                 <th className="p-3">#</th>
                 <th className="p-3">Name</th>
                 <th className="p-3">Phone</th>
+                <th className="p-3">Email</th>
                 <th className="p-3">CNIC</th>
                 <th className="p-3">Designation</th>
                 <th className="p-3">Department</th>
                 <th className="p-3">Salary</th>
+                <th className="p-3">Documents</th>
                 <th className="p-3">Actions</th>
               </tr>
             </thead>
@@ -246,11 +344,26 @@ const Employees = () => {
                   <td className="p-3">{index + 1}</td>
                   <td className="p-3">{employee.name}</td>
                   <td className="p-3">{employee.phone}</td>
+                  <td className="p-3">{employee.email}</td>
                   <td className="p-3">{employee.cnic}</td>
                   <td className="p-3">{employee.designation}</td>
                   <td className="p-3">{employee.department}</td>
                   <td className="p-3">
                     {formatNumberWithCommas(employee.salary)}
+                  </td>
+                  <td className="p-3">
+                    {employee.documents ? (
+                      <button
+                        onClick={() => {
+                          handleDownloadPDF(index);
+                        }}
+                        className="btn btn-sm btn-success"
+                      >
+                        Download PDF
+                      </button>
+                    ) : (
+                      <span className="text-gray-500">No document</span>
+                    )}
                   </td>
                   <td className="p-3 flex gap-2 justify-center">
                     <button
