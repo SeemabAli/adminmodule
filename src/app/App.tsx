@@ -8,8 +8,8 @@ import TaxAccounts from "@/pages/Accounts/TaxAccounts/TaxAccounts";
 import FactoryExpenses from "@/pages/Accounts/FactoryExpenses";
 import TruckOtherExpenses from "@/pages/Accounts/TruckOtherExpenses";
 import Brands from "@/pages/Brands/Brands";
-import TruckRoute from "@/pages/TruckRoute/TruckRoute";
-import Customer from "@/pages/Accounts/Customer";
+// import TruckRoute from "@/pages/TruckRoute/TruckRoute";
+// import Customer from "@/pages/Accounts/Customer";
 import {
   Route,
   createBrowserRouter,
@@ -58,10 +58,10 @@ const router = createBrowserRouter(
         </Route>
 
         {/* Customer Access */}
-        <Route element={<RequireAuth allowedRoles={[ROLES.OWNER]} />}>
+        {/* <Route element={<RequireAuth allowedRoles={[ROLES.OWNER]} />}>
           <Route path="customer" element={<Customer />} />
           <Route path="truck-route" element={<TruckRoute />} />
-        </Route>
+        </Route> */}
       </Route>
     </Route>,
   ]),

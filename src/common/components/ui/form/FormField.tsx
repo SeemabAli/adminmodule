@@ -27,9 +27,7 @@ export function FormField<T extends FieldValues>({
     <p className={`w-full ${className}`}>
       <label className="form-control w-full relative top-1 right-2">
         <span className="label block">
-          <span
-            className={`label-text font-semibold ${errorMessage ? "text-red-500" : "text-gray-700"}`}
-          >
+          <span className={`label-text font-semibold text-gray-700`}>
             {label}
           </span>
         </span>

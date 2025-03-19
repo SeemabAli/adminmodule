@@ -13,22 +13,5 @@ export const taxSchema = z.object({
     .refine((val) => val > 0, "Tax rate must be greater than 0"),
 });
 
-// Helper function for real-time validation
-export const validateField = (
-  fieldName: keyof z.infer<typeof taxSchema>,
-  value: unknown,
-): string | null => {
-  const fieldSchema = taxSchema.shape[fieldName];
-  try {
-    fieldSchema.parse(value);
-    return null;
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return error.errors[0]?.message ?? "Invalid input";
-    }
-    return "Validation error";
-  }
-};
-
 // Type definition
 export type TaxFormData = z.infer<typeof taxSchema>;

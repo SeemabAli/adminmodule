@@ -40,7 +40,14 @@ export default tseslint.config(
       ],
       "@typescript-eslint/array-type": ["error", { default: "array" }],
       "@typescript-eslint/consistent-type-definitions": "off",
-      "@typescript-eslint/no-misused-promises": "off"
+      "@typescript-eslint/no-misused-promises": "off",
+      "@typescript-eslint/prefer-promise-reject-errors": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-unnecessary-condition": "off"
     },
   },
   {

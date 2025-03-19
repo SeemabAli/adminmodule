@@ -1,4 +1,11 @@
 import { useState } from "react";
+
+interface Tax {
+  taxName: string;
+  taxRate: number;
+  rateType: string;
+  appliedTaxes: string[];
+}
 import { notify } from "@/lib/notify";
 import { FormField } from "@/common/components/ui/form/FormField";
 import { useForm } from "react-hook-form";
@@ -6,22 +13,10 @@ import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { taxSchema } from "./tax.schema";
 
-interface Tax {
-  taxName: string;
-  appliedTaxes: string[];
-  taxRate: number;
-  rateType: "Percentage" | "Fixed/Bag";
-}
-
 const TaxAccounts = () => {
   const [taxes, setTaxes] = useState<Tax[]>([]);
-  const [taxName, setTaxName] = useState("");
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [selectedTaxes, setSelectedTaxes] = useState<string[]>([]);
-  const [taxRate, setTaxRate] = useState("");
-  const [rateType, setRateType] = useState<"Percentage" | "Fixed/Bag">(
-    "Percentage",
-  );
-  const [editIndex, setEditIndex] = useState<number | null>(null);
 
   const taxOptions: string[] = [
     "On Purchase Price",
@@ -34,6 +29,11 @@ const TaxAccounts = () => {
   const {
     register,
     formState: { errors, isSubmitting },
+    handleSubmit,
+    setValue,
+    setFocus,
+    getValues,
+    reset,
   } = useForm({
     resolver: zodResolver(taxSchema),
     defaultValues: {
@@ -53,102 +53,106 @@ const TaxAccounts = () => {
     setSelectedTaxes(selectedTaxes.filter((t) => t !== tax));
   };
 
-  const handleSave = () => {
-    if (!taxName.trim() || selectedTaxes.length === 0 || !taxRate.trim()) {
-      notify.error("Please fill in all fields.");
-      return;
+  const handleAddTax = async (formData: {
+    taxName: string;
+    taxRate: number;
+  }) => {
+    if (selectedTaxes.length === 0) {
+      notify.error("Please select at least one tax type.");
+      return Promise.reject();
     }
 
-    const numericTaxRate = Number(taxRate);
-    if (isNaN(numericTaxRate) || numericTaxRate < 0) {
-      notify.error("Please enter a valid tax rate.");
-      return;
-    }
-
-    const newTax = {
-      taxName,
-      appliedTaxes: selectedTaxes,
-      taxRate: numericTaxRate,
-      rateType,
+    const newTax: Tax = {
+      ...formData,
+      rateType: "",
+      appliedTaxes: [],
     };
 
-    if (editIndex !== null) {
-      const updatedTaxes = [...taxes];
-      updatedTaxes[editIndex] = newTax;
-      setTaxes(updatedTaxes);
-      notify.success("Tax updated successfully!");
-    } else {
-      setTaxes([...taxes, newTax]);
-      notify.success("Tax added successfully!");
+    setTaxes([...taxes, newTax]);
+    reset();
+    setSelectedTaxes([]);
+    notify.success("Tax added successfully!");
+    return Promise.resolve(newTax);
+  };
+
+  const onTaxUpdate = async (updatedTaxIndex: number) => {
+    if (selectedTaxes.length === 0) {
+      notify.error("Please select at least one tax type.");
+      return Promise.reject();
     }
 
-    resetForm();
+    const formData = getValues();
+    const updatedTaxes = taxes.map((tax, index) => {
+      if (index === updatedTaxIndex) {
+        return {
+          ...formData,
+          rateType: tax.rateType,
+          appliedTaxes: selectedTaxes,
+        };
+      }
+      return tax;
+    });
+
+    setTaxes(updatedTaxes);
+    setEditingIndex(null);
+    reset();
+    setSelectedTaxes([]);
+    notify.success("Tax updated successfully!");
+    return Promise.resolve(updatedTaxes);
   };
 
   const handleEdit = (index: number) => {
-    const tax = taxes.find((_, i) => i === index);
-    if (!tax) return;
-    setTaxName(tax.taxName);
-    setSelectedTaxes(tax.appliedTaxes);
-    setTaxRate(tax.taxRate.toString());
-    setRateType(tax.rateType);
-    setEditIndex(index);
+    const targetTax = taxes.find((_, i) => i === index);
+    if (!targetTax) return;
+
+    setValue("taxName", targetTax.taxName);
+    setValue("taxRate", targetTax.taxRate);
+    setFocus("taxName");
+    setEditingIndex(index);
   };
 
   const handleDelete = (index: number) => {
     notify.confirmDelete(() => {
-      setTaxes((prev) => prev.filter((_, i) => i !== index));
+      setTaxes(taxes.filter((_, i) => i !== index));
       notify.success("Tax deleted successfully!");
     });
-  };
-
-  const resetForm = () => {
-    setTaxName("");
-    setSelectedTaxes([]);
-    setTaxRate("");
-    setRateType("Percentage");
-    setEditIndex(null);
   };
 
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-4">Tax Management</h2>
 
-      {/* Tax Form */}
       <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
-        <FormField
-          type="text"
-          placeholder="Enter Tax Name"
-          value={taxName}
-          onChange={(e) => {
-            setTaxName(e.target.value);
-          }}
-          name="taxName"
-          label="Tax Name"
-          register={register}
-          errorMessage={errors.taxName?.message}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <FormField
+            placeholder="Enter Tax Name"
+            name="taxName"
+            label="Tax Name"
+            register={register}
+            errorMessage={errors.taxName?.message}
+          />
 
-        {/* Tax Type Dropdown */}
-        <label className="block w-full relative mb-1 font-medium top-1 right-2">
-          Select Tax Type
-        </label>
-        <select
-          onChange={handleTaxChange}
-          className="select select-bordered w-full mb-4 relative right-2"
-          defaultValue=""
-        >
-          <option value="" disabled>
-            Select a Tax Type
-          </option>
-          {taxOptions.map((tax) => (
-            <option key={tax} value={tax} className="option">
-              {tax}
-            </option>
-          ))}
-        </select>
+          <div className="flex flex-col">
+            <label className="block w-full relative mb-1 font-medium">
+              Select Tax Type
+            </label>
+            <select
+              onChange={handleTaxChange}
+              className="select select-bordered w-full mb-1"
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Select a Tax Type
+              </option>
+              {taxOptions.map((tax) => (
+                <option key={tax} value={tax} className="option">
+                  {tax}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-        {/* Display Selected Taxes */}
         {selectedTaxes.length > 0 && (
           <div className="mb-4">
             <p className="font-medium">Selected Taxes:</p>
@@ -173,62 +177,47 @@ const TaxAccounts = () => {
           </div>
         )}
 
-        {/* Tax Rate Selection */}
-        <label className="block font-medium mb-1">Tax Rate</label>
-        <div className="flex items-center gap-4 mb-1">
-          <label className="flex items-center space-x-2">
-            <input
-              type="radio"
-              name="rateType"
-              value="Percentage"
-              checked={rateType === "Percentage"}
-              onChange={() => {
-                setRateType("Percentage");
-              }}
-              className="radio-info"
-            />
-            <span>Percentage</span>
-          </label>
-          <label className="flex items-center space-x-2">
-            <input
-              type="radio"
-              name="rateType"
-              value="Fixed/Bag"
-              checked={rateType === "Fixed/Bag"}
-              onChange={() => {
-                setRateType("Fixed/Bag");
-              }}
-              className="radio-info"
-            />
-            <span>Fixed/Bag</span>
-          </label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div>
+            <label className="block font-medium mb-1">Tax Rate Type</label>
+            <div className="flex items-center gap-4 mb-2">
+              <label className="flex items-center space-x-2">
+                <input type="radio" value="Percentage" className="radio-info" />
+                <span>Percentage</span>
+              </label>
+              <label className="flex items-center space-x-2">
+                <input type="radio" value="Fixed/Bag" className="radio-info" />
+                <span>Fixed/Bag</span>
+              </label>
+            </div>
+          </div>
+
+          <FormField
+            type="number"
+            placeholder="Enter Tax Rate"
+            name="taxRate"
+            label="Tax Rate"
+            register={register}
+            errorMessage={errors.taxRate?.message}
+          />
         </div>
 
-        <FormField
-          type="number"
-          placeholder="Enter Tax Rate"
-          value={taxRate}
-          onChange={(e) => {
-            setTaxRate(e.target.value);
-          }}
-          name="taxRate"
-          label=""
-          register={register}
-          errorMessage={errors.taxRate?.message}
-        />
-
-        {/* Save Button */}
         <Button
-          onClick={handleSave}
+          onClick={
+            editingIndex !== null
+              ? handleSubmit(() => {
+                  void onTaxUpdate(editingIndex);
+                })
+              : handleSubmit(handleAddTax)
+          }
           shape="info"
           pending={isSubmitting}
           className="mt-4"
         >
-          {editIndex !== null ? "Update" : "Save"}
+          {editingIndex !== null ? "Update Tax" : "Add Tax"}
         </Button>
       </div>
 
-      {/* Display Tax Entries */}
       {taxes.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="table w-full bg-base-200 rounded-lg shadow-md">
@@ -250,15 +239,15 @@ const TaxAccounts = () => {
                 >
                   <td className="p-3">{index + 1}</td>
                   <td className="p-3">{tax.taxName}</td>
-                  <td className="p-3">{tax.appliedTaxes.join(", ")}</td>
+                  <td className="p-3">{tax.appliedTaxes}</td>
                   <td className="p-3">{tax.rateType}</td>
                   <td className="p-3">{tax.taxRate}</td>
-                  <td className="p-3 space-x-2">
+                  <td className="p-3 flex gap-2 justify-center">
                     <button
+                      className="btn btn-sm btn-secondary"
                       onClick={() => {
                         handleEdit(index);
                       }}
-                      className="btn btn-sm btn-warning"
                     >
                       Edit
                     </button>
