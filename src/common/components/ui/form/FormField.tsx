@@ -26,7 +26,7 @@ export function FormField<T extends FieldValues>({
   return (
     <div className={`form-control w-full ${className}`}>
       {/* Label */}
-      <label className="label">
+      <label className="label font-medium">
         <span className="label-text text-base-content">{label}</span>
       </label>
 
