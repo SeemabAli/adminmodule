@@ -1,14 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { notify } from "@/lib/notify";
 import { FormField } from "@/common/components/ui/form/FormField";
 import { useForm } from "react-hook-form";
 import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { companySchema, type Company } from "./company.schema";
+import { createCompany, fetchAllCompanies } from "./company.service";
+import { logger } from "@/lib/logger";
+import { useService } from "@/common/hooks/custom/useService";
+import { ErrorPage } from "@/common/components/Error";
 
 const CompanyAccounts = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+  const { error, data, isLoading } = useService(fetchAllCompanies);
 
   const {
     register,
@@ -27,9 +33,15 @@ const CompanyAccounts = () => {
   });
 
   const handleAddCompany = async (newCompany: Company) => {
-    setCompanies([...companies, newCompany]);
-    reset();
-    return Promise.resolve(newCompany);
+    try {
+      await createCompany(newCompany);
+      setCompanies([...companies, newCompany]);
+      reset();
+      notify.success("Company added successfully.");
+    } catch (error: unknown) {
+      notify.error("Failed to add company.");
+      logger.error(error);
+    }
   };
 
   const onCompanyUpdate = async (updatedCompanyIndex: number) => {
@@ -61,6 +73,30 @@ const CompanyAccounts = () => {
     setCompanies(companies.filter((_, i) => i !== index));
     notify.success("Company deleted successfully.");
   };
+
+  // useEffect(() => {
+  //   // Fetch companies from the server
+  //   const fetchCompanies = async () => {
+  //     try {
+  //       const allCompanies = await fetchAllCompanies();
+  //       setCompanies(allCompanies);
+  //     } catch (error: unknown) {
+  //       notify.error("Failed to fetch companies.");
+  //       logger.error("Failed to fetch all companies", error);
+  //     }
+  //   };
+  //   void fetchCompanies();
+  // }, []);
+
+  useEffect(() => {
+    if (data) {
+      setCompanies(data);
+    }
+  }, [data]);
+
+  if (error) {
+    <ErrorPage />;
+  }
 
   return (
     <div className="p-6">
@@ -97,6 +133,7 @@ const CompanyAccounts = () => {
           {editingIndex !== null ? "Update Company" : "Add Company"}
         </Button>
       </div>
+      {isLoading && <div className="skeleton h-28 w-full"></div>}
       {companies.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="table w-full bg-base-200 rounded-lg shadow-md">

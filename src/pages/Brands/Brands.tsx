@@ -336,6 +336,7 @@ const Brands = () => {
             </select>
 
             {/* Display selected taxes */}
+            {/* {isLoading && <div className="skeleton h-28 w-full"></div>} */}
             {taxes.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-4">
                 {taxes.map((tax) => (

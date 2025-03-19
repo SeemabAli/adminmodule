@@ -7,3 +7,5 @@ export const deliveryRouteSchema = z.object({
   tollType: z.string().default(""),
   tollAmount: z.string().default(""),
 });
+
+export type DeliveryRoute = z.infer<typeof deliveryRouteSchema>;

@@ -281,7 +281,7 @@ export const Header = ({ handleLogout }: NavbarProps) => {
           >
             <FiX />
           </button>
-          <div className="p-6 mt-10 space-y-4">
+          <div className="p-6 mt-10">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -295,7 +295,7 @@ export const Header = ({ handleLogout }: NavbarProps) => {
               />
             </button>
             {mobileAccountDropdownOpen && (
-              <ul className="menu bg-base-200 rounded-box mt-2 p-2 shadow">
+              <ul className="menu bg-base-200 p-2 shadow">
                 {dropdownLinks.map((link, index) => (
                   <li key={index}>
                     <Link to={link.path} onClick={closeMenu}>
@@ -319,7 +319,7 @@ export const Header = ({ handleLogout }: NavbarProps) => {
 
             <button
               onClick={toggleTheme}
-              className="btn btn-ghost flex justify-start w-full mt-4"
+              className="btn btn-ghost flex justify-start w-full mt-2 mb-4"
             >
               {theme === "corporate" ? (
                 <FiMoon size={20} />

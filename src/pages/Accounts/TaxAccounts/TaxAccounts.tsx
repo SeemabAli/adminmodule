@@ -257,6 +257,7 @@ const TaxAccounts = () => {
         </Button>
       </div>
 
+      {/* {isLoading && <div className="skeleton h-28 w-full"></div>} */}
       {taxes.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="table w-full bg-base-200 rounded-lg shadow-md">
