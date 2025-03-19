@@ -8,7 +8,7 @@ import { companySchema, type Company } from "./company.schema";
 import { createCompany, fetchAllCompanies } from "./company.service";
 import { logger } from "@/lib/logger";
 import { useService } from "@/common/hooks/custom/useService";
-import { ErrorPage } from "@/common/components/Error";
+import { ErrorModal } from "@/common/components/Error";
 
 const CompanyAccounts = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -70,8 +70,10 @@ const CompanyAccounts = () => {
   };
 
   const handleDelete = (index: number) => {
-    setCompanies(companies.filter((_, i) => i !== index));
-    notify.success("Company deleted successfully.");
+    notify.confirmDelete(() => {
+      setCompanies(companies.filter((_, i) => i !== index));
+      notify.success("Company deleted successfully.");
+    });
   };
 
   // useEffect(() => {
@@ -95,7 +97,15 @@ const CompanyAccounts = () => {
   }, [data]);
 
   if (error) {
-    <ErrorPage />;
+    return (
+      <ErrorModal
+        message={
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch companies data"
+        }
+      />
+    );
   }
 
   return (

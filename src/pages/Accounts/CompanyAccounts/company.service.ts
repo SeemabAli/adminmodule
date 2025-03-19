@@ -4,6 +4,7 @@ import { sendApiRequest } from "@/common/services/api.service";
 export const createCompany = async (data: Company) => {
   const response = await sendApiRequest("/companies", {
     method: "POST",
+    withAuthorization: true,
     data,
   });
   return response;
@@ -12,6 +13,7 @@ export const createCompany = async (data: Company) => {
 export const fetchAllCompanies = async () => {
   const response = await sendApiRequest<Company[]>("/companies", {
     method: "GET",
+    withAuthorization: true,
   });
   return response;
 };

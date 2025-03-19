@@ -1,11 +1,14 @@
 import { z } from "zod";
 
 export const deliveryRouteSchema = z.object({
-  routeName: z.string().nonempty("Route Name is required"),
-  shortCode: z.string().nonempty("Short Code is required"),
-  haveToll: z.string().nonempty("Have Toll is required"),
-  tollType: z.string().default(""),
-  tollAmount: z.string().default(""),
+  name: z.string().nonempty("Name is required"),
+  code: z.string().nonempty("Short Code is required"),
+  haveToll: z.string(),
+  tollType: z.string().optional(),
+  tollAmount: z.number().optional(),
 });
 
-export type DeliveryRoute = z.infer<typeof deliveryRouteSchema>;
+export type DeliveryRoute = z.infer<typeof deliveryRouteSchema> & {
+  tollType?: string;
+  tollAmount?: number;
+};

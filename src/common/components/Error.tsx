@@ -1,12 +1,14 @@
-import { useLocation, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 
-export const ErrorPage = () => {
-  const location = useLocation();
+type ErrorModalProps = {
+  message?: string;
+};
+export const ErrorModal = ({ message }: ErrorModalProps) => {
   const navigate = useNavigate();
 
   // Extract error information if passed via state
   const errorMessage =
-    location.state?.errorMessage ??
+    message ??
     "Something went wrong. We couldn't find what you were looking for.";
 
   const handleGoBack = () => {
