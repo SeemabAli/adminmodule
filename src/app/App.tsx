@@ -1,7 +1,7 @@
 import { Toaster } from "react-hot-toast";
 import CompanyAccounts from "@/pages/Accounts/CompanyAccounts/CompanyAccounts";
 import Employees from "@/pages/Accounts/Employees/Employees";
-import BankAccounts from "@/pages/Accounts/BankAccounts";
+import BankAccounts from "@/pages/Accounts/BankAccounts/BankAccounts";
 import TruckInformation from "@/pages/Accounts/TruckInformation";
 import DeliveryRoutes from "@/pages/Accounts/DeliveryRoutes/DeliveryRoutes";
 import TaxAccounts from "@/pages/Accounts/TaxAccounts/TaxAccounts";
