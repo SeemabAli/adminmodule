@@ -23,11 +23,19 @@ export const employeeSchema = z.object({
   cnic: z.number().refine((value) => value !== null && value !== undefined, {
     message: "CNIC is required",
   }),
+
   designation: z.string().nonempty("Designation is required"),
+
+  department: z.string().optional(),
+
   salary: z.number().refine((value) => value !== null && value !== undefined, {
     message: "Salary is required",
   }),
+
+  documents: z.any().optional().nullable(),
+  documentUrl: z.string().optional(),
+  role: z.string().nullable().optional(),
 });
 
 // Type definition
-export type Employees = z.infer<typeof employeeSchema>;
+export type Employee = z.infer<typeof employeeSchema>;
