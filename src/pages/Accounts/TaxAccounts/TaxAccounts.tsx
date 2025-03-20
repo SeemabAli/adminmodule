@@ -1,23 +1,30 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-type Tax = {
-  taxName: string;
-  taxRate: number;
+export type Tax = {
+  name: string;
+  rateValue: number;
   rateType: string;
-  appliedTaxes: string[];
+  applicableOn: string[];
 };
 import { notify } from "@/lib/notify";
 import { FormField } from "@/common/components/ui/form/FormField";
 import { useForm } from "react-hook-form";
 import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { taxSchema } from "./tax.schema";
+import { taxSchema, type TaxFormData } from "./tax.schema";
+import { useService } from "@/common/hooks/custom/useService";
+import { createTax, fetchAllTaxes } from "./tax.service";
+import { logger } from "@/lib/logger";
+import { ErrorModal } from "@/common/components/Error";
 
 const TaxAccounts = () => {
   const [taxes, setTaxes] = useState<Tax[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [selectedTaxes, setSelectedTaxes] = useState<string[]>([]);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [selectedOption, setSelectedOption] = useState<string | null>(
+    "percentage",
+  );
+  const { error, data, isLoading } = useService(fetchAllTaxes);
 
   const taxOptions: string[] = [
     "On Purchase Price",
@@ -38,8 +45,8 @@ const TaxAccounts = () => {
   } = useForm({
     resolver: zodResolver(taxSchema),
     defaultValues: {
-      taxName: "",
-      taxRate: 0,
+      name: "",
+      rateValue: 0,
     },
   });
 
@@ -54,34 +61,52 @@ const TaxAccounts = () => {
     setSelectedTaxes(selectedTaxes.filter((t) => t !== tax));
   };
 
-  const handleAddTax = async (formData: {
-    taxName: string;
-    taxRate: number;
-  }) => {
-    if (selectedTaxes.length === 0) {
-      notify.error("Please select at least one tax type.");
-      return Promise.reject();
+  // const handleAddTax = async (formData: {
+  //   taxName: string;
+  //   taxRate: number;
+  // }) => {
+  //   if (selectedTaxes.length === 0) {
+  //     notify.error("Please select at least one tax type.");
+  //     return Promise.reject();
+  //   }
+
+  //   if (!selectedOption) {
+  //     notify.error("Please select a rate type.");
+  //     return Promise.reject();
+  //   }
+
+  //   const newTax: Tax = {
+  //     ...formData,
+  //     rateType: selectedOption,
+  //     applicableOn: [...selectedTaxes],
+  //   };
+
+  //   setTaxes([...taxes, newTax]);
+  //   reset();
+  //   setSelectedTaxes([]);
+  //   setSelectedOption(null);
+  //   notify.success("Tax added successfully!");
+  //   return Promise.resolve(newTax);
+  // };
+
+  const handleAddTax = async (newTaxFormData: TaxFormData) => {
+    try {
+      const TaxPayload = {
+        ...newTaxFormData,
+        rateType: selectedOption ?? "",
+        applicableOn: [...selectedTaxes],
+      };
+      await createTax(TaxPayload);
+      setTaxes([...taxes, TaxPayload]);
+      reset();
+      setSelectedTaxes([]);
+      setSelectedOption(null);
+      notify.success("Tax added successfully!");
+    } catch (error) {
+      notify.error("Failed to add tax.");
+      logger.error(error);
     }
-
-    if (!selectedOption) {
-      notify.error("Please select a rate type.");
-      return Promise.reject();
-    }
-
-    const newTax: Tax = {
-      ...formData,
-      rateType: selectedOption,
-      appliedTaxes: [...selectedTaxes],
-    };
-
-    setTaxes([...taxes, newTax]);
-    reset();
-    setSelectedTaxes([]);
-    setSelectedOption(null);
-    notify.success("Tax added successfully!");
-    return Promise.resolve(newTax);
   };
-
   const onTaxUpdate = async (updatedTaxIndex: number) => {
     if (selectedTaxes.length === 0) {
       notify.error("Please select at least one tax type.");
@@ -99,7 +124,7 @@ const TaxAccounts = () => {
         return {
           ...formData,
           rateType: selectedOption,
-          appliedTaxes: [...selectedTaxes],
+          applicableOn: [...selectedTaxes],
         };
       }
       return tax;
@@ -122,11 +147,11 @@ const TaxAccounts = () => {
     const targetTax = taxes[index];
     if (!targetTax) return;
 
-    setValue("taxName", targetTax.taxName);
-    setValue("taxRate", targetTax.taxRate);
+    setValue("name", targetTax.name);
+    setValue("rateValue", targetTax.rateValue);
     setSelectedOption(targetTax.rateType);
-    setSelectedTaxes([...targetTax.appliedTaxes]);
-    setFocus("taxName");
+    setSelectedTaxes([...targetTax.applicableOn]);
+    setFocus("name");
     setEditingIndex(index);
   };
 
@@ -137,6 +162,29 @@ const TaxAccounts = () => {
     });
   };
 
+  useEffect(() => {
+    if (data) {
+      setTaxes(
+        data.map((tax: Partial<Tax>) => ({
+          name: tax.name ?? "",
+          rateValue: tax.rateValue ?? 0,
+          rateType: tax.rateType ?? "Unknown", // Provide a default value if rateType is missing
+          applicableOn: tax.applicableOn ?? [], // Ensure applicableOn is an array
+        })),
+      );
+    }
+  }, [data]);
+
+  if (error) {
+    return (
+      <ErrorModal
+        message={
+          error instanceof Error ? error.message : "Failed to fetch Taxes Data"
+        }
+      />
+    );
+  }
+
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-4">Tax Management</h2>
@@ -145,10 +193,10 @@ const TaxAccounts = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           <FormField
             placeholder="Enter Tax Name"
-            name="taxName"
+            name="name"
             label="Tax Name"
             register={register}
-            errorMessage={errors.taxName?.message}
+            errorMessage={errors.name?.message}
           />
 
           <div className="flex flex-col">
@@ -208,10 +256,10 @@ const TaxAccounts = () => {
               <label className="flex items-center space-x-2">
                 <input
                   type="radio"
-                  value="Percentage"
-                  checked={selectedOption === "Percentage"}
+                  value="percentage"
+                  checked={selectedOption === "percentage"}
                   onChange={() => {
-                    handleRadioChange("Percentage");
+                    handleRadioChange("percentage");
                   }}
                   className="radio-info"
                 />
@@ -220,10 +268,10 @@ const TaxAccounts = () => {
               <label className="flex items-center space-x-2">
                 <input
                   type="radio"
-                  value="Fixed/Bag"
-                  checked={selectedOption === "Fixed/Bag"}
+                  value="fixed"
+                  checked={selectedOption === "fixed"}
                   onChange={() => {
-                    handleRadioChange("Fixed/Bag");
+                    handleRadioChange("fixed");
                   }}
                   className="radio-info"
                 />
@@ -233,10 +281,10 @@ const TaxAccounts = () => {
             <FormField
               type="number"
               placeholder="Enter Tax Rate"
-              name="taxRate"
+              name="rateValue"
               label="Tax Rate"
               register={register}
-              errorMessage={errors.taxRate?.message}
+              errorMessage={errors.rateValue?.message}
             />
           </div>
         </div>
@@ -257,7 +305,7 @@ const TaxAccounts = () => {
         </Button>
       </div>
 
-      {/* {isLoading && <div className="skeleton h-28 w-full"></div>} */}
+      {isLoading && <div className="skeleton h-28 w-full"></div>}
       {taxes.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="table w-full bg-base-200 rounded-lg shadow-md">
@@ -278,10 +326,10 @@ const TaxAccounts = () => {
                   className="border-b border-base-300 text-center"
                 >
                   <td className="p-3">{index + 1}</td>
-                  <td className="p-3">{tax.taxName}</td>
-                  <td className="p-3">{tax.appliedTaxes.join(", ")}</td>
+                  <td className="p-3">{tax.name}</td>
+                  <td className="p-3">{tax.applicableOn.join(", ")}</td>
                   <td className="p-3">{tax.rateType}</td>
-                  <td className="p-3">{tax.taxRate}</td>
+                  <td className="p-3">{tax.rateValue}</td>
                   <td className="p-3 flex gap-2 justify-center">
                     <button
                       className="btn btn-sm btn-secondary"

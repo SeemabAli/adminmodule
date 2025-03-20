@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const brandSchema = z.object({
+  id: z.string().optional(),
   brandName: z
     .string()
     .nonempty("Brand name is required")

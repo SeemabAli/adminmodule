@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { notify } from "@/lib/notify";
 import { FormField } from "@/common/components/ui/form/FormField";
@@ -5,12 +7,17 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { brandSchema, type BrandFormData } from "./brand.schema";
+import { createBrand, fetchAllBrands } from "./brand.service";
+import { logger } from "@/lib/logger";
+import { useService } from "@/common/hooks/custom/useService";
+import { ErrorModal } from "@/common/components/Error";
+import type { Company } from "../Accounts/CompanyAccounts/company.schema";
+import { fetchAllCompanies } from "../Accounts/CompanyAccounts/company.service";
+import { fetchAllRoutes } from "../Accounts/DeliveryRoutes/route.service";
+import type { DeliveryRoute } from "../Accounts/DeliveryRoutes/deliveryRoute.schema";
 
-type Brand = {
-  name: string;
-  shortCode: string;
-  kgPerBag: number;
-  commission: number;
+// Additional properties not in the schema but used in the component
+type BrandExtended = BrandFormData & {
   lessCommission: boolean;
   taxes: string[];
   routes: {
@@ -22,7 +29,7 @@ type Brand = {
 };
 
 const Brands = () => {
-  const [brands, setBrands] = useState<Brand[]>([]);
+  const [brands, setBrands] = useState<BrandExtended[]>([]);
   const [lessCommission, setLessCommission] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [taxes, setTaxes] = useState<string[]>([]);
@@ -30,6 +37,8 @@ const Brands = () => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [isInEditMode, setIsInEditMode] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState("");
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [routes, setRoutes] = useState<DeliveryRoute[]>([]);
   const [routeInputs, setRouteInputs] = useState<
     {
       routeShortCode: string;
@@ -37,6 +46,13 @@ const Brands = () => {
       givenToTruck: number | null;
     }[]
   >([]);
+
+  // Use the service hook pattern for API calls
+  const {
+    error: fetchBrandsError,
+    data: brandsData,
+    isLoading: isBrandDataLoading,
+  } = useService(fetchAllBrands);
 
   const {
     register,
@@ -55,10 +71,84 @@ const Brands = () => {
     },
   });
 
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const response = await fetchAllCompanies();
+        setCompanies(response);
+      } catch (error: unknown) {
+        logger.error("Failed to fetch companies", error);
+      }
+    };
+    void fetchCompanies();
+
+    const fetchRoutes = async () => {
+      try {
+        const response = await fetchAllRoutes();
+        setRoutes(response);
+      } catch (error: unknown) {
+        logger.error("Failed to fetch routes", error);
+      }
+    };
+    void fetchRoutes();
+  }, []);
+
+  // Update state when data is received from the API
+  useEffect(() => {
+    if (brandsData) {
+      // Map API response to BrandExtended type
+      const fetchedBrands = brandsData.map((brand: any) => ({
+        id: brand.id,
+        brandName: brand.brandName,
+        brandShortCode: brand.brandShortCode,
+        weight: brand.weight,
+        commission: brand.commission,
+        lessCommission: brand.lessCommission ?? false,
+        taxes: brand.taxes ?? [],
+        routes: brand.routes ?? [],
+        companyName: brand.companyName,
+      }));
+      setBrands(fetchedBrands);
+    }
+  }, [brandsData]);
+
+  // Initialize route inputs when switching to step 2
+  useEffect(() => {
+    if (step === 2 && routeInputs.length === 0) {
+      initializeRouteInputs();
+    }
+  }, [step, routeInputs.length]);
+
+  // Initialize route inputs when moving to step 2
+  const initializeRouteInputs = () => {
+    // Initialize with empty values if in add mode
+    if (!isInEditMode) {
+      setRouteInputs(
+        routeShortCodes.map((route) => ({
+          routeShortCode: route,
+          freight: null,
+          givenToTruck: null,
+        })),
+      );
+    }
+  };
+
+  // Handle API errors
+  if (fetchBrandsError) {
+    return (
+      <ErrorModal
+        message={
+          fetchBrandsError instanceof Error
+            ? fetchBrandsError.message
+            : "Failed to fetch brands data"
+        }
+      />
+    );
+  }
+
   // Dummy Data
   const taxTypes = ["WHT", "GST", "Sales Tax", "Income Tax"];
   const routeShortCodes = ["RTE001", "RTE002", "RTE003", "RTE004"];
-  const companyNames = ["Company A", "Company B", "Company C", "Company D"];
 
   const handleNext = async () => {
     // Validate first step fields
@@ -74,21 +164,6 @@ const Brands = () => {
 
   const handleBack = () => {
     setStep(1);
-  };
-
-  // Initialize route inputs when moving to step 2
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const initializeRouteInputs = () => {
-    // Initialize with empty values if in add mode
-    if (!isInEditMode) {
-      setRouteInputs(
-        routeShortCodes.map((route) => ({
-          routeShortCode: route,
-          freight: null,
-          givenToTruck: null,
-        })),
-      );
-    }
   };
 
   // Handle route input change
@@ -128,43 +203,73 @@ const Brands = () => {
     }
 
     const formValues = getValues();
-    const newBrand: Brand = {
-      name: formValues.brandName,
-      shortCode: formValues.brandShortCode,
-      kgPerBag: formValues.weight,
+
+    // Prepare data for API submission - conforming to the schema
+    const brandData: BrandFormData = {
+      brandName: formValues.brandName,
+      brandShortCode: formValues.brandShortCode,
+      weight: formValues.weight,
       commission: formValues.commission,
+    };
+
+    // If we're editing, include the ID
+    if (isInEditMode && editingIndex !== null && brands[editingIndex]?.id) {
+      brandData.id = brands[editingIndex].id;
+    }
+
+    // Additional data that will be sent to the API but isn't in the formal schema
+    const additionalData = {
       companyName: selectedCompany,
       lessCommission,
       taxes,
-      routes: validRoutes as {
-        routeShortCode: string;
-        freight: number;
-        givenToTruck: number;
-      }[],
+      routes: validRoutes.filter(
+        (
+          route,
+        ): route is {
+          routeShortCode: string;
+          freight: number;
+          givenToTruck: number;
+        } => route.freight !== null && route.givenToTruck !== null,
+      ),
     };
 
-    if (editingIndex !== null) {
-      const updatedBrands = [...brands];
-      updatedBrands[editingIndex] = newBrand;
-      setBrands(updatedBrands);
-      setEditingIndex(null);
-      setIsInEditMode(false);
-    } else {
-      setBrands([...brands, newBrand]);
-    }
+    // Combined data object to send to API
+    const newBrand = { ...brandData, ...additionalData } as any;
 
-    // Reset Fields & Return to Step 1
-    reset();
-    setSelectedCompany("");
-    setLessCommission(false);
-    setTaxes([]);
-    setRouteInputs([]);
-    setStep(1);
-    notify.success(
-      isInEditMode
-        ? "Brand updated successfully!"
-        : "Brand added successfully!",
-    );
+    try {
+      await createBrand(newBrand);
+
+      // Update local state if in edit mode
+      if (isInEditMode && editingIndex !== null) {
+        const updatedBrands = [...brands];
+        updatedBrands[editingIndex] = newBrand;
+        setBrands(updatedBrands);
+      } else {
+        // Add new brand to state
+        setBrands([...brands, newBrand]);
+      }
+
+      // Reset form
+      reset();
+      setSelectedCompany("");
+      setLessCommission(false);
+      setTaxes([]);
+      setRouteInputs([]);
+      setStep(1);
+      setIsInEditMode(false);
+      setEditingIndex(null);
+
+      notify.success(
+        isInEditMode
+          ? "Brand updated successfully!"
+          : "Brand added successfully!",
+      );
+    } catch (error) {
+      notify.error(
+        isInEditMode ? "Failed to update brand" : "Failed to add brand",
+      );
+      logger.error(error);
+    }
   };
 
   // Edit Brand
@@ -173,10 +278,10 @@ const Brands = () => {
     const brand = brands[index];
     if (!brand) return;
 
-    // Set form values
-    setValue("brandName", brand.name);
-    setValue("brandShortCode", brand.shortCode);
-    setValue("weight", brand.kgPerBag);
+    // Set form values as per schema
+    setValue("brandName", brand.brandName);
+    setValue("brandShortCode", brand.brandShortCode);
+    setValue("weight", brand.weight);
     setValue("commission", brand.commission);
 
     setSelectedCompany(brand.companyName);
@@ -206,8 +311,8 @@ const Brands = () => {
   // Filtered brands based on search query
   const filteredBrands = brands.filter(
     (brand) =>
-      brand.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      brand.shortCode.toLowerCase().includes(searchQuery.toLowerCase()),
+      brand.brandName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      brand.brandShortCode.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleTaxChange = (tax: string) => {
@@ -218,17 +323,11 @@ const Brands = () => {
 
   const handleDeleteBrand = (index: number) => {
     notify.confirmDelete(() => {
+      // Here you would add API call to delete brand
       setBrands((prev) => prev.filter((_, i) => i !== index));
       notify.success("Brand deleted successfully!");
     });
   };
-
-  // Initialize route inputs when switching to step 2
-  useEffect(() => {
-    if (step === 2 && routeInputs.length === 0) {
-      initializeRouteInputs();
-    }
-  }, [initializeRouteInputs, routeInputs.length, step]);
 
   return (
     <div className="p-6">
@@ -259,9 +358,9 @@ const Brands = () => {
               }}
             >
               <option value="">Select Company</option>
-              {companyNames.map((company) => (
-                <option key={company} value={company}>
-                  {company}
+              {companies.map((company) => (
+                <option key="companyId" value={company.id}>
+                  {company.name}
                 </option>
               ))}
             </select>
@@ -336,7 +435,7 @@ const Brands = () => {
             </select>
 
             {/* Display selected taxes */}
-            {/* {isLoading && <div className="skeleton h-28 w-full"></div>} */}
+            {isBrandDataLoading && <div className="skeleton h-28 w-full"></div>}
             {taxes.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-4">
                 {taxes.map((tax) => (
@@ -368,15 +467,15 @@ const Brands = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {routeInputs.map((route, index) => (
+                  {routes.map((route, index) => (
                     <tr key={index}>
-                      <td>{route.routeShortCode}</td>
+                      <td>{route.code}</td>
                       <td>
                         <input
                           type="number"
                           placeholder="Enter Freight"
                           className="input input-bordered input-sm w-full"
-                          value={route.freight ?? ""}
+                          value={""}
                           onChange={(e) => {
                             handleRouteInputChange(
                               index,
@@ -391,7 +490,7 @@ const Brands = () => {
                           type="number"
                           placeholder="Enter Amount"
                           className="input input-bordered input-sm w-full"
-                          value={route.givenToTruck ?? ""}
+                          value={""}
                           onChange={(e) => {
                             handleRouteInputChange(
                               index,
@@ -413,7 +512,7 @@ const Brands = () => {
               </button>
               <Button
                 shape="info"
-                pending={isSubmitting}
+                pending={isSubmitting || isBrandDataLoading}
                 onClick={handleSaveBrand}
               >
                 {isInEditMode ? "Update Brand" : "Save Brand"}
@@ -423,7 +522,9 @@ const Brands = () => {
         )}
       </div>
       {/* Brands Table */}
-      {filteredBrands.length > 0 ? (
+      {isBrandDataLoading ? (
+        <div className="skeleton h-32 w-full mt-4"></div>
+      ) : filteredBrands.length > 0 ? (
         <div className="overflow-x-auto mt-4">
           <table className="table w-full bg-base-200 rounded-lg shadow-md">
             <thead>
@@ -447,10 +548,10 @@ const Brands = () => {
                   className="border-b border-base-300 text-center"
                 >
                   <td>{index + 1}</td>
-                  <td>{brand.name}</td>
-                  <td>{brand.shortCode}</td>
+                  <td>{brand.brandName}</td>
+                  <td>{brand.brandShortCode}</td>
                   <td>{brand.companyName}</td>
-                  <td>{brand.kgPerBag}</td>
+                  <td>{brand.weight}</td>
                   <td>{brand.commission}</td>
                   <td>{brand.lessCommission ? "Yes" : "No"}</td>
                   <td>{brand.taxes.join(", ")}</td>

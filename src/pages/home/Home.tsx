@@ -49,15 +49,15 @@ const Hero = () => {
 
         <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="flex items-center gap-4 bg-base-200 text-base-content dark:border p-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">
-            <FiUser className="text-3xl text-blue-600" />
+            <FiUser className="text-3xl text-primary" />
             <span className="font-semibold">Employee Management</span>
           </div>
           <div className="flex items-center gap-4 bg-base-200 text-base-content dark:border p-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">
-            <FiTruck className="text-3xl text-blue-600" />
+            <FiTruck className="text-3xl text-primary" />
             <span className="font-semibold">Transportation</span>
           </div>
           <div className="flex items-center gap-4 bg-base-200 text-base-content dark:border p-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">
-            <FiDollarSign className="text-3xl text-blue-600" />
+            <FiDollarSign className="text-3xl text-primary" />
             <span className="font-semibold">Payment & Taxes</span>
           </div>
         </div>
@@ -235,8 +235,8 @@ const Services = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-base-200 p-8 rounded-xl border border-blue-100 text-center">
-            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="bg-base-200 p-8 rounded-xl border border-primary-100 text-center">
+            <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-6">
               <FiSettings className="text-white text-2xl" />
             </div>
             <h3 className="text-xl font-semibold mb-3 text-base-content">
@@ -246,13 +246,13 @@ const Services = () => {
               End-to-end software solution for cement production, employee
               management, and logistics.
             </p>
-            <button className="text-blue-600 font-medium hover:underline">
+            <button className="text-base-content font-medium hover:underline">
               Learn More →
             </button>
           </div>
 
-          <div className="bg-base-200 p-8 rounded-xl border border-blue-100 text-center">
-            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="bg-base-200 p-8 rounded-xl border border-primary-100 text-center">
+            <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-6">
               <FiMessageSquare className="text-white text-2xl" />
             </div>
             <h3 className="text-xl font-semibold mb-3 text-base-content">
@@ -262,13 +262,13 @@ const Services = () => {
               Expert guidance on optimizing operations, compliance, and
               financial management.
             </p>
-            <button className="text-blue-600 font-medium hover:underline">
+            <button className="text-base-content font-medium hover:underline">
               Learn More →
             </button>
           </div>
 
-          <div className="bg-base-200 p-8 rounded-xl border border-blue-100 text-center">
-            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="bg-base-200 p-8 rounded-xl border border-primary-100 text-center">
+            <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-6">
               <FiBarChart2 className="text-white text-2xl" />
             </div>
             <h3 className="text-xl font-semibold mb-3 text-base-content">
@@ -278,7 +278,7 @@ const Services = () => {
               Customized dashboards and reports for tracking KPIs and business
               performance.
             </p>
-            <button className="text-blue-600 font-medium hover:underline">
+            <button className="text-base-content font-medium hover:underline">
               Learn More →
             </button>
           </div>

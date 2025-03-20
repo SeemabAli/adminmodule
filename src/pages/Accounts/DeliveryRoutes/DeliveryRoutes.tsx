@@ -8,20 +8,16 @@ import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ErrorModal } from "@/common/components/Error";
 import { useService } from "@/common/hooks/custom/useService";
-import { deliveryRouteSchema } from "./deliveryRoute.schema";
-
-type DeliveryRoute = {
-  name: string;
-  code: string;
-  haveToll: string;
-  tollType: string | null;
-  tollAmount: number | null;
-};
+import {
+  deliveryRouteSchema,
+  type DeliveryRoute,
+} from "./deliveryRoute.schema";
 
 const DeliveryRoutes = () => {
   const [routes, setRoutes] = useState<DeliveryRoute[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [hasToll, setHasToll] = useState(false);
   const { error, data, isLoading } = useService(fetchAllRoutes);
 
   const {
@@ -38,32 +34,25 @@ const DeliveryRoutes = () => {
     defaultValues: {
       name: "",
       code: "",
-      haveToll: "No",
-      tollType: "oneway",
-      tollAmount: null,
+      toll: undefined,
     },
   });
 
-  const haveToll = watch("haveToll");
+  const watchToll = watch("toll");
 
-  const handleAddRoute = async (newDeliveryRoute: DeliveryRoute) => {
+  const handleAddRoute = async (formData: DeliveryRoute) => {
     try {
-      // Format the payload based on haveToll value
+      // Format the payload based on hasToll state
       const routePayload = {
-        ...newDeliveryRoute,
-        tollType:
-          newDeliveryRoute.haveToll === "Yes"
-            ? (newDeliveryRoute.tollType ?? null)
-            : null,
-        tollAmount:
-          newDeliveryRoute.haveToll === "Yes"
-            ? newDeliveryRoute.tollAmount
-            : null,
+        name: formData.name,
+        code: formData.code,
+        toll: hasToll ? formData.toll : undefined,
       };
 
       await createRoute(routePayload);
       setRoutes([...routes, routePayload]);
       reset();
+      setHasToll(false);
       notify.success("Route added successfully!");
     } catch (error: unknown) {
       notify.error("Failed to add route.");
@@ -74,16 +63,11 @@ const DeliveryRoutes = () => {
   const onRouteUpdate = async (updatedRouteIndex: number) => {
     const formValues = getValues();
 
-    // Format the payload based on haveToll value
+    // Format the payload based on hasToll state
     const updatedRoute = {
-      ...formValues,
-      tollType: formValues.haveToll === "Yes" ? formValues.tollType : null,
-      tollAmount:
-        formValues.haveToll === "Yes"
-          ? formValues.tollAmount
-            ? Number(formValues.tollAmount)
-            : null
-          : null,
+      name: formValues.name,
+      code: formValues.code,
+      toll: hasToll ? formValues.toll : undefined,
     };
 
     const updatedRoutes = routes.map((route, index) => {
@@ -96,6 +80,7 @@ const DeliveryRoutes = () => {
     setRoutes(updatedRoutes);
     setEditingIndex(null);
     reset();
+    setHasToll(false);
     notify.success("Route updated successfully!");
     return Promise.resolve(updatedRoutes);
   };
@@ -106,14 +91,13 @@ const DeliveryRoutes = () => {
 
     setValue("name", targetRoute.name);
     setValue("code", targetRoute.code);
-    setValue("haveToll", targetRoute.haveToll);
 
-    if (targetRoute.haveToll === "Yes") {
-      setValue("tollType", targetRoute.tollType ?? "oneway");
-      setValue("tollAmount", targetRoute.tollAmount);
+    if (targetRoute.toll) {
+      setHasToll(true);
+      setValue("toll", targetRoute.toll);
     } else {
-      setValue("tollType", "oneway");
-      setValue("tollAmount", null);
+      setHasToll(false);
+      setValue("toll", { type: "oneway", amount: null });
     }
 
     setFocus("name");
@@ -127,6 +111,15 @@ const DeliveryRoutes = () => {
     });
   };
 
+  const toggleToll = (hasT: boolean) => {
+    setHasToll(hasT);
+    if (hasT) {
+      setValue("toll", { type: "oneway", amount: null });
+    } else {
+      setValue("toll", undefined);
+    }
+  };
+
   // Filter Routes
   const filteredRoutes = routes.filter(
     (route) =>
@@ -136,16 +129,17 @@ const DeliveryRoutes = () => {
 
   useEffect(() => {
     if (data) {
+      // Transform the received data to match the new schema structure
       setRoutes(
         data.map((route) => ({
-          ...route,
-          tollType: route.haveToll === "Yes" ? (route.tollType ?? null) : null,
-          tollAmount:
-            route.haveToll === "Yes"
-              ? route.tollAmount
-                ? Number(route.tollAmount)
-                : null
-              : null,
+          name: route.name,
+          code: route.code,
+          toll: route.toll
+            ? {
+                type: route.toll?.type ?? null,
+                amount: route.toll?.amount ? Number(route.toll.amount) : null,
+              }
+            : undefined,
         })),
       );
     }
@@ -207,8 +201,10 @@ const DeliveryRoutes = () => {
             <label className="flex items-center space-x-2">
               <input
                 type="radio"
-                value="Yes"
-                {...register("haveToll")}
+                checked={hasToll}
+                onChange={() => {
+                  toggleToll(true);
+                }}
                 className="radio-info"
               />
               <span>Yes</span>
@@ -216,8 +212,10 @@ const DeliveryRoutes = () => {
             <label className="flex items-center space-x-2">
               <input
                 type="radio"
-                value="No"
-                {...register("haveToll")}
+                checked={!hasToll}
+                onChange={() => {
+                  toggleToll(false);
+                }}
                 className="radio-info"
               />
               <span>No</span>
@@ -226,7 +224,7 @@ const DeliveryRoutes = () => {
         </div>
 
         {/* Toll Type and Amount - Only if Toll is Yes */}
-        {haveToll === "Yes" && (
+        {hasToll && (
           <>
             <div className="mt-2">
               <label className="block mb-1 font-medium">Toll Type</label>
@@ -235,7 +233,10 @@ const DeliveryRoutes = () => {
                   <input
                     type="radio"
                     value="oneway"
-                    {...register("tollType")}
+                    checked={watchToll?.type === "oneway"}
+                    onChange={() => {
+                      setValue("toll.type", "oneway");
+                    }}
                     className="radio-info"
                   />
                   <span>One Way</span>
@@ -244,7 +245,10 @@ const DeliveryRoutes = () => {
                   <input
                     type="radio"
                     value="twoway"
-                    {...register("tollType")}
+                    checked={watchToll?.type === "twoway"}
+                    onChange={() => {
+                      setValue("toll.type", "twoway");
+                    }}
                     className="radio-info"
                   />
                   <span>Two Way</span>
@@ -253,20 +257,24 @@ const DeliveryRoutes = () => {
             </div>
 
             <div className="mt-2">
-              <FormField
-                placeholder="Enter Toll Amount"
+              <label className="block mb-1 font-medium">Toll Amount</label>
+              <input
                 type="number"
-                name="tollAmount"
-                label="Toll Amount"
-                register={register}
-                errorMessage={errors.tollAmount?.message}
+                placeholder="Enter Toll Amount"
+                value={watchToll?.amount ?? ""}
                 onChange={(e) => {
-                  setValue(
-                    "tollAmount",
-                    Number(e.target.value.replace(/,/g, "")),
-                  );
+                  const value = e.target.value
+                    ? Number(e.target.value.replace(/,/g, ""))
+                    : null;
+                  setValue("toll.amount", value);
                 }}
+                className={`input input-bordered w-full ${errors.toll?.amount ? "input-error" : ""}`}
               />
+              {errors.toll?.amount && (
+                <p className="text-error text-sm mt-1">
+                  {errors.toll.amount.message}
+                </p>
+              )}
             </div>
           </>
         )}
@@ -312,12 +320,10 @@ const DeliveryRoutes = () => {
                   <td className="p-3">{index + 1}</td>
                   <td className="p-3">{route.name}</td>
                   <td className="p-3">{route.code}</td>
-                  <td className="p-3">{route.haveToll}</td>
+                  <td className="p-3">{route.toll ? "Yes" : "No"}</td>
+                  <td className="p-3">{route.toll ? route.toll.type : "-"}</td>
                   <td className="p-3">
-                    {route.haveToll === "Yes" ? route.tollType : "-"}
-                  </td>
-                  <td className="p-3">
-                    {route.haveToll === "Yes" ? route.tollAmount : "-"}
+                    {route.toll ? route.toll.amount : "-"}
                   </td>
                   <td className="p-3 flex gap-2 justify-center">
                     <button
