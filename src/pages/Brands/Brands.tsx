@@ -15,6 +15,7 @@ import type { Company } from "../Accounts/CompanyAccounts/company.schema";
 import { fetchAllCompanies } from "../Accounts/CompanyAccounts/company.service";
 import { fetchAllRoutes } from "../Accounts/DeliveryRoutes/route.service";
 import type { DeliveryRoute } from "../Accounts/DeliveryRoutes/deliveryRoute.schema";
+import { fetchAllTaxes } from "../Accounts/TaxAccounts/tax.service";
 
 // Additional properties not in the schema but used in the component
 type BrandExtended = BrandFormData & {
@@ -91,6 +92,18 @@ const Brands = () => {
       }
     };
     void fetchRoutes();
+
+    // Fetch Taxes data
+    const fetchTaxes = async () => {
+      // Fetch taxes from API
+      try {
+        const response = await fetchAllTaxes();
+        setTaxes(response.map((tax: any) => tax.name));
+      } catch (error: unknown) {
+        logger.error("Failed to fetch taxes", error);
+      }
+    };
+    void fetchTaxes();
   }, []);
 
   // Update state when data is received from the API
