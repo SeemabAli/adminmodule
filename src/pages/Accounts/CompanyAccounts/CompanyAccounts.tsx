@@ -9,10 +9,11 @@ import { createCompany, fetchAllCompanies } from "./company.service";
 import { logger } from "@/lib/logger";
 import { useService } from "@/common/hooks/custom/useService";
 import { ErrorModal } from "@/common/components/Error";
+import { updateCompany } from "./update.service";
 
 const CompanyAccounts = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const { error, data, isLoading } = useService(fetchAllCompanies);
 
@@ -27,6 +28,7 @@ const CompanyAccounts = () => {
   } = useForm({
     resolver: zodResolver(companySchema),
     defaultValues: {
+      id: "",
       name: "",
       address: "",
     },
@@ -44,51 +46,45 @@ const CompanyAccounts = () => {
     }
   };
 
-  const onCompanyUpdate = async (updatedCompanyIndex: number) => {
-    const updatedCompanies = companies.map((company, index) => {
-      if (index === updatedCompanyIndex) {
-        return getValues();
-      }
-      return company;
-    });
+  const onCompanyUpdate = async (companyId: string) => {
+    try {
+      const updatedCompanyData = getValues();
+      await updateCompany(companyId, updatedCompanyData);
 
-    setCompanies(updatedCompanies);
-    setEditingIndex(null);
-    reset();
-    return Promise.resolve(updatedCompanies);
+      const updatedCompanies = companies.map((company) => {
+        if (company.id === companyId) {
+          return { ...company, ...updatedCompanyData };
+        }
+        return company;
+      });
+
+      setCompanies(updatedCompanies);
+      setEditingId(null);
+      reset();
+      notify.success("Company updated successfully.");
+    } catch (error: unknown) {
+      notify.error("Failed to update company.");
+      logger.error(error);
+    }
   };
 
-  const handleEdit = (index: number) => {
-    const targetCompany = companies.find((_, i) => i === index);
+  const handleEdit = (id: string) => {
+    const targetCompany = companies.find((company) => company.id === id);
     // Don't update fields if company is not present in the list of companies
     if (!targetCompany) return;
 
     setValue("name", targetCompany.name);
     setValue("address", targetCompany.address);
     setFocus("name");
-    setEditingIndex(index);
+    setEditingId(id);
   };
 
-  const handleDelete = (index: number) => {
+  const handleDelete = (id: string) => {
     notify.confirmDelete(() => {
-      setCompanies(companies.filter((_, i) => i !== index));
+      setCompanies(companies.filter((company) => company.id !== id));
       notify.success("Company deleted successfully.");
     });
   };
-
-  // useEffect(() => {
-  //   // Fetch companies from the server
-  //   const fetchCompanies = async () => {
-  //     try {
-  //       const allCompanies = await fetchAllCompanies();
-  //       setCompanies(allCompanies);
-  //     } catch (error: unknown) {
-  //       notify.error("Failed to fetch companies.");
-  //       logger.error("Failed to fetch all companies", error);
-  //     }
-  //   };
-  //   void fetchCompanies();
-  // }, []);
 
   useEffect(() => {
     if (data) {
@@ -130,9 +126,9 @@ const CompanyAccounts = () => {
         </div>
         <Button
           onClick={
-            editingIndex !== null
+            editingId !== null
               ? handleSubmit(() => {
-                  void onCompanyUpdate(editingIndex);
+                  void onCompanyUpdate(editingId);
                 })
               : handleSubmit(handleAddCompany)
           }
@@ -140,7 +136,7 @@ const CompanyAccounts = () => {
           pending={isSubmitting}
           className="mt-4"
         >
-          {editingIndex !== null ? "Update Company" : "Add Company"}
+          {editingId !== null ? "Update Company" : "Add Company"}
         </Button>
       </div>
       {isLoading && <div className="skeleton h-28 w-full"></div>}
@@ -158,7 +154,7 @@ const CompanyAccounts = () => {
             <tbody>
               {companies.map((company, index) => (
                 <tr
-                  key={index}
+                  key={company.id}
                   className="border-b border-base-300 text-center"
                 >
                   <td className="p-3">{index + 1}</td>
@@ -168,14 +164,15 @@ const CompanyAccounts = () => {
                     <button
                       className="btn btn-sm btn-secondary"
                       onClick={() => {
-                        handleEdit(index);
+                        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+                        company.id && handleEdit(company.id);
                       }}
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => {
-                        handleDelete(index);
+                        handleDelete(company.id ?? "");
                       }}
                       className="btn btn-sm btn-error"
                     >

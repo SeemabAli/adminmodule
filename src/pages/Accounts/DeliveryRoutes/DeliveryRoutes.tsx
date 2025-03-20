@@ -14,8 +14,8 @@ type DeliveryRoute = {
   name: string;
   code: string;
   haveToll: string;
-  tollType?: string;
-  tollAmount?: number;
+  tollType: string | null;
+  tollAmount: number | null;
 };
 
 const DeliveryRoutes = () => {
@@ -33,22 +33,14 @@ const DeliveryRoutes = () => {
     getValues,
     reset,
     watch,
-  } = useForm<
-    {
-      name: string;
-      code: string;
-      haveToll: string;
-      tollType?: string;
-      tollAmount?: number;
-    } & DeliveryRoute
-  >({
+  } = useForm<DeliveryRoute>({
     resolver: zodResolver(deliveryRouteSchema),
     defaultValues: {
       name: "",
       code: "",
       haveToll: "No",
       tollType: "oneway",
-      tollAmount: undefined,
+      tollAmount: null,
     },
   });
 
@@ -56,12 +48,21 @@ const DeliveryRoutes = () => {
 
   const handleAddRoute = async (newDeliveryRoute: DeliveryRoute) => {
     try {
-      await createRoute({
+      // Format the payload based on haveToll value
+      const routePayload = {
         ...newDeliveryRoute,
-        tollType: newDeliveryRoute.tollType ?? "",
-        tollAmount: newDeliveryRoute.tollAmount ?? undefined,
-      });
-      setRoutes([...routes, newDeliveryRoute]);
+        tollType:
+          newDeliveryRoute.haveToll === "Yes"
+            ? (newDeliveryRoute.tollType ?? null)
+            : null,
+        tollAmount:
+          newDeliveryRoute.haveToll === "Yes"
+            ? newDeliveryRoute.tollAmount
+            : null,
+      };
+
+      await createRoute(routePayload);
+      setRoutes([...routes, routePayload]);
       reset();
       notify.success("Route added successfully!");
     } catch (error: unknown) {
@@ -71,12 +72,19 @@ const DeliveryRoutes = () => {
   };
 
   const onRouteUpdate = async (updatedRouteIndex: number) => {
-    const updatedRoute = getValues();
+    const formValues = getValues();
 
-    // Format the toll amount if toll is enabled
-    if (updatedRoute.haveToll === "Yes" && updatedRoute.tollAmount) {
-      updatedRoute.tollAmount = Number(updatedRoute.tollAmount);
-    }
+    // Format the payload based on haveToll value
+    const updatedRoute = {
+      ...formValues,
+      tollType: formValues.haveToll === "Yes" ? formValues.tollType : null,
+      tollAmount:
+        formValues.haveToll === "Yes"
+          ? formValues.tollAmount
+            ? Number(formValues.tollAmount)
+            : null
+          : null,
+    };
 
     const updatedRoutes = routes.map((route, index) => {
       if (index === updatedRouteIndex) {
@@ -102,7 +110,10 @@ const DeliveryRoutes = () => {
 
     if (targetRoute.haveToll === "Yes") {
       setValue("tollType", targetRoute.tollType ?? "oneway");
-      setValue("tollAmount", targetRoute.tollAmount ?? undefined);
+      setValue("tollAmount", targetRoute.tollAmount);
+    } else {
+      setValue("tollType", "oneway");
+      setValue("tollAmount", null);
     }
 
     setFocus("name");
@@ -119,7 +130,7 @@ const DeliveryRoutes = () => {
   // Filter Routes
   const filteredRoutes = routes.filter(
     (route) =>
-      route.name.toLowerCase().includes(searchTerm.toLowerCase()) ??
+      route.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       route.code.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
@@ -128,7 +139,13 @@ const DeliveryRoutes = () => {
       setRoutes(
         data.map((route) => ({
           ...route,
-          tollAmount: route.tollAmount ? Number(route.tollAmount) : undefined,
+          tollType: route.haveToll === "Yes" ? (route.tollType ?? null) : null,
+          tollAmount:
+            route.haveToll === "Yes"
+              ? route.tollAmount
+                ? Number(route.tollAmount)
+                : null
+              : null,
         })),
       );
     }

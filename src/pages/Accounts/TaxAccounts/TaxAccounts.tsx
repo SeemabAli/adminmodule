@@ -152,7 +152,7 @@ const TaxAccounts = () => {
           />
 
           <div className="flex flex-col">
-            <label className="block w-full relative mb-1 font-medium">
+            <label className="block w-full relative font-medium">
               Select Tax Type
             </label>
             <select

@@ -12,7 +12,7 @@ const FactoryExpenseTypes = () => {
       fixedPerTon?: number;
       percentPerTon?: number;
       rangeTonFrom?: string;
-      rangeTonValue?: number;
+      rangeTonValues?: Record<string, number>;
       extraCharge: number;
     }[]
   >([]);
@@ -20,24 +20,26 @@ const FactoryExpenseTypes = () => {
   const today = new Date().toISOString().split("T")[0] ?? "";
   const [expenseName, setExpenseName] = useState("");
   const [expenseDate, setExpenseDate] = useState(today);
-  const [expenseCategory, setExpenseCategory] = useState("General");
+  const [expenseOn, setExpenseOn] = useState("General");
   const [expenseType, setExpenseType] = useState("Fixed Amount");
   const [fixedAmount, setFixedAmount] = useState<number | "">("");
   const [fixedPerTon, setFixedPerTon] = useState<number | "">("");
   const [percentPerTon, setPercentPerTon] = useState<number | "">("");
   const [rangeTonFrom, setRangeTonFrom] = useState("0-50 Tons");
-  const [rangeTonValue, setRangeTonValue] = useState<number | "">("");
+  const [rangeTonValues, setRangeTonValues] = useState<
+    Record<string, number | "">
+  >({
+    "0-50 Tons": "",
+    "51-100 Tons": "",
+    "101+ Tons": "",
+  });
   const [extraCharge, setExtraCharge] = useState<number | "">("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isRangeTableOpen, setIsRangeTableOpen] = useState(false);
 
   const rangeOptions = ["0-50 Tons", "51-100 Tons", "101+ Tons"];
-  const expenseCategories = [
-    "General",
-    "Operational",
-    "Maintenance",
-    "Miscellaneous",
-  ];
+  const expenseCategories = ["General", "Specific Product"];
 
   const handleSaveExpense = () => {
     if (expenseName.trim() === "") {
@@ -49,18 +51,28 @@ const FactoryExpenseTypes = () => {
       return;
     }
 
+    // Convert rangeTonValues from { [key: string]: number | "" } to { [key: string]: number }
+    // by removing any empty values
+    const processedRangeTonValues: Record<string, number> = {};
+    if (expenseType === "Range Ton From") {
+      Object.keys(rangeTonValues).forEach((key) => {
+        if (rangeTonValues[key] !== "") {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          processedRangeTonValues[key] = rangeTonValues[key]!;
+        }
+      });
+    }
+
     const newExpense = {
       name: expenseName,
       date: expenseDate,
-      type: expenseCategory,
+      type: expenseOn,
       fixedAmount: fixedAmount as number,
       fixedPerTon: fixedPerTon as number,
       percentPerTon: percentPerTon as number,
       rangeTonFrom: expenseType === "Range Ton From" ? rangeTonFrom : undefined,
-      rangeTonValue:
-        expenseType === "Range Ton From"
-          ? (rangeTonValue as number)
-          : undefined,
+      rangeTonValues:
+        expenseType === "Range Ton From" ? processedRangeTonValues : undefined,
       extraCharge: extraCharge as number,
     };
 
@@ -81,7 +93,7 @@ const FactoryExpenseTypes = () => {
     if (!expense) return;
     setExpenseName(expense.name);
     setExpenseDate(expense.date);
-    setExpenseCategory(expense.type);
+    setExpenseOn(expense.type);
     setExpenseType(
       expense.rangeTonFrom
         ? "Range Ton From"
@@ -95,7 +107,22 @@ const FactoryExpenseTypes = () => {
     setFixedPerTon(expense.fixedPerTon ?? "");
     setPercentPerTon(expense.percentPerTon ?? "");
     setRangeTonFrom(expense.rangeTonFrom ?? "0-50 Tons");
-    setRangeTonValue(expense.rangeTonValue ?? "");
+
+    // Reset range values
+    const initialRangeTonValues: Record<string, number | ""> = {
+      "0-50 Tons": "",
+      "51-100 Tons": "",
+      "101+ Tons": "",
+    };
+
+    // Populate with existing values if available
+    if (expense.rangeTonValues) {
+      Object.keys(expense.rangeTonValues).forEach((key) => {
+        initialRangeTonValues[key] = expense.rangeTonValues?.[key] ?? "";
+      });
+    }
+
+    setRangeTonValues(initialRangeTonValues);
     setExtraCharge(expense.extraCharge);
     setEditingIndex(index);
   };
@@ -110,15 +137,37 @@ const FactoryExpenseTypes = () => {
   const resetForm = () => {
     setExpenseName("");
     setExpenseDate("");
-    setExpenseCategory("General");
+    setExpenseOn("General");
     setExpenseType("Fixed Amount");
     setFixedAmount("");
     setFixedPerTon("");
     setPercentPerTon("");
     setRangeTonFrom("0-50 Tons");
-    setRangeTonValue("");
+    setRangeTonValues({
+      "0-50 Tons": "",
+      "51-100 Tons": "",
+      "101+ Tons": "",
+    });
     setExtraCharge("");
     setError(null);
+    setIsRangeTableOpen(false);
+  };
+
+  const handleRangeTonValueChange = (range: string, value: string) => {
+    const numValue = value === "" ? "" : parseFloat(value.replace(/,/g, ""));
+    setRangeTonValues((prev) => ({
+      ...prev,
+      [range]: numValue,
+    }));
+  };
+
+  const getRangeValuesDisplay = (rangeTonValues?: Record<string, number>) => {
+    if (!rangeTonValues || Object.keys(rangeTonValues).length === 0)
+      return "N/A";
+
+    return Object.entries(rangeTonValues)
+      .map(([range, value]) => `${range}: ${formatNumberWithCommas(value)}`)
+      .join(", ");
   };
 
   return (
@@ -153,11 +202,11 @@ const FactoryExpenseTypes = () => {
             />
           </label>
           <label className="block">
-            Category
+            Expense On
             <select
-              value={expenseCategory}
+              value={expenseOn}
               onChange={(e) => {
-                setExpenseCategory(e.target.value);
+                setExpenseOn(e.target.value);
               }}
               className="select select-bordered w-full"
             >
@@ -167,6 +216,21 @@ const FactoryExpenseTypes = () => {
                 </option>
               ))}
             </select>
+          </label>
+          <label className="block">
+            Extra Charge if Brand Changes
+            <input
+              type="text"
+              placeholder="Extra Charge"
+              value={
+                extraCharge === "" ? "" : formatNumberWithCommas(extraCharge)
+              }
+              onChange={(e) => {
+                const value = e.target.value.replace(/,/g, "");
+                setExtraCharge(value === "" ? "" : parseFloat(value));
+              }}
+              className="input input-bordered w-full"
+            />
           </label>
           <div className="col-span-2 flex gap-2 flex-wrap">
             {["Fixed Amount", "Fixed/Ton", "Percent/Ton", "Range Ton From"].map(
@@ -179,6 +243,11 @@ const FactoryExpenseTypes = () => {
                     checked={expenseType === type}
                     onChange={() => {
                       setExpenseType(type);
+                      if (type === "Range Ton From") {
+                        setIsRangeTableOpen(true);
+                      } else {
+                        setIsRangeTableOpen(false);
+                      }
                     }}
                     className="radio"
                   />
@@ -234,49 +303,42 @@ const FactoryExpenseTypes = () => {
             />
           )}
 
-          {expenseType === "Range Ton From" && (
-            <>
-              <select
-                value={rangeTonFrom}
-                onChange={(e) => {
-                  setRangeTonFrom(e.target.value);
-                }}
-                className="select select-bordered w-full"
-              >
-                {rangeOptions.map((range, index) => (
-                  <option key={index} value={range}>
-                    {range}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="text"
-                placeholder="Enter Value"
-                value={
-                  rangeTonValue === ""
-                    ? ""
-                    : formatNumberWithCommas(rangeTonValue)
-                }
-                onChange={(e) => {
-                  const value = e.target.value.replace(/,/g, "");
-                  setRangeTonValue(value === "" ? "" : parseFloat(value));
-                }}
-                className="input input-bordered w-full"
-              />
-            </>
+          {expenseType === "Range Ton From" && isRangeTableOpen && (
+            <div className="overflow-x-auto mb-4">
+              <table className="table w-full bg-base-300">
+                <thead>
+                  <tr className="bg-base-300">
+                    <th>Range</th>
+                    <th>Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rangeOptions.map((range) => (
+                    <tr key={range}>
+                      <td>{range}</td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Enter Value"
+                          value={
+                            rangeTonValues[range] === ""
+                              ? ""
+                              : formatNumberWithCommas(
+                                  rangeTonValues[range] ?? 0,
+                                )
+                          }
+                          onChange={(e) => {
+                            handleRangeTonValueChange(range, e.target.value);
+                          }}
+                          className="input input-bordered input-sm w-full"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
-          <input
-            type="text"
-            placeholder="Extra Charge"
-            value={
-              extraCharge === "" ? "" : formatNumberWithCommas(extraCharge)
-            }
-            onChange={(e) => {
-              const value = e.target.value.replace(/,/g, "");
-              setExtraCharge(value === "" ? "" : parseFloat(value));
-            }}
-            className="input input-bordered w-full"
-          />
         </div>
         <button onClick={handleSaveExpense} className="btn btn-info mt-4">
           {editingIndex !== null ? "Update Expense" : "Save Expense"}
@@ -293,6 +355,10 @@ const FactoryExpenseTypes = () => {
                 <th>Date</th>
                 <th>Type</th>
                 <th>Fixed Amount</th>
+                <th>Fixed/Ton</th>
+                <th>Percent/Ton</th>
+                <th>Range Values</th>
+                <th>Extra Charge</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -303,7 +369,23 @@ const FactoryExpenseTypes = () => {
                   <td>{expense.name}</td>
                   <td>{expense.date}</td>
                   <td>{expense.type}</td>
-                  <td>{expense.fixedAmount ?? "N/A"}</td>
+                  <td>
+                    {expense.fixedAmount !== undefined
+                      ? formatNumberWithCommas(expense.fixedAmount)
+                      : "N/A"}
+                  </td>
+                  <td>
+                    {expense.fixedPerTon !== undefined
+                      ? formatNumberWithCommas(expense.fixedPerTon)
+                      : "N/A"}
+                  </td>
+                  <td>
+                    {expense.percentPerTon !== undefined
+                      ? formatNumberWithCommas(expense.percentPerTon)
+                      : "N/A"}
+                  </td>
+                  <td>{getRangeValuesDisplay(expense.rangeTonValues)}</td>
+                  <td>{formatNumberWithCommas(expense.extraCharge)}</td>
                   <td className="flex justify-center">
                     <button
                       onClick={() => {

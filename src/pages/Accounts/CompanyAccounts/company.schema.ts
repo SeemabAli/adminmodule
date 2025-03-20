@@ -1,11 +1,13 @@
 import { z } from "zod";
 
 export const companySchema = z.object({
+  id: z.string().optional(),
+
   name: z
     .string()
     .nonempty("Company name is required")
     .min(3, "Company name must be at least 2 characters")
-    .max(20, "Company name must not exceed 20 characters"),
+    .max(30, "Company name must not exceed 30 characters"),
 
   address: z
     .string()

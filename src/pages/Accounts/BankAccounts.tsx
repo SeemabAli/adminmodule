@@ -162,11 +162,39 @@ const BankAccounts = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
-    setChequeFormData({
-      ...chequeFormData,
-      // Use type assertion for the status field
-      [name]: name === "status" ? (value as ChequeStatus) : value,
-    });
+
+    // Special case for status change
+    if (name === "status") {
+      const status = value as ChequeStatus;
+
+      // If changing to cancelled status, set chequeTo equal to chequeFrom
+      if (status === "cancelled") {
+        setChequeFormData({
+          ...chequeFormData,
+          status,
+          chequeTo: chequeFormData.chequeFrom,
+        });
+      } else {
+        setChequeFormData({
+          ...chequeFormData,
+          status,
+        });
+      }
+    } else {
+      // For cancelled status, keep chequeFrom and chequeTo in sync
+      if (chequeFormData.status === "cancelled" && name === "chequeFrom") {
+        setChequeFormData({
+          ...chequeFormData,
+          chequeFrom: value,
+          chequeTo: value,
+        });
+      } else {
+        setChequeFormData({
+          ...chequeFormData,
+          [name]: value,
+        });
+      }
+    }
   };
 
   // Handle save/update cheque
@@ -175,22 +203,37 @@ const BankAccounts = () => {
 
     const { chequeFrom, chequeTo, status } = chequeFormData;
 
-    if (chequeFrom.trim() === "" || chequeTo.trim() === "") {
+    if (chequeFrom.trim() === "") {
       notify.error("Please fill in all required fields");
       return;
     }
 
-    const fromNum = parseInt(chequeFrom);
-    const toNum = parseInt(chequeTo);
+    // For cancelled status, we only need to validate the single cheque number
+    if (status === "cancelled") {
+      const chequeNum = parseInt(chequeFrom);
+      if (isNaN(chequeNum)) {
+        notify.error("Cheque number must be a valid number");
+        return;
+      }
+    } else {
+      // For active or completed status, validate the range
+      if (chequeTo.trim() === "") {
+        notify.error("Please fill in all required fields");
+        return;
+      }
 
-    if (isNaN(fromNum) || isNaN(toNum)) {
-      notify.error("Cheque numbers must be valid numbers");
-      return;
-    }
+      const fromNum = parseInt(chequeFrom);
+      const toNum = parseInt(chequeTo);
 
-    if (fromNum > toNum) {
-      notify.error("'Cheque From' must be less than or equal to 'Cheque To'");
-      return;
+      if (isNaN(fromNum) || isNaN(toNum)) {
+        notify.error("Cheque numbers must be valid numbers");
+        return;
+      }
+
+      if (fromNum > toNum) {
+        notify.error("'Cheque From' must be less than or equal to 'Cheque To'");
+        return;
+      }
     }
 
     setBankAccounts(
@@ -285,10 +328,16 @@ const BankAccounts = () => {
 
     let total = 0;
     account.cheques.forEach((cheque) => {
-      const from = parseInt(cheque.chequeFrom);
-      const to = parseInt(cheque.chequeTo);
-      if (!isNaN(from) && !isNaN(to)) {
-        total += to - from + 1;
+      if (cheque.status === "cancelled") {
+        // For cancelled cheques, count as 1
+        total += 1;
+      } else {
+        // For active or completed cheques, calculate the range
+        const from = parseInt(cheque.chequeFrom);
+        const to = parseInt(cheque.chequeTo);
+        if (!isNaN(from) && !isNaN(to)) {
+          total += to - from + 1;
+        }
       }
     });
 
@@ -336,7 +385,7 @@ const BankAccounts = () => {
             />
           </label>
           <label className="block mb-1 font-medium">
-            Account Number
+            Account Number/IBAN#
             <input
               type="text"
               name="accountNumber"
@@ -464,22 +513,6 @@ const BankAccounts = () => {
               {editingChequeId ? "Edit Cheque Book" : "Add New Cheque Book"}
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <input
-                type="text"
-                name="chequeFrom"
-                placeholder="Cheque From"
-                value={chequeFormData.chequeFrom}
-                onChange={handleChequeInputChange}
-                className="input input-bordered w-full"
-              />
-              <input
-                type="text"
-                name="chequeTo"
-                placeholder="Cheque To"
-                value={chequeFormData.chequeTo}
-                onChange={handleChequeInputChange}
-                className="input input-bordered w-full"
-              />
               <select
                 name="status"
                 value={chequeFormData.status}
@@ -490,6 +523,37 @@ const BankAccounts = () => {
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
               </select>
+
+              {/* Dynamic input fields based on status */}
+              {chequeFormData.status === "cancelled" ? (
+                <input
+                  type="text"
+                  name="chequeFrom"
+                  placeholder="Cancelled Cheque Number"
+                  value={chequeFormData.chequeFrom}
+                  onChange={handleChequeInputChange}
+                  className="input input-bordered w-full"
+                />
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    name="chequeFrom"
+                    placeholder="Cheque From"
+                    value={chequeFormData.chequeFrom}
+                    onChange={handleChequeInputChange}
+                    className="input input-bordered w-full"
+                  />
+                  <input
+                    type="text"
+                    name="chequeTo"
+                    placeholder="Cheque To"
+                    value={chequeFormData.chequeTo}
+                    onChange={handleChequeInputChange}
+                    className="input input-bordered w-full"
+                  />
+                </>
+              )}
             </div>
             <div className="flex mt-4">
               <button onClick={handleSaveCheque} className="btn btn-info">
@@ -530,12 +594,17 @@ const BankAccounts = () => {
                 </thead>
                 <tbody>
                   {selectedAccount.cheques.map((cheque, index) => {
-                    const fromNum = parseInt(cheque.chequeFrom);
-                    const toNum = parseInt(cheque.chequeTo);
-                    const count =
-                      !isNaN(fromNum) && !isNaN(toNum)
-                        ? toNum - fromNum + 1
-                        : "Invalid";
+                    let count;
+                    if (cheque.status === "cancelled") {
+                      count = 1; // Cancelled cheques count as 1
+                    } else {
+                      const fromNum = parseInt(cheque.chequeFrom);
+                      const toNum = parseInt(cheque.chequeTo);
+                      count =
+                        !isNaN(fromNum) && !isNaN(toNum)
+                          ? toNum - fromNum + 1
+                          : "Invalid";
+                    }
 
                     return (
                       <tr key={cheque.id} className="border-b border-base-300">
