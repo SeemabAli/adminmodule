@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { notify } from "@/lib/notify";
+import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
 
 interface Truck {
   truckNumber: string;
@@ -189,17 +190,18 @@ const TruckInformation = () => {
                       onClick={() => {
                         handleEditTruck(index);
                       }}
-                      className="btn btn-sm btn-secondary mr-2"
+                      className="flex items-center justify-center"
                     >
-                      Edit
+                      <PencilSquareIcon className="w-4 h-4 text-info" />
                     </button>
+
                     <button
                       onClick={() => {
                         handleDeleteTruck(index);
                       }}
-                      className="btn btn-sm btn-error"
+                      className="flex items-center justify-center"
                     >
-                      Delete
+                      <TrashIcon className="w-4 h-4 text-red-500" />
                     </button>
                   </td>
                 </tr>

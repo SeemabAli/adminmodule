@@ -1,6 +1,7 @@
 import { formatNumberWithCommas } from "@/utils/CommaSeparator";
 import { notify } from "@/lib/notify";
 import { useState } from "react";
+import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
 
 type Expense = {
   name: string;
@@ -186,17 +187,18 @@ const TruckOtherExpense = () => {
                       onClick={() => {
                         handleEditExpense(index);
                       }}
-                      className="btn btn-sm btn-secondary"
+                      className="flex items-center justify-center"
                     >
-                      Edit
+                      <PencilSquareIcon className="w-4 h-4 text-info" />
                     </button>
+
                     <button
                       onClick={() => {
                         handleDeleteExpense(index);
                       }}
-                      className="btn btn-sm btn-error ml-2"
+                      className="flex items-center justify-center"
                     >
-                      Delete
+                      <TrashIcon className="w-4 h-4 text-red-500" />
                     </button>
                   </td>
                 </tr>

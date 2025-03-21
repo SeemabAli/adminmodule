@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { logger } from "@/lib/logger";
-import { createRoute, fetchAllRoutes } from "./route.service";
+import {
+  createRoute,
+  fetchAllRoutes,
+  updateDeliveryRoute,
+  deleteDeliveryRoute,
+} from "./route.service";
 import { notify } from "../../../lib/notify";
 import { FormField } from "@/common/components/ui/form/FormField";
 import { useForm } from "react-hook-form";
@@ -12,6 +17,8 @@ import {
   deliveryRouteSchema,
   type DeliveryRoute,
 } from "./deliveryRoute.schema";
+import TrashIcon from "@heroicons/react/24/solid/TrashIcon";
+import PencilSquareIcon from "@heroicons/react/24/solid/PencilSquareIcon";
 
 const DeliveryRoutes = () => {
   const [routes, setRoutes] = useState<DeliveryRoute[]>([]);
@@ -70,23 +77,36 @@ const DeliveryRoutes = () => {
       toll: hasToll ? formValues.toll : undefined,
     };
 
-    const updatedRoutes = routes.map((route, index) => {
-      if (index === updatedRouteIndex) {
-        return updatedRoute;
-      }
-      return route;
-    });
+    try {
+      const targetRoute = routes[updatedRouteIndex];
+      if (targetRoute?.id) {
+        // Call updateDeliveryRoute API with the id and updated data
+        await updateDeliveryRoute(targetRoute.id, updatedRoute);
 
-    setRoutes(updatedRoutes);
+        const updatedRoutes = routes.map((route, index) => {
+          if (index === updatedRouteIndex) {
+            return { ...updatedRoute, id: route.id };
+          }
+          return route;
+        });
+
+        setRoutes(updatedRoutes);
+        notify.success("Route updated successfully!");
+      } else {
+        notify.error("Route ID is missing.");
+      }
+    } catch (error) {
+      notify.error("Failed to update route.");
+      logger.error(error);
+    }
+
     setEditingIndex(null);
     reset();
     setHasToll(false);
-    notify.success("Route updated successfully!");
-    return Promise.resolve(updatedRoutes);
   };
 
   const handleEdit = (index: number) => {
-    const targetRoute = routes.find((_, i) => i === index);
+    const targetRoute = routes[index];
     if (!targetRoute) return;
 
     setValue("name", targetRoute.name);
@@ -104,10 +124,21 @@ const DeliveryRoutes = () => {
     setEditingIndex(index);
   };
 
-  const handleDelete = (index: number) => {
-    notify.confirmDelete(() => {
-      setRoutes(routes.filter((_, i) => i !== index));
-      notify.success("Route deleted successfully!");
+  const handleDelete = (id?: string) => {
+    notify.confirmDelete(async () => {
+      try {
+        if (id) {
+          await deleteDeliveryRoute(id); // API call to delete
+        } else {
+          notify.error("Route ID is missing.");
+          return;
+        }
+        setRoutes(routes.filter((route) => route.id !== id));
+        notify.success("Route deleted successfully!");
+      } catch (error) {
+        notify.error("Failed to delete route.");
+        logger.error(error);
+      }
     });
   };
 
@@ -132,6 +163,7 @@ const DeliveryRoutes = () => {
       // Transform the received data to match the new schema structure
       setRoutes(
         data.map((route) => ({
+          id: route.id,
           name: route.name,
           code: route.code,
           toll: route.toll
@@ -327,20 +359,23 @@ const DeliveryRoutes = () => {
                   </td>
                   <td className="p-3 flex gap-2 justify-center">
                     <button
-                      className="btn btn-sm btn-secondary"
                       onClick={() => {
                         handleEdit(index);
                       }}
+                      className="flex items-center mt-2 justify-center"
                     >
-                      Edit
+                      <PencilSquareIcon className="w-5 h-5 text-info" />
                     </button>
+
                     <button
                       onClick={() => {
-                        handleDelete(index);
+                        if (route.id !== undefined) {
+                          handleDelete(route.id);
+                        }
                       }}
-                      className="btn btn-sm btn-error"
+                      className="flex items-center mt-2 justify-center"
                     >
-                      Delete
+                      <TrashIcon className="w-5 h-5 text-red-500" />
                     </button>
                   </td>
                 </tr>

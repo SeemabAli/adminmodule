@@ -1,140 +1,138 @@
-/* eslint-disable @typescript-eslint/require-await */
-/* eslint-disable @typescript-eslint/no-confusing-void-expression */
-import { useEffect, useState } from "react";
+import { formatNumberWithCommas } from "@/utils/CommaSeparator";
+import { useState } from "react";
 import { notify } from "@/lib/notify";
-import { FormField } from "@/common/components/ui/form/FormField";
-import { useForm } from "react-hook-form";
-import { Button } from "@/common/components/ui/Button";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  bankAccountSchema,
-  chequeSchema,
-  type BankAccount,
-  type Cheque,
-  type ChequeStatus,
-} from "./bank.schema";
-import { logger } from "@/lib/logger";
+import PencilSquareIcon from "@heroicons/react/24/solid/PencilSquareIcon";
+import TrashIcon from "@heroicons/react/24/solid/TrashIcon";
+
+interface BankAccount {
+  id: string;
+  bankName: string;
+  accountTitle: string;
+  accountNumber: string;
+  openingBalance: string;
+  cheques: Cheque[];
+}
+
+interface Cheque {
+  id: string;
+  chequeFrom: string;
+  chequeTo: string;
+  dateAdded: string;
+  status: ChequeStatus;
+}
+
+// Define a type for cheque status
+type ChequeStatus = "active" | "completed" | "cancelled";
 
 const BankAccounts = () => {
   // Bank account state
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [bankFormData, setBankFormData] = useState({
+    bankName: "HBL",
+    accountTitle: "",
+    accountNumber: "",
+    openingBalance: "",
+  });
   const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
 
   // Cheque management state
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(
     null,
   );
+  // Use explicit type annotation for the status field
+  const [chequeFormData, setChequeFormData] = useState<{
+    chequeFrom: string;
+    chequeTo: string;
+    status: ChequeStatus;
+  }>({
+    chequeFrom: "",
+    chequeTo: "",
+    status: "active",
+  });
   const [editingChequeId, setEditingChequeId] = useState<string | null>(null);
 
-  // Bank Account Form
-  const {
-    register: registerBankAccount,
-    formState: { errors: bankErrors, isSubmitting: isBankSubmitting },
-    handleSubmit: handleBankSubmit,
-    reset: resetBankForm,
-  } = useForm<BankAccount>({
-    resolver: zodResolver(bankAccountSchema),
-    defaultValues: {
-      id: "",
-      bankName: "HBL",
-      accountTitle: "",
-      accountNumber: "",
-      openingBalance: "",
-      cheques: [],
-    },
-  });
-
-  // Cheque Form
-  const {
-    register: registerCheque,
-    formState: { errors: chequeErrors, isSubmitting: isChequeSubmitting },
-    handleSubmit: handleChequeSubmit,
-    setValue: setChequeValue,
-    reset: resetChequeForm,
-    watch: watchChequeForm,
-  } = useForm<Cheque>({
-    resolver: zodResolver(chequeSchema),
-    defaultValues: {
-      id: "",
-      chequeFrom: "",
-      chequeTo: "",
-      status: "active" as ChequeStatus,
-    },
-  });
-
-  // Watch for changes in cheque status
-  const chequeStatus = watchChequeForm("status");
-  const chequeFrom = watchChequeForm("chequeFrom");
-
-  // Set chequeTo equal to chequeFrom when status is cancelled
-  useEffect(() => {
-    if (chequeStatus === "cancelled" && chequeFrom) {
-      setChequeValue("chequeTo", chequeFrom);
-    }
-  }, [chequeStatus, chequeFrom, setChequeValue]);
+  const handleBankInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
+    const { name, value } = e.target;
+    setBankFormData({
+      ...bankFormData,
+      [name]:
+        name === "openingBalance"
+          ? formatNumberWithCommas(value.replace(/,/g, ""))
+          : value,
+    });
+  };
 
   // Generate a unique ID
   const generateId = () => {
     return Date.now().toString(36) + Math.random().toString(36).substring(2);
   };
 
-  // Format opening balance with commas
-  // const handleOpeningBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const value = e.target.value;
-  //   const formattedValue = formatNumberWithCommas(value.replace(/,/g, ""));
-  //   setBankValue("openingBalance", formattedValue);
-  // };
-
   // Handle bank account save/update
-  const handleSaveBankAccount = async (data: BankAccount) => {
-    try {
-      if (editingAccountId) {
-        // Update existing account
-        setBankAccounts(
-          bankAccounts.map((account) =>
-            account.id === editingAccountId
-              ? { ...account, ...data, id: editingAccountId }
-              : account,
-          ),
-        );
-        setEditingAccountId(null);
-        notify.success("Bank account updated successfully!");
-      } else {
-        // Add new account
-        const newAccount: BankAccount = {
-          ...data,
-          id: generateId(),
-          cheques: [],
-        };
-        setBankAccounts([...bankAccounts, newAccount]);
-        notify.success("Bank account added successfully!");
-      }
-      resetBankForm({
-        id: "",
-        bankName: "HBL",
-        accountTitle: "",
-        accountNumber: "",
-        openingBalance: "",
-      });
-    } catch (error: unknown) {
-      notify.error("Failed to save bank account.");
-      logger.error(error);
+  const handleSaveBankAccount = () => {
+    const { bankName, accountTitle, accountNumber, openingBalance } =
+      bankFormData;
+
+    if (
+      accountTitle.trim() === "" ||
+      accountNumber.trim() === "" ||
+      openingBalance.trim() === ""
+    ) {
+      notify.error("Please fill in all required fields");
+      return;
     }
+
+    if (editingAccountId) {
+      // Update existing account
+      setBankAccounts(
+        bankAccounts.map((account) =>
+          account.id === editingAccountId
+            ? {
+                ...account,
+                bankName,
+                accountTitle,
+                accountNumber,
+                openingBalance,
+              }
+            : account,
+        ),
+      );
+      setEditingAccountId(null);
+    } else {
+      // Add new account
+      const newAccount: BankAccount = {
+        id: generateId(),
+        bankName,
+        accountTitle,
+        accountNumber,
+        openingBalance,
+        cheques: [],
+      };
+      setBankAccounts([...bankAccounts, newAccount]);
+    }
+
+    // Reset form
+    setBankFormData({
+      bankName: "HBL",
+      accountTitle: "",
+      accountNumber: "",
+      openingBalance: "",
+    });
   };
 
   // Handle edit bank account
   const handleEditBankAccount = (accountId: string) => {
     const account = bankAccounts.find((acc) => acc.id === accountId);
-    if (!account) return;
-
-    resetBankForm({
-      id: account.id,
-      bankName: account.bankName,
-      accountTitle: account.accountTitle,
-      accountNumber: account.accountNumber,
-      openingBalance: account.openingBalance,
-    });
-    setEditingAccountId(accountId);
+    if (account) {
+      setBankFormData({
+        bankName: account.bankName,
+        accountTitle: account.accountTitle,
+        accountNumber: account.accountNumber,
+        openingBalance: account.openingBalance,
+      });
+      setEditingAccountId(accountId);
+    }
   };
 
   // Handle delete bank account
@@ -154,69 +152,129 @@ const BankAccounts = () => {
   const handleSelectAccount = (accountId: string) => {
     setSelectedAccountId(accountId);
     setEditingChequeId(null);
-    resetChequeForm({
-      id: "",
+    setChequeFormData({
       chequeFrom: "",
       chequeTo: "",
       status: "active",
     });
   };
 
-  // Handle save/update cheque
-  const handleSaveCheque = async (data: Cheque) => {
-    try {
-      if (!selectedAccountId) return;
+  // Handle cheque form input changes
+  const handleChequeInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
+    const { name, value } = e.target;
 
-      if (data.status === "cancelled") {
-        // For cancelled cheques, make sure chequeTo equals chequeFrom
-        data.chequeTo = data.chequeFrom;
+    // Special case for status change
+    if (name === "status") {
+      const status = value as ChequeStatus;
+
+      // If changing to cancelled status, set chequeTo equal to chequeFrom
+      if (status === "cancelled") {
+        setChequeFormData({
+          ...chequeFormData,
+          status,
+          chequeTo: chequeFormData.chequeFrom,
+        });
+      } else {
+        setChequeFormData({
+          ...chequeFormData,
+          status,
+        });
+      }
+    } else {
+      // For cancelled status, keep chequeFrom and chequeTo in sync
+      if (chequeFormData.status === "cancelled" && name === "chequeFrom") {
+        setChequeFormData({
+          ...chequeFormData,
+          chequeFrom: value,
+          chequeTo: value,
+        });
+      } else {
+        setChequeFormData({
+          ...chequeFormData,
+          [name]: value,
+        });
+      }
+    }
+  };
+
+  // Handle save/update cheque
+  const handleSaveCheque = () => {
+    if (!selectedAccountId) return;
+
+    const { chequeFrom, chequeTo, status } = chequeFormData;
+
+    if (chequeFrom.trim() === "") {
+      notify.error("Please fill in all required fields");
+      return;
+    }
+
+    // For cancelled status, we only need to validate the single cheque number
+    if (status === "cancelled") {
+      const chequeNum = parseInt(chequeFrom);
+      if (isNaN(chequeNum)) {
+        notify.error("Cheque number must be a valid number");
+        return;
+      }
+    } else {
+      // For active or completed status, validate the range
+      if (chequeTo.trim() === "") {
+        notify.error("Please fill in all required fields");
+        return;
       }
 
-      setBankAccounts(
-        bankAccounts.map((account) => {
-          if (account.id === selectedAccountId) {
-            let updatedCheques;
+      const fromNum = parseInt(chequeFrom);
+      const toNum = parseInt(chequeTo);
 
-            if (editingChequeId) {
-              // Update existing cheque
-              updatedCheques =
-                account.cheques?.map((cheque) =>
-                  cheque.id === editingChequeId
-                    ? { ...data, id: editingChequeId }
-                    : cheque,
-                ) ?? [];
-            } else {
-              // Add new cheque
-              const newCheque: Cheque = {
-                ...data,
-                id: generateId(),
-                dateAdded: new Date().toISOString().split("T")[0],
-              };
-              updatedCheques = [...(account.cheques ?? []), newCheque];
-            }
+      if (isNaN(fromNum) || isNaN(toNum)) {
+        notify.error("Cheque numbers must be valid numbers");
+        return;
+      }
 
-            return { ...account, cheques: updatedCheques };
-          }
-          return account;
-        }),
-      );
-
-      resetChequeForm({
-        id: "",
-        chequeFrom: "",
-        chequeTo: "",
-        status: "active",
-      });
-      setEditingChequeId(null);
-      notify.success(
-        editingChequeId
-          ? "Cheque book updated successfully!"
-          : "Cheque book added successfully!",
-      );
-    } catch (error: unknown) {
-      notify.error("Failed to save cheque book.");
-      logger.error(error);
+      if (fromNum > toNum) {
+        notify.error("'Cheque From' must be less than or equal to 'Cheque To'");
+        return;
+      }
     }
+
+    setBankAccounts(
+      bankAccounts.map((account) => {
+        if (account.id === selectedAccountId) {
+          let updatedCheques;
+
+          if (editingChequeId) {
+            // Update existing cheque
+            updatedCheques = account.cheques.map((cheque) =>
+              cheque.id === editingChequeId
+                ? { ...cheque, chequeFrom, chequeTo, status }
+                : cheque,
+            );
+          } else {
+            // Add new cheque
+            const newCheque: Cheque = {
+              id: generateId(),
+              chequeFrom,
+              chequeTo,
+              dateAdded: new Date().toISOString().split("T")[0] ?? "",
+              status,
+            };
+            updatedCheques = [...account.cheques, newCheque];
+          }
+
+          return { ...account, cheques: updatedCheques };
+        }
+        return account;
+      }),
+    );
+
+    // Reset form
+    setChequeFormData({
+      chequeFrom: "",
+      chequeTo: "",
+      status: "active",
+    });
+    setEditingChequeId(null);
   };
 
   // Handle edit cheque
@@ -224,18 +282,17 @@ const BankAccounts = () => {
     const selectedAccount = bankAccounts.find(
       (acc) => acc.id === selectedAccountId,
     );
-    if (!selectedAccount) return;
-
-    const cheque = selectedAccount.cheques?.find((chq) => chq.id === chequeId);
-    if (!cheque) return;
-
-    resetChequeForm({
-      id: cheque.id,
-      chequeFrom: cheque.chequeFrom,
-      chequeTo: cheque.chequeTo,
-      status: cheque.status,
-    });
-    setEditingChequeId(chequeId);
+    if (selectedAccount) {
+      const cheque = selectedAccount.cheques.find((chq) => chq.id === chequeId);
+      if (cheque) {
+        setChequeFormData({
+          chequeFrom: cheque.chequeFrom,
+          chequeTo: cheque.chequeTo,
+          status: cheque.status,
+        });
+        setEditingChequeId(chequeId);
+      }
+    }
   };
 
   // Handle delete cheque
@@ -246,9 +303,9 @@ const BankAccounts = () => {
           if (account.id === selectedAccountId) {
             return {
               ...account,
-              cheques:
-                account.cheques?.filter((cheque) => cheque.id !== chequeId) ??
-                [],
+              cheques: account.cheques.filter(
+                (cheque) => cheque.id !== chequeId,
+              ),
             };
           }
           return account;
@@ -257,21 +314,19 @@ const BankAccounts = () => {
 
       if (editingChequeId === chequeId) {
         setEditingChequeId(null);
-        resetChequeForm({
-          id: "",
+        setChequeFormData({
           chequeFrom: "",
           chequeTo: "",
           status: "active",
         });
       }
-      notify.success("Cheque book deleted successfully!");
     });
   };
 
   // Get total cheques count for an account
   const getChequesCount = (accountId: string) => {
     const account = bankAccounts.find((acc) => acc.id === accountId);
-    if (!account?.cheques) return 0;
+    if (!account) return 0;
 
     let total = 0;
     account.cheques.forEach((cheque) => {
@@ -306,85 +361,70 @@ const BankAccounts = () => {
           {editingAccountId ? "Edit Bank Account" : "Add New Bank Account"}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="block mb-1">
-            <FormField
-              label="Select Bank"
+          <label className="block mb-1 font-medium">
+            Select Bank
+            <select
               name="bankName"
-              register={registerBankAccount}
-              errorMessage={bankErrors.bankName?.message}
-              renderInput={
-                <select
-                  {...registerBankAccount("bankName")}
-                  className="select select-bordered w-full bg-base-100 text-base-content focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="HBL">HBL</option>
-                  <option value="UBL">UBL</option>
-                  <option value="Meezan">Meezan</option>
-                  <option value="Other">Other</option>
-                </select>
-              }
+              value={bankFormData.bankName}
+              onChange={handleBankInputChange}
+              className="select select-bordered w-full"
+            >
+              <option value="HBL">HBL</option>
+              <option value="UBL">UBL</option>
+              <option value="Meezan">Meezan</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+          <label className="block mb-1 font-medium">
+            Account Title
+            <input
+              type="text"
+              name="accountTitle"
+              placeholder="Account Title"
+              value={bankFormData.accountTitle}
+              onChange={handleBankInputChange}
+              className="input input-bordered w-full"
             />
-          </div>
-          <FormField
-            placeholder="Account Title"
-            name="accountTitle"
-            label="Account Title"
-            register={registerBankAccount}
-            errorMessage={bankErrors.accountTitle?.message}
-          />
-          <FormField
-            placeholder="Account Number/IBAN#"
-            name="accountNumber"
-            label="Account Number/IBAN#"
-            register={registerBankAccount}
-            errorMessage={bankErrors.accountNumber?.message}
-          />
-          <div className="block mb-1">
-            <FormField
-              placeholder="Opening Balance"
+          </label>
+          <label className="block mb-1 font-medium">
+            Account Number/IBAN#
+            <input
+              type="text"
+              name="accountNumber"
+              placeholder="Account Number"
+              value={bankFormData.accountNumber}
+              onChange={handleBankInputChange}
+              className="input input-bordered w-full"
+            />
+          </label>
+          <label className="block mb-1 font-medium">
+            Opening Balance
+            <input
+              type="text"
               name="openingBalance"
-              label="Opening Balance"
-              register={registerBankAccount}
-              errorMessage={bankErrors.openingBalance?.message}
-              renderInput={
-                <select
-                  {...registerBankAccount("bankName")}
-                  className="select select-bordered w-full bg-base-100 text-base-content focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="HBL">HBL</option>
-                  <option value="UBL">UBL</option>
-                  <option value="Meezan">Meezan</option>
-                  <option value="Other">Other</option>
-                </select>
-              }
+              placeholder="Opening Balance"
+              value={bankFormData.openingBalance}
+              onChange={handleBankInputChange}
+              className="input input-bordered w-full"
             />
-          </div>
+          </label>
         </div>
         <div className="flex mt-4">
-          <Button
-            onClick={handleBankSubmit(handleSaveBankAccount)}
-            shape="info"
-            pending={isBankSubmitting}
-          >
+          <button onClick={handleSaveBankAccount} className="btn btn-info">
             {editingAccountId ? "Update Account" : "Save Account"}
-          </Button>
+          </button>
           {editingAccountId && (
-            <Button
+            <button
               onClick={() => {
                 setEditingAccountId(null);
-                resetBankForm({
-                  id: "",
+                setBankFormData({
                   bankName: "HBL",
                   accountTitle: "",
                   accountNumber: "",
                   openingBalance: "",
                 });
               }}
-              shape="info"
-              className="ml-2"
-            >
-              Cancel
-            </Button>
+            ></button>
           )}
         </div>
       </div>
@@ -413,28 +453,28 @@ const BankAccounts = () => {
                   <td className="p-3">{account.accountTitle}</td>
                   <td className="p-3">{account.accountNumber}</td>
                   <td className="p-3">{account.openingBalance}</td>
-                  <td className="p-3">{getChequesCount(account.id ?? "")}</td>
+                  <td className="p-3">{getChequesCount(account.id)}</td>
                   <td className="p-3">
                     <button
-                      onClick={() =>
-                        account.id && handleEditBankAccount(account.id)
-                      }
+                      onClick={() => {
+                        handleEditBankAccount(account.id);
+                      }}
                       className="btn btn-xs btn-secondary mr-1"
                     >
                       Edit
                     </button>
                     <button
-                      onClick={() =>
-                        account.id && handleSelectAccount(account.id)
-                      }
+                      onClick={() => {
+                        handleSelectAccount(account.id);
+                      }}
                       className="btn btn-xs btn-info mr-1"
                     >
                       Manage Cheques
                     </button>
                     <button
-                      onClick={() =>
-                        account.id && handleDeleteBankAccount(account.id)
-                      }
+                      onClick={() => {
+                        handleDeleteBankAccount(account.id);
+                      }}
                       className="btn btn-xs btn-error"
                     >
                       Delete
@@ -475,83 +515,72 @@ const BankAccounts = () => {
               {editingChequeId ? "Edit Cheque Book" : "Add New Cheque Book"}
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="block mb-1">
-                <FormField
-                  name="status"
-                  label="Status"
-                  register={registerCheque}
-                  errorMessage={chequeErrors.status?.message}
-                  renderInput={
-                    <select
-                      {...registerCheque("status")}
-                      className="select select-bordered w-full"
-                    >
-                      <option value="active">Active</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  }
-                />
-              </div>
+              <select
+                name="status"
+                value={chequeFormData.status}
+                onChange={handleChequeInputChange}
+                className="select select-bordered w-full"
+              >
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
 
               {/* Dynamic input fields based on status */}
-              {chequeStatus === "cancelled" ? (
-                <FormField
-                  placeholder="Cancelled Cheque Number"
+              {chequeFormData.status === "cancelled" ? (
+                <input
+                  type="text"
                   name="chequeFrom"
-                  label="Cheque Number"
-                  register={registerCheque}
-                  errorMessage={chequeErrors.chequeFrom?.message}
+                  placeholder="Cancelled Cheque Number"
+                  value={chequeFormData.chequeFrom}
+                  onChange={handleChequeInputChange}
+                  className="input input-bordered w-full"
                 />
               ) : (
                 <>
-                  <FormField
-                    placeholder="Cheque From"
+                  <input
+                    type="text"
                     name="chequeFrom"
-                    label="Cheque From"
-                    register={registerCheque}
-                    errorMessage={chequeErrors.chequeFrom?.message}
+                    placeholder="Cheque From"
+                    value={chequeFormData.chequeFrom}
+                    onChange={handleChequeInputChange}
+                    className="input input-bordered w-full"
                   />
-                  <FormField
-                    placeholder="Cheque To"
+                  <input
+                    type="text"
                     name="chequeTo"
-                    label="Cheque To"
-                    register={registerCheque}
-                    errorMessage={chequeErrors.chequeTo?.message}
+                    placeholder="Cheque To"
+                    value={chequeFormData.chequeTo}
+                    onChange={handleChequeInputChange}
+                    className="input input-bordered w-full"
                   />
                 </>
               )}
             </div>
             <div className="flex mt-4">
-              <Button
-                onClick={handleChequeSubmit(handleSaveCheque)}
-                shape="info"
-                pending={isChequeSubmitting}
-              >
+              <button onClick={handleSaveCheque} className="btn btn-info">
                 {editingChequeId ? "Update Cheque Book" : "Add Cheque Book"}
-              </Button>
+              </button>
               {editingChequeId && (
-                <Button
+                <button
                   onClick={() => {
                     setEditingChequeId(null);
-                    resetChequeForm({
-                      id: "",
+                    setChequeFormData({
                       chequeFrom: "",
                       chequeTo: "",
                       status: "active",
                     });
                   }}
-                  shape="info"
-                  className="ml-2"
+                  className="btn btn-outline ml-2"
                 >
                   Cancel
-                </Button>
+                </button>
               )}
             </div>
           </div>
 
           {/* Cheque Table */}
-          {selectedAccount.cheques && selectedAccount.cheques.length > 0 ? (
+          {selectedAccount.cheques.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="table w-full">
                 <thead>
@@ -601,20 +630,21 @@ const BankAccounts = () => {
                         </td>
                         <td className="p-3">
                           <button
-                            onClick={() =>
-                              cheque.id && handleEditCheque(cheque.id)
-                            }
-                            className="btn btn-xs btn-secondary mr-1"
+                            onClick={() => {
+                              handleEditCheque(cheque.id);
+                            }}
+                            className="flex items-center justify-center"
                           >
-                            Edit
+                            <PencilSquareIcon className="w-4 h-4 text-info" />
                           </button>
+
                           <button
-                            onClick={() =>
-                              cheque.id && handleDeleteCheque(cheque.id)
-                            }
-                            className="btn btn-xs btn-error"
+                            onClick={() => {
+                              handleDeleteCheque(cheque.id);
+                            }}
+                            className="flex items-center justify-center"
                           >
-                            Delete
+                            <TrashIcon className="w-4 h-4 text-red-500" />
                           </button>
                         </td>
                       </tr>

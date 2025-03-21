@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes, ReactNode } from "react";
+import type { InputHTMLAttributes } from "react";
 import type {
   FieldError,
   FieldPath,
@@ -11,10 +11,9 @@ type Props<T extends FieldValues> = {
   label: string;
   errorMessage?: FieldError["message"];
   register: UseFormRegister<T>;
-  children?: ReactNode;
-  renderInput?: ReactNode; // New prop for custom input elements
+  children?: React.ReactNode;
   className?: string;
-} & Omit<InputHTMLAttributes<HTMLInputElement>, "className">;
+} & InputHTMLAttributes<HTMLInputElement>;
 
 export function FormField<T extends FieldValues>({
   name,
@@ -22,7 +21,6 @@ export function FormField<T extends FieldValues>({
   errorMessage,
   register,
   children,
-  renderInput,
   className = "relative left-0.5",
   ...rest
 }: Props<T>) {
@@ -30,17 +28,14 @@ export function FormField<T extends FieldValues>({
     <div className={`form-control w-full ${className}`}>
       {/* Label */}
       <label className="label font-medium">
-        <span className="label-text text-base-content">{label}</span>
+        <span className="label-text text-base-content ">{label}</span>
       </label>
 
-      {/* Input Field or Custom Input */}
-      {renderInput ? (
-        <input
-          {...register(name)}
-          className="input input-bordered w-full bg-base-100 text-base-content focus:outline-none focus:ring-2 focus:ring-primary"
-          {...rest}
-        />
-      ) : null}
+      <input
+        {...register(name)}
+        className="input input-bordered w-full mb-2 bg-base-100 text-base-content focus:outline-none focus:ring-2 focus:ring-primary"
+        {...rest}
+      />
 
       {/* Slot for Additional Content (Like Icons) */}
       {children && (

@@ -1,4 +1,5 @@
 import { notify } from "@/lib/notify";
+import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
 import { useState, useEffect } from "react";
 
 interface Company {
@@ -706,17 +707,18 @@ export const Purchase = () => {
                       onClick={() => {
                         handleEditItem(index);
                       }}
-                      className="btn btn-sm btn-secondary"
+                      className="flex items-center justify-center"
                     >
-                      Edit
+                      <PencilSquareIcon className="w-4 h-4 text-info" />
                     </button>
+
                     <button
                       onClick={() => {
                         handleDeletePurchaseItems(index);
                       }}
-                      className="btn btn-sm btn-error ml-2"
+                      className="flex items-center justify-center"
                     >
-                      Delete
+                      <TrashIcon className="w-4 h-4 text-red-500" />
                     </button>
                   </td>
                 </tr>

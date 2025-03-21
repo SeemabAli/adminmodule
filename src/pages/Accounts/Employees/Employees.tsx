@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-expressions */
 /* eslint-disable @typescript-eslint/require-await */
 
 import { useEffect, useState, useRef } from "react";
@@ -13,6 +12,7 @@ import { createEmployee, fetchAllEmployees } from "./employee.service";
 import { logger } from "@/lib/logger";
 import { useService } from "@/common/hooks/custom/useService";
 import { ErrorModal } from "@/common/components/Error";
+import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
 
 export type Employees = {
   id?: string;
@@ -445,20 +445,21 @@ const EmployeeManagement = () => {
                   </td>
                   <td className="p-3 flex gap-2 justify-center">
                     <button
-                      className="btn btn-sm btn-secondary"
                       onClick={() => {
-                        employee.id && handleEdit(employee.id);
+                        handleEdit(employee.id ?? "");
                       }}
+                      className="flex items-center justify-center"
                     >
-                      Edit
+                      <PencilSquareIcon className="w-4 h-4 text-info" />
                     </button>
+
                     <button
                       onClick={() => {
                         handleDelete(employee.id ?? "");
                       }}
-                      className="btn btn-sm btn-error"
+                      className="flex items-center justify-center"
                     >
-                      Delete
+                      <TrashIcon className="w-4 h-4 text-red-500" />
                     </button>
                     {employee.role && (
                       <button

@@ -1,4 +1,5 @@
 import { notify } from "@/lib/notify";
+import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
 import { useState } from "react";
 
 const TruckRoute = () => {
@@ -137,17 +138,18 @@ const TruckRoute = () => {
                       onClick={() => {
                         handleEditRoute(index);
                       }}
-                      className="btn btn-sm btn-secondary"
+                      className="flex items-center justify-center"
                     >
-                      Edit
+                      <PencilSquareIcon className="w-4 h-4 text-info" />
                     </button>
+
                     <button
                       onClick={() => {
                         handleDeleteRoute(index);
                       }}
-                      className="btn btn-sm btn-error"
+                      className="flex items-center justify-center"
                     >
-                      Delete
+                      <TrashIcon className="w-4 h-4 text-red-500" />
                     </button>
                   </td>
                 </tr>

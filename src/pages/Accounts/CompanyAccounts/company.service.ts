@@ -17,3 +17,20 @@ export const fetchAllCompanies = async () => {
   });
   return response;
 };
+
+export const updateCompany = async (id: string, data: Company) => {
+  const response = await sendApiRequest(`/companies/${id}`, {
+    method: "PUT",
+    withAuthorization: true,
+    data,
+  });
+  return response;
+};
+
+export const deleteCompany = async (id: string) => {
+  const response = await sendApiRequest(`/companies/${id}`, {
+    method: "DELETE",
+    withAuthorization: true,
+  });
+  return response;
+};

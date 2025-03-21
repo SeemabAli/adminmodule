@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { notify } from "../../lib/notify";
+import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
 
 interface Phone {
   number: string;
@@ -33,14 +34,16 @@ interface Customer {
   ledgerNumber: number;
   signatures: Signature[];
   otherImages: string[];
+  smsPattern?: {
+    enabled: boolean;
+    frequency: "Daily" | "Weekly" | "Monthly" | "Yearly";
+    via: string;
+  };
 }
 
-// SMS Template interface
-interface SmsTemplate {
-  id: number;
-  name: string;
-  content: string;
-}
+// SMS Via options
+const smsViaOptions = ["SMS", "WhatsApp", "Email", "Push Notification"];
+const smsFrequencyOptions = ["Daily", "Weekly", "Monthly", "Yearly"];
 
 const Customer = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -78,57 +81,30 @@ const Customer = () => {
   const [otherImages, setOtherImages] = useState<string[]>([]);
   const [otherImage, setOtherImage] = useState("");
 
-  // SMS related states
+  // Map state
+  const [showMap, setShowMap] = useState(false);
+  const [mapSearchQuery, setMapSearchQuery] = useState("");
+
+  // SMS Pattern state
+  const [smsEnabled, setSmsEnabled] = useState(false);
+  const [smsFrequency, setSmsFrequency] = useState<
+    "Daily" | "Weekly" | "Monthly" | "Yearly"
+  >("Monthly");
+  const [smsVia, setSmsVia] = useState("SMS");
+
+  // For sending SMS to existing customers
   const [showSmsModal, setShowSmsModal] = useState(false);
   const [selectedCustomerIndexes, setSelectedCustomerIndexes] = useState<
     number[]
   >([]);
-  const [selectedSmsTemplates, setSelectedSmsTemplates] = useState<number[]>(
-    [],
-  );
-  const [smsVia, setSmsVia] = useState("SMS");
-
-  // Dummy SMS templates
-  const smsTemplates: SmsTemplate[] = [
-    {
-      id: 1,
-      name: "Payment Reminder",
-      content:
-        "Dear customer, this is a gentle reminder to clear your pending payment.",
-    },
-    {
-      id: 2,
-      name: "New Offer",
-      content:
-        "Dear customer, we have a new offer available for you. Contact us for more details.",
-    },
-    {
-      id: 3,
-      name: "Order Confirmation",
-      content: "Your order has been confirmed and will be delivered soon.",
-    },
-    {
-      id: 4,
-      name: "Holiday Notice",
-      content:
-        "Our office will remain closed on upcoming holidays. Sorry for inconvenience.",
-    },
-    {
-      id: 5,
-      name: "Thank You",
-      content:
-        "Thank you for your recent purchase. We appreciate your business.",
-    },
-  ];
-
-  // SMS Via options
-  const smsViaOptions = ["SMS", "WhatsApp", "Email", "Push Notification"];
 
   const handleNextStep = () => {
     if (currentStep === 1) {
-      // Validate required fields for step 1
+      // Validate only required fields for step 1
       if (!customerName || !acTitle || !route) {
-        notify.error("Please complete all required fields in Step 1");
+        notify.error(
+          "Please complete all required fields: Customer Name, A/C Title, and Route",
+        );
         return;
       }
       setCurrentStep(2);
@@ -142,7 +118,10 @@ const Customer = () => {
   };
 
   const handleAddPhone = () => {
-    if (!phoneNumber) return;
+    if (!phoneNumber) {
+      notify.error("Please enter a phone number");
+      return;
+    }
     setPhones([...phones, { number: phoneNumber, status: phoneStatus }]);
     setPhoneNumber("");
     setPhoneStatus("Mobile");
@@ -153,7 +132,10 @@ const Customer = () => {
   };
 
   const handleAddAddress = () => {
-    if (!addressText) return;
+    if (!addressText) {
+      notify.error("Please enter an address");
+      return;
+    }
     setAddresses([...addresses, { text: addressText, map: addressMap }]);
     setAddressText("");
     setAddressMap("");
@@ -189,9 +171,23 @@ const Customer = () => {
   };
 
   const handleSave = () => {
-    // Validation remains the same
+    // Validate only required fields
     if (!customerName || !acTitle || !route) {
-      notify.error("Please complete all fields correctly");
+      notify.error(
+        "Please complete all required fields: Customer Name, A/C Title, and Route",
+      );
+      return;
+    }
+
+    // Validate phone number if entered
+    if (phoneNumber && phones.length === 0) {
+      notify.error("Please add the phone number or clear the field");
+      return;
+    }
+
+    // Validate address if entered
+    if (addressText && addresses.length === 0) {
+      notify.error("Please add the address or clear the field");
       return;
     }
 
@@ -206,12 +202,19 @@ const Customer = () => {
       phones,
       addresses,
       route,
-      creditLimit: Number(creditLimit),
+      creditLimit: Number(creditLimit) || 0,
       postDatedCheques,
       ledgerDetails,
-      ledgerNumber: Number(ledgerNumber),
+      ledgerNumber: Number(ledgerNumber) || 0,
       signatures,
       otherImages,
+      smsPattern: smsEnabled
+        ? {
+            enabled: smsEnabled,
+            frequency: smsFrequency,
+            via: smsVia,
+          }
+        : undefined,
     };
 
     if (editingIndex !== null) {
@@ -224,6 +227,11 @@ const Customer = () => {
     }
 
     // Reset all form fields
+    resetForm();
+    notify.success("Customer saved successfully.");
+  };
+
+  const resetForm = () => {
     setCustomerName("");
     setAcTitle("");
     setDealingPerson("");
@@ -240,37 +248,50 @@ const Customer = () => {
     setLedgerNumber("");
     setSignatures([]);
     setOtherImages([]);
+    setSmsEnabled(false);
+    setSmsFrequency("Monthly");
+    setSmsVia("SMS");
 
     // Reset to step 1
     setCurrentStep(1);
-
-    notify.success("Customer saved successfully.");
   };
 
   const handleEdit = (index: number) => {
-    const customer = customers.find((_, i) => i === index);
+    const customer = customers[index];
     if (!customer) return;
+
     setCustomerName(customer.customerName);
     setAcTitle(customer.acTitle);
-    setDealingPerson(customer.dealingPerson);
-    setReference(customer.reference);
-    setCnicFront(customer.cnicFront);
-    setCnicBack(customer.cnicBack);
-    setNtn(customer.ntn);
-    setPhones(customer.phones);
-    setAddresses(customer.addresses);
+    setDealingPerson(customer.dealingPerson || "");
+    setReference(customer.reference || "");
+    setCnicFront(customer.cnicFront || "");
+    setCnicBack(customer.cnicBack || "");
+    setNtn(customer.ntn || "");
+    setPhones(customer.phones || []);
+    setAddresses(customer.addresses || []);
     setRoute(customer.route);
-    setCreditLimit(customer.creditLimit.toString());
-    setPostDatedCheques(customer.postDatedCheques);
-    setLedgerDetails(customer.ledgerDetails);
-    setSignatures(customer.signatures);
-    setLedgerNumber(customer.ledgerNumber.toString());
+    setCreditLimit(customer.creditLimit ? customer.creditLimit.toString() : "");
+    setPostDatedCheques(customer.postDatedCheques || []);
+    setLedgerDetails(customer.ledgerDetails || "");
+    setSignatures(customer.signatures || []);
+    setLedgerNumber(
+      customer.ledgerNumber ? customer.ledgerNumber.toString() : "",
+    );
     setOtherImages(customer.otherImages || []);
+
+    // Set SMS pattern if it exists
+    if (customer.smsPattern) {
+      setSmsEnabled(customer.smsPattern.enabled);
+      setSmsFrequency(customer.smsPattern.frequency);
+      setSmsVia(customer.smsPattern.via);
+    } else {
+      setSmsEnabled(false);
+      setSmsFrequency("Monthly");
+      setSmsVia("SMS");
+    }
+
     setEditingIndex(index);
-
-    // Reset to step 1 when editing
     setCurrentStep(1);
-
     notify.success("Customer loaded for editing.");
   };
 
@@ -353,11 +374,33 @@ const Customer = () => {
     notify.success("Image removed successfully!");
   };
 
-  // SMS related functions
+  // Map related functions
+  const openMapSelector = () => {
+    setShowMap(true);
+  };
+
+  const closeMapSelector = () => {
+    setShowMap(false);
+  };
+
+  const handleMapSearch = () => {
+    // In a real implementation, this would use the Google Maps API to search for the location
+    // and update the addressMap state with the coordinates
+    // For now, we'll just simulate this behavior
+    if (mapSearchQuery) {
+      setAddressMap(
+        `https://maps.google.com/?q=${encodeURIComponent(mapSearchQuery)}`,
+      );
+      setAddressText(mapSearchQuery);
+      closeMapSelector();
+      notify.success("Location selected!");
+    }
+  };
+
+  // SMS Modal related functions
   const openSmsModal = () => {
     setShowSmsModal(true);
     setSelectedCustomerIndexes([]);
-    setSelectedSmsTemplates([]);
   };
 
   const closeSmsModal = () => {
@@ -374,33 +417,20 @@ const Customer = () => {
     }
   };
 
-  const toggleSmsTemplateSelection = (id: number) => {
-    if (selectedSmsTemplates.includes(id)) {
-      setSelectedSmsTemplates(selectedSmsTemplates.filter((i) => i !== id));
-    } else {
-      setSelectedSmsTemplates([...selectedSmsTemplates, id]);
-    }
-  };
-
   const handleSendSms = () => {
-    if (
-      selectedCustomerIndexes.length === 0 ||
-      selectedSmsTemplates.length === 0
-    ) {
-      notify.error("Please select customers and messages to send");
+    if (selectedCustomerIndexes.length === 0) {
+      notify.error("Please select customers to send messages to");
       return;
     }
 
     // Get customer names for display in success message
-    const customerNames = selectedCustomerIndexes.map(
-      (index) => customers.find((_, i) => i === index)?.customerName,
-    );
-    const messageCount = selectedSmsTemplates.length;
+    const customerNames = selectedCustomerIndexes
+      .map((index) => customers[index]?.customerName)
+      .filter(Boolean);
 
     // In a real app, you would send SMS here
-
     notify.success(
-      `${messageCount} messages sent to ${customerNames.join(", ")} via ${smsVia}`,
+      `Messages sent to ${customerNames.join(", ")} via ${smsVia}`,
     );
     closeSmsModal();
   };
@@ -415,9 +445,11 @@ const Customer = () => {
       <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
         {currentStep === 1 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Basic Information */}
-            <div>
-              <label className="block font-medium mb-1">Customer Name</label>
+            {/* Required Fields - highlighted */}
+            <div className="border-l-4 border-accent p-2">
+              <label className="block font-medium mb-1">
+                Customer Name <span className="text-error">*</span>
+              </label>
               <input
                 type="text"
                 placeholder="Enter Full Name"
@@ -428,8 +460,10 @@ const Customer = () => {
                 className="input input-bordered w-full"
               />
             </div>
-            <div>
-              <label className="block font-medium mb-1">A/C Title</label>
+            <div className="border-l-4 border-accent p-2">
+              <label className="block font-medium mb-1">
+                A/C Title <span className="text-error">*</span>
+              </label>
               <input
                 type="text"
                 placeholder="Enter Account Title"
@@ -440,7 +474,23 @@ const Customer = () => {
                 className="input input-bordered w-full"
               />
             </div>
-            <div>
+            <div className="border-l-4 border-accent p-2">
+              <label className="block font-medium mb-1">
+                Route <span className="text-error">*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Enter Route"
+                value={route}
+                onChange={(e) => {
+                  setRoute(e.target.value);
+                }}
+                className="input input-bordered w-full"
+              />
+            </div>
+
+            {/* Optional Fields */}
+            <div className="pt-2">
               <label className="block font-medium mb-1">Dealing Person</label>
               <input
                 type="text"
@@ -517,20 +567,6 @@ const Customer = () => {
               />
             </div>
 
-            {/* Route */}
-            <div>
-              <label className="block font-medium mb-1">Route</label>
-              <input
-                type="text"
-                placeholder="Enter Route"
-                value={route}
-                onChange={(e) => {
-                  setRoute(e.target.value);
-                }}
-                className="input input-bordered w-full"
-              />
-            </div>
-
             {/* Credit Limit */}
             <div>
               <label className="block font-medium mb-1">Credit Limit</label>
@@ -551,7 +587,7 @@ const Customer = () => {
               <input
                 type="text"
                 value={ledgerNumber}
-                placeholder="Enter Ledger Details"
+                placeholder="Enter Ledger Number"
                 onChange={(e) => {
                   setLedgerNumber(e.target.value);
                 }}
@@ -560,7 +596,7 @@ const Customer = () => {
             </div>
 
             {/* Ledger Details */}
-            <div>
+            <div className="md:col-span-2">
               <label className="block font-medium mb-1">Ledger Details</label>
               <textarea
                 value={ledgerDetails}
@@ -569,29 +605,35 @@ const Customer = () => {
                   setLedgerDetails(e.target.value);
                 }}
                 className="textarea textarea-bordered w-full"
+                rows={3}
               />
             </div>
 
             {/* Signature Section */}
-            <div>
+            <div className="md:col-span-2">
               <div className="flex flex-col gap-2">
-                <h3 className="text-xl font-semibold mb-2">Signature</h3>
-                <div className="flex gap-4 flex-wrap mb-2">
-                  <div className="flex-1">
-                    <input
-                      type="file"
-                      onChange={handleSignatureImageUpload}
-                      className="file-input file-input-bordered w-full"
-                      accept="image/*"
-                    />
-                  </div>
-                  <button onClick={handleAddSignature} className="btn btn-info">
+                <h3 className="text-lg font-semibold mb-2">Signature</h3>
+                <div className="flex-1 flex flex-col">
+                  {" "}
+                  {/* Use flex-col to stack elements vertically */}
+                  <input
+                    type="file"
+                    onChange={handleSignatureImageUpload}
+                    className="file-input file-input-bordered w-full md:w-1/2"
+                    accept="image/*"
+                  />
+                  <button
+                    onClick={handleAddSignature}
+                    className="btn btn-info mt-2"
+                    disabled={!signatureImage}
+                  >
                     Add Signature
                   </button>
                 </div>
+
                 {signatures.length > 0 && (
                   <div className="overflow-x-auto">
-                    <table className="table w-full">
+                    <table className="table w-1/4">
                       <thead>
                         <tr>
                           <th>Image</th>
@@ -615,9 +657,9 @@ const Customer = () => {
                                 onClick={() => {
                                   handleRemoveSignature(index);
                                 }}
-                                className="btn btn-sm btn-error"
+                                className="justify-center"
                               >
-                                Remove
+                                <TrashIcon className="w-5 h-5 text-red-500" />
                               </button>
                             </td>
                           </tr>
@@ -633,9 +675,11 @@ const Customer = () => {
 
         {currentStep === 2 && (
           <div>
-            {/* Phone Numbers Section */}
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold mb-2">Phone Numbers</h3>
+            {/* Phone Numbers Section - required */}
+            <div className="mb-6 border-l-4 border-accent p-2">
+              <h3 className="text-xl font-semibold mb-2">
+                Phone Numbers <span className="text-error">*</span>
+              </h3>
               <div className="flex gap-4 mb-2 flex-wrap">
                 <input
                   type="text"
@@ -659,7 +703,11 @@ const Customer = () => {
                   <option value="Mobile">Mobile</option>
                   <option value="Whatsapp">Whatsapp</option>
                 </select>
-                <button onClick={handleAddPhone} className="btn btn-info">
+                <button
+                  onClick={handleAddPhone}
+                  className="btn btn-info"
+                  disabled={!phoneNumber}
+                >
                   Add
                 </button>
               </div>
@@ -683,9 +731,9 @@ const Customer = () => {
                               onClick={() => {
                                 handleRemovePhone(index);
                               }}
-                              className="btn btn-sm btn-error"
+                              className="justify-center"
                             >
-                              Remove
+                              <TrashIcon className="w-5 h-5 text-red-500" />
                             </button>
                           </td>
                         </tr>
@@ -696,31 +744,38 @@ const Customer = () => {
               )}
             </div>
 
-            {/* Addresses Section */}
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold mb-2">Address</h3>
-              <div className="mb-2 flex gap-4 flex-wrap">
-                <input
-                  type="text"
-                  placeholder="Address Text"
-                  value={addressText}
-                  onChange={(e) => {
-                    setAddressText(e.target.value);
-                  }}
-                  className="input input-bordered"
-                />
-                <input
-                  type="text"
-                  placeholder="Map Address (URL)"
-                  value={addressMap}
-                  onChange={(e) => {
-                    setAddressMap(e.target.value);
-                  }}
-                  className="input input-bordered"
-                />
-                <button onClick={handleAddAddress} className="btn btn-info">
-                  Add Address
-                </button>
+            {/* Addresses Section - required */}
+            <div className="mb-6 border-l-4 border-accent p-2">
+              <h3 className="text-xl font-semibold mb-2">
+                Address <span className="text-error">*</span>
+              </h3>
+              <div className="mb-2">
+                <div className="flex gap-4 mb-2 flex-wrap">
+                  <div className="flex-grow">
+                    <input
+                      type="text"
+                      placeholder="Address Text"
+                      value={addressText}
+                      onChange={(e) => {
+                        setAddressText(e.target.value);
+                      }}
+                      className="input input-bordered w-full"
+                    />
+                  </div>
+                  <button
+                    onClick={openMapSelector}
+                    className="btn btn-secondary"
+                  >
+                    Select on Map
+                  </button>
+                  <button
+                    onClick={handleAddAddress}
+                    className="btn btn-info"
+                    disabled={!addressText}
+                  >
+                    Add Address
+                  </button>
+                </div>
               </div>
               {addresses.length > 0 && (
                 <div className="overflow-x-auto">
@@ -753,15 +808,77 @@ const Customer = () => {
                               onClick={() => {
                                 handleRemoveAddress(index);
                               }}
-                              className="btn btn-sm btn-error"
+                              className="justify-center"
                             >
-                              Remove
+                              <TrashIcon className="w-5 h-5 text-red-500" />
                             </button>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+            </div>
+
+            {/* SMS Send Pattern - NEW SECTION */}
+            <div className="mb-6">
+              <div className="flex items-center mb-2">
+                <input
+                  type="checkbox"
+                  checked={smsEnabled}
+                  onChange={() => {
+                    setSmsEnabled(!smsEnabled);
+                  }}
+                  className="checkbox mr-2"
+                />
+                <h3 className="text-xl font-semibold">SMS Send Pattern</h3>
+              </div>
+
+              {smsEnabled && (
+                <div className="pl-6 mt-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-medium mb-1">
+                        Frequency
+                      </label>
+                      <select
+                        value={smsFrequency}
+                        onChange={(e) => {
+                          setSmsFrequency(
+                            e.target.value as
+                              | "Daily"
+                              | "Weekly"
+                              | "Monthly"
+                              | "Yearly",
+                          );
+                        }}
+                        className="select select-bordered w-full"
+                      >
+                        {smsFrequencyOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block font-medium mb-1">Send Via</label>
+                      <select
+                        value={smsVia}
+                        onChange={(e) => {
+                          setSmsVia(e.target.value);
+                        }}
+                        className="select select-bordered w-full"
+                      >
+                        {smsViaOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -778,7 +895,11 @@ const Customer = () => {
                     accept="image/*"
                   />
                 </div>
-                <button onClick={handleAddOtherImage} className="btn btn-info">
+                <button
+                  onClick={handleAddOtherImage}
+                  className="btn btn-info"
+                  disabled={!otherImage}
+                >
                   Add Image
                 </button>
               </div>
@@ -806,9 +927,9 @@ const Customer = () => {
                               onClick={() => {
                                 handleRemoveOtherImage(index);
                               }}
-                              className="btn btn-sm btn-error"
+                              className="justify-center"
                             >
-                              Remove
+                              <TrashIcon className="w-5 h-5 text-red-500" />
                             </button>
                           </td>
                         </tr>
@@ -822,7 +943,7 @@ const Customer = () => {
             {/* Post-dated Cheques Section */}
             <div className="mb-6">
               <h3 className="text-xl font-semibold mb-2">Post-dated Cheques</h3>
-              <div className="flex gap-4 flex-wrap mb-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
                 <input
                   type="date"
                   placeholder="Due Date"
@@ -848,10 +969,25 @@ const Customer = () => {
                     className="file-input file-input-bordered w-full"
                     accept="image/*"
                   />
+                  {chequeImage && (
+                    <div className="mt-2">
+                      <img
+                        src={chequeImage}
+                        alt="Cheque"
+                        className="w-32 h-20 object-cover rounded"
+                      />
+                    </div>
+                  )}
                 </div>
-                <button onClick={handleAddCheque} className="btn btn-info">
-                  Add Cheque
-                </button>
+                <div className="md:col-span-2">
+                  <button
+                    onClick={handleAddCheque}
+                    className="btn btn-info w-full md:w-auto"
+                    disabled={!chequeDueDate || !chequeDetails}
+                  >
+                    Add Cheque
+                  </button>
+                </div>
               </div>
               {postDatedCheques.length > 0 && (
                 <div className="overflow-x-auto">
@@ -883,9 +1019,9 @@ const Customer = () => {
                               onClick={() => {
                                 handleRemoveCheque(index);
                               }}
-                              className="btn btn-sm btn-error"
+                              className="justify-center"
                             >
-                              Remove
+                              <TrashIcon className="w-5 h-5 text-red-500" />
                             </button>
                           </td>
                         </tr>
@@ -898,75 +1034,88 @@ const Customer = () => {
           </div>
         )}
 
-        {/* Navigation buttons */}
-        <div className="mt-6 flex justify-between">
-          {currentStep === 2 && (
-            <button onClick={handlePrevStep} className="btn btn-secondary">
-              Back
+        {/* Navigation Buttons */}
+        <div className="flex justify-between mt-6">
+          {currentStep === 2 ? (
+            <button
+              className="btn btn-outline btn-primary"
+              onClick={handlePrevStep}
+            >
+              Previous
             </button>
+          ) : (
+            <div></div>
           )}
-          {currentStep === 1 && (
-            <button onClick={handleNextStep} className="btn btn-accent ml-auto">
+          {currentStep === 1 ? (
+            <button className="btn btn-primary" onClick={handleNextStep}>
               Next
             </button>
-          )}
-          {currentStep === 2 && (
-            <button onClick={handleSave} className="btn btn-info">
-              {editingIndex !== null ? "Update Customer" : "Save Customer"}
+          ) : (
+            <button className="btn btn-success" onClick={handleSave}>
+              {editingIndex !== null ? "Update" : "Save"}
             </button>
           )}
-          {currentStep === 1 && <div></div>}
         </div>
       </div>
 
+      {/* Customers List */}
       {customers.length > 0 && (
         <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-semibold">Customer List</h3>
-            <button onClick={openSmsModal} className="btn btn-info">
-              Send SMS
-            </button>
+          <div className="flex justify-between mb-4">
+            <h3 className="text-xl font-semibold">Customers List</h3>
+            {customers.length > 0 && (
+              <button onClick={openSmsModal} className="btn btn-primary">
+                Send SMS to Selected
+              </button>
+            )}
           </div>
           <div className="overflow-x-auto">
-            <table className="table w-full bg-base-200 rounded-lg shadow-md">
+            <table className="table w-full">
               <thead>
-                <tr className="bg-base-300 text-base-content text-center">
-                  <th>#</th>
-                  <th>Customer Name</th>
+                <tr>
+                  <th>Customer</th>
                   <th>A/C Title</th>
+                  <th>Phone</th>
+                  <th>Address</th>
                   <th>Route</th>
-                  <th>Credit Limit</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {customers.map((customer, index) => (
-                  <tr
-                    key={index}
-                    className="border-b border-base-300 text-center"
-                  >
-                    <td>{index + 1}</td>
+                  <tr key={index}>
                     <td>{customer.customerName}</td>
                     <td>{customer.acTitle}</td>
+                    <td>
+                      {customer.phones.length > 0
+                        ? customer.phones[0]?.number
+                        : "-"}
+                    </td>
+                    <td>
+                      {customer.addresses.length > 0
+                        ? customer.addresses[0]?.text
+                        : "-"}
+                    </td>
                     <td>{customer.route}</td>
-                    <td>{customer.creditLimit}</td>
-                    <td className="flex justify-center gap-2">
-                      <button
-                        onClick={() => {
-                          handleEdit(index);
-                        }}
-                        className="btn btn-sm btn-secondary"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => {
-                          handleDelete(index);
-                        }}
-                        className="btn btn-sm btn-error"
-                      >
-                        Delete
-                      </button>
+                    <td>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            handleEdit(index);
+                          }}
+                          className="w-5 h-5 text-info"
+                        >
+                          <PencilSquareIcon className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleDelete(index);
+                          }}
+                          className="w-5 h-5 text-red-500"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -976,87 +1125,116 @@ const Customer = () => {
         </div>
       )}
 
+      {/* Map Modal */}
+      {showMap && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-base-100 p-6 rounded-lg w-full max-w-3xl">
+            <h3 className="text-xl font-bold mb-4">Select Location</h3>
+
+            <div className="mb-4">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Search for a location"
+                  value={mapSearchQuery}
+                  onChange={(e) => {
+                    setMapSearchQuery(e.target.value);
+                  }}
+                  className="input input-bordered flex-grow"
+                />
+                <button onClick={handleMapSearch} className="btn btn-primary">
+                  Search
+                </button>
+              </div>
+            </div>
+
+            {/* Embedded Google Map */}
+            <div className="h-96 w-full mb-4 bg-gray-200 flex items-center justify-center">
+              <iframe
+                title="Google Maps"
+                width="100%"
+                height="100%"
+                src={`https://www.google.com/maps/embed/v1/place?key=YOUR_API_KEY&q=${encodeURIComponent(mapSearchQuery || "Pakistan")}`}
+                allowFullScreen
+              ></iframe>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button onClick={closeMapSelector} className="btn btn-outline">
+                Cancel
+              </button>
+              <button
+                onClick={handleMapSearch}
+                className="btn btn-primary"
+                disabled={!mapSearchQuery}
+              >
+                Confirm Location
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* SMS Modal */}
       {showSmsModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-base-200 p-6 rounded-lg shadow-lg w-full max-w-3xl">
+          <div className="bg-base-100 p-6 rounded-lg w-full max-w-2xl">
             <h3 className="text-xl font-bold mb-4">Send SMS to Customers</h3>
 
             <div className="mb-4">
-              <label className="block font-medium mb-2">Select SMS Via</label>
+              <label className="block font-medium mb-1">Select Customers</label>
+              <div className="max-h-60 overflow-y-auto border rounded p-2">
+                {customers.map((customer, index) => (
+                  <div key={index} className="form-control">
+                    <label className="label cursor-pointer justify-start gap-2">
+                      <input
+                        type="checkbox"
+                        className="checkbox"
+                        checked={selectedCustomerIndexes.includes(index)}
+                        onChange={() => {
+                          toggleCustomerSelection(index);
+                        }}
+                      />
+                      <span className="label-text">
+                        {customer.customerName} (
+                        {customer.phones?.length > 0
+                          ? customer.phones[0]?.number
+                          : "No phone"}
+                        )
+                      </span>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block font-medium mb-1">Send Via</label>
               <select
-                className="select select-bordered w-full"
                 value={smsVia}
                 onChange={(e) => {
                   setSmsVia(e.target.value);
                 }}
+                className="select select-bordered w-full"
               >
-                {smsViaOptions.map((option, index) => (
-                  <option key={index} value={option}>
+                {smsViaOptions.map((option) => (
+                  <option key={option} value={option}>
                     {option}
                   </option>
                 ))}
               </select>
             </div>
 
-            <div className="mb-4">
-              <label className="block font-medium mb-2">Select Customers</label>
-              <div className="bg-base-100 p-2 rounded-lg max-h-40 overflow-y-auto">
-                {customers.map((customer, index) => (
-                  <div key={index} className="flex items-center mb-2">
-                    <input
-                      type="checkbox"
-                      className="checkbox mr-2"
-                      checked={selectedCustomerIndexes.includes(index)}
-                      onChange={() => {
-                        toggleCustomerSelection(index);
-                      }}
-                    />
-                    <span>{customer.customerName}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <label className="block font-medium mb-2">
-                Select Message Templates
-              </label>
-              <div className="bg-base-100 p-2 rounded-lg max-h-60 overflow-y-auto">
-                {smsTemplates.map((template) => (
-                  <div key={template.id} className="mb-2">
-                    <div className="flex items-center mb-1">
-                      <input
-                        type="checkbox"
-                        className="checkbox mr-2"
-                        checked={selectedSmsTemplates.includes(template.id)}
-                        onChange={() => {
-                          toggleSmsTemplateSelection(template.id);
-                        }}
-                      />
-                      <span className="font-medium">{template.name}</span>
-                    </div>
-                    <p className="text-sm pl-6 text-gray-600">
-                      {template.content}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             <div className="flex justify-end gap-2">
-              <button onClick={closeSmsModal} className="btn btn-ghost">
+              <button onClick={closeSmsModal} className="btn btn-outline">
                 Cancel
               </button>
               <button
                 onClick={handleSendSms}
-                className="btn btn-info"
-                disabled={
-                  selectedCustomerIndexes.length === 0 ||
-                  selectedSmsTemplates.length === 0
-                }
+                className="btn btn-primary"
+                disabled={selectedCustomerIndexes.length === 0}
               >
-                Send Messages
+                Send SMS
               </button>
             </div>
           </div>

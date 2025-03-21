@@ -2,24 +2,24 @@ import { z } from "zod";
 
 export const brandSchema = z.object({
   id: z.string().optional(),
-  brandName: z
+  name: z
     .string()
     .nonempty("Brand name is required")
     .min(2, "Brand name must be at least 2 characters"),
 
-  brandShortCode: z
+  code: z
     .string()
     .nonempty("Short code is required")
     .min(2, "Short code must be at least 2 characters")
     .max(10, "Short code must not exceed 10 characters"),
 
-  weight: z
+  weightPerBagKg: z
     .number()
     .positive("Weight must be a positive number")
     .or(z.string().regex(/^\d+$/).transform(Number))
     .refine((val) => val > 0, "Weight must be greater than 0"),
 
-  commission: z
+  commissionPerBag: z
     .number()
     .positive("Commission must be a positive number")
     .or(z.string().regex(/^\d+$/).transform(Number))

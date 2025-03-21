@@ -136,42 +136,42 @@ export const Header = ({ handleLogout }: NavbarProps) => {
       title: "Tax Accounts",
       inDropdown: true,
     },
-    {
-      path: "/purchase",
-      allowedRoles: [ROLES.ADMIN],
-      title: "Purchase",
-      inDropdown: true,
-    },
-    {
-      path: "/bank-accounts",
-      allowedRoles: [ROLES.ADMIN],
-      title: "Bank Accounts",
-      inDropdown: true,
-    },
-    {
-      path: "/employees",
-      allowedRoles: [ROLES.ADMIN],
-      title: "Employees",
-      inDropdown: true,
-    },
-    {
-      path: "/truck-information",
-      allowedRoles: [ROLES.ADMIN],
-      title: "Truck Information",
-      inDropdown: true,
-    },
-    {
-      path: "/factory-expenses",
-      allowedRoles: [ROLES.ADMIN],
-      title: "Factory Expenses",
-      inDropdown: true,
-    },
-    {
-      path: "/truck-other-expenses",
-      allowedRoles: [ROLES.ADMIN],
-      title: "Truck Other Expenses",
-      inDropdown: true,
-    },
+    // {
+    //   path: "/purchase",
+    //   allowedRoles: [ROLES.ADMIN],
+    //   title: "Purchase",
+    //   inDropdown: true,
+    // },
+    // {
+    //   path: "/bank-accounts",
+    //   allowedRoles: [ROLES.ADMIN],
+    //   title: "Bank Accounts",
+    //   inDropdown: true,
+    // },
+    // {
+    //   path: "/employees",
+    //   allowedRoles: [ROLES.ADMIN],
+    //   title: "Employees",
+    //   inDropdown: true,
+    // },
+    // {
+    //   path: "/truck-information",
+    //   allowedRoles: [ROLES.ADMIN],
+    //   title: "Truck Information",
+    //   inDropdown: true,
+    // },
+    // {
+    //   path: "/factory-expenses",
+    //   allowedRoles: [ROLES.ADMIN],
+    //   title: "Factory Expenses",
+    //   inDropdown: true,
+    // },
+    // {
+    //   path: "/truck-other-expenses",
+    //   allowedRoles: [ROLES.ADMIN],
+    //   title: "Truck Other Expenses",
+    //   inDropdown: true,
+    // },
     {
       path: "/customer",
       allowedRoles: [ROLES.ADMIN],
@@ -184,12 +184,12 @@ export const Header = ({ handleLogout }: NavbarProps) => {
       title: "Brands",
       inDropdown: false,
     },
-    {
-      path: "/truck-route",
-      allowedRoles: [ROLES.ADMIN],
-      title: "Truck Route",
-      inDropdown: false,
-    },
+    // {
+    //   path: "/truck-route",
+    //   allowedRoles: [ROLES.ADMIN],
+    //   title: "Truck Route",
+    //   inDropdown: false,
+    // },
   ];
 
   if (!userRoles) return null;

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 import { useEffect, useState } from "react";
 import { notify } from "@/lib/notify";
 import { FormField } from "@/common/components/ui/form/FormField";
@@ -5,11 +6,17 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { companySchema, type Company } from "./company.schema";
-import { createCompany, fetchAllCompanies } from "./company.service";
+import {
+  createCompany,
+  fetchAllCompanies,
+  updateCompany,
+  deleteCompany,
+} from "./company.service";
 import { logger } from "@/lib/logger";
 import { useService } from "@/common/hooks/custom/useService";
 import { ErrorModal } from "@/common/components/Error";
-import { updateCompany } from "./update.service";
+import { TrashIcon } from "@heroicons/react/24/solid";
+import { PencilSquareIcon } from "@heroicons/react/24/solid";
 
 const CompanyAccounts = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -68,22 +75,27 @@ const CompanyAccounts = () => {
     }
   };
 
-  const handleEdit = (id: string) => {
-    const targetCompany = companies.find((company) => company.id === id);
+  const handleEdit = (companyId: string) => {
+    const targetCompany = companies.find((company) => company.id === companyId);
     // Don't update fields if company is not present in the list of companies
     if (!targetCompany) return;
 
     setValue("name", targetCompany.name);
     setValue("address", targetCompany.address);
     setFocus("name");
-    setEditingId(id);
+    setEditingId(companyId);
   };
 
-  const handleDelete = (id: string) => {
-    notify.confirmDelete(() => {
-      setCompanies(companies.filter((company) => company.id !== id));
+  const handleDelete = async (companyId: string) => {
+    console.log("companyId", companyId);
+    try {
+      await deleteCompany(companyId);
+      setCompanies(companies.filter((company) => company.id !== companyId));
       notify.success("Company deleted successfully.");
-    });
+    } catch (error: unknown) {
+      notify.error("Failed to delete company.");
+      logger.error(error);
+    }
   };
 
   useEffect(() => {
@@ -160,23 +172,23 @@ const CompanyAccounts = () => {
                   <td className="p-3">{index + 1}</td>
                   <td className="p-3">{company.name}</td>
                   <td className="p-3">{company.address}</td>
-                  <td className="p-3 flex gap-2 justify-center">
+                  <td className="p-1 flex gap-1 justify-center">
                     <button
-                      className="btn btn-sm btn-secondary"
                       onClick={() => {
-                        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
                         company.id && handleEdit(company.id);
                       }}
+                      className="flex items-center mt-2 justify-center"
                     >
-                      Edit
+                      <PencilSquareIcon className="w-5 h-5 text-info" />
                     </button>
+
                     <button
                       onClick={() => {
-                        handleDelete(company.id ?? "");
+                        void handleDelete(company.id ?? "");
                       }}
-                      className="btn btn-sm btn-error"
+                      className="flex items-center mt-2 justify-center"
                     >
-                      Delete
+                      <TrashIcon className="w-5 h-5 text-red-500" />
                     </button>
                   </td>
                 </tr>

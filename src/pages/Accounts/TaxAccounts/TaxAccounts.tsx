@@ -16,6 +16,8 @@ import { useService } from "@/common/hooks/custom/useService";
 import { createTax, fetchAllTaxes } from "./tax.service";
 import { logger } from "@/lib/logger";
 import { ErrorModal } from "@/common/components/Error";
+import PencilSquareIcon from "@heroicons/react/24/solid/PencilSquareIcon";
+import TrashIcon from "@heroicons/react/24/solid/TrashIcon";
 
 const TaxAccounts = () => {
   const [taxes, setTaxes] = useState<Tax[]>([]);
@@ -330,22 +332,23 @@ const TaxAccounts = () => {
                   <td className="p-3">{tax.applicableOn.join(", ")}</td>
                   <td className="p-3">{tax.rateType}</td>
                   <td className="p-3">{tax.rateValue}</td>
-                  <td className="p-3 flex gap-2 justify-center">
+                  <td className="p-3 flex justify-center">
                     <button
-                      className="btn btn-sm btn-secondary"
                       onClick={() => {
                         handleEdit(index);
                       }}
+                      className="flex items-center mt-1 justify-center"
                     >
-                      Edit
+                      <PencilSquareIcon className="w-5 h-5 text-info" />
                     </button>
+
                     <button
                       onClick={() => {
                         handleDelete(index);
                       }}
-                      className="btn btn-sm btn-error"
+                      className="flex items-center mt-1 justify-center"
                     >
-                      Delete
+                      <TrashIcon className="w-5 h-5 text-red-500" />
                     </button>
                   </td>
                 </tr>

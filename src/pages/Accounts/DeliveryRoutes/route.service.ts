@@ -17,3 +17,20 @@ export const fetchAllRoutes = async () => {
   });
   return response;
 };
+
+export const updateDeliveryRoute = async (id: string, data: DeliveryRoute) => {
+  const response = await sendApiRequest(`/delivery-routes/${id}`, {
+    method: "PUT",
+    withAuthorization: true,
+    data,
+  });
+  return response;
+};
+
+export const deleteDeliveryRoute = async (id: string) => {
+  const response = await sendApiRequest(`/delivery-routes/${id}`, {
+    method: "DELETE",
+    withAuthorization: true,
+  });
+  return response;
+};
