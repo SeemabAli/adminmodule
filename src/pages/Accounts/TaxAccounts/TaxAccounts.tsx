@@ -1,19 +1,19 @@
 import { useEffect, useState } from "react";
-
-export type Tax = {
-  name: string;
-  rateValue: number;
-  rateType: string;
-  applicableOn: string[];
-};
 import { notify } from "@/lib/notify";
 import { FormField } from "@/common/components/ui/form/FormField";
 import { useForm } from "react-hook-form";
 import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { taxSchema, type TaxFormData } from "./tax.schema";
+import { taxSchema, type Tax, type TaxApplication } from "./tax.schema";
 import { useService } from "@/common/hooks/custom/useService";
-import { createTax, fetchAllTaxes } from "./tax.service";
+import {
+  createTax,
+  fetchAllTaxes,
+  updateTax,
+  deleteTax,
+  fetchTaxApplications,
+  type TaxRequestPayload,
+} from "./tax.service";
 import { logger } from "@/lib/logger";
 import { ErrorModal } from "@/common/components/Error";
 import PencilSquareIcon from "@heroicons/react/24/solid/PencilSquareIcon";
@@ -21,20 +21,15 @@ import TrashIcon from "@heroicons/react/24/solid/TrashIcon";
 
 const TaxAccounts = () => {
   const [taxes, setTaxes] = useState<Tax[]>([]);
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [selectedTaxes, setSelectedTaxes] = useState<string[]>([]);
-  const [selectedOption, setSelectedOption] = useState<string | null>(
+  const [editingTaxId, setEditingTaxId] = useState<string | null>(null);
+  const [selectedApplicationIds, setSelectedApplicationIds] = useState<
+    Set<string>
+  >(new Set());
+  const [taxApplications, setTaxApplications] = useState<TaxApplication[]>([]);
+  const [selectedOption, setSelectedOption] = useState<"percentage" | "fixed">(
     "percentage",
   );
   const { error, data, isLoading } = useService(fetchAllTaxes);
-
-  const taxOptions: string[] = [
-    "On Purchase Price",
-    "On Commission (Next Month)",
-    "On Commission (Same Month)",
-    "On Bank Payments to Company",
-    "On Retail/Sale Price",
-  ];
 
   const {
     register,
@@ -42,136 +37,201 @@ const TaxAccounts = () => {
     handleSubmit,
     setValue,
     setFocus,
-    getValues,
     reset,
-  } = useForm({
+  } = useForm<Tax>({
     resolver: zodResolver(taxSchema),
     defaultValues: {
+      id: "",
       name: "",
       rateValue: 0,
+      rateType: "percentage",
+      applicableOn: [],
     },
   });
 
   const handleTaxChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedValue = e.target.value;
-    if (selectedValue && !selectedTaxes.includes(selectedValue)) {
-      setSelectedTaxes([...selectedTaxes, selectedValue]);
+    if (selectedValue && !selectedApplicationIds.has(selectedValue)) {
+      setSelectedApplicationIds(
+        new Set([...selectedApplicationIds, selectedValue]),
+      );
     }
   };
 
   const removeSelectedTax = (tax: string) => {
-    setSelectedTaxes(selectedTaxes.filter((t) => t !== tax));
+    setSelectedApplicationIds((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(tax);
+      return newSet;
+    });
   };
 
-  // const handleAddTax = async (formData: {
-  //   taxName: string;
-  //   taxRate: number;
-  // }) => {
-  //   if (selectedTaxes.length === 0) {
-  //     notify.error("Please select at least one tax type.");
-  //     return Promise.reject();
-  //   }
+  const handleAddTax = async (formData: Tax) => {
+    if (selectedApplicationIds.size === 0) {
+      notify.error("Please select at least one tax type.");
+      return;
+    }
 
-  //   if (!selectedOption) {
-  //     notify.error("Please select a rate type.");
-  //     return Promise.reject();
-  //   }
-
-  //   const newTax: Tax = {
-  //     ...formData,
-  //     rateType: selectedOption,
-  //     applicableOn: [...selectedTaxes],
-  //   };
-
-  //   setTaxes([...taxes, newTax]);
-  //   reset();
-  //   setSelectedTaxes([]);
-  //   setSelectedOption(null);
-  //   notify.success("Tax added successfully!");
-  //   return Promise.resolve(newTax);
-  // };
-
-  const handleAddTax = async (newTaxFormData: TaxFormData) => {
     try {
-      const TaxPayload = {
-        ...newTaxFormData,
-        rateType: selectedOption ?? "",
-        applicableOn: [...selectedTaxes],
+      // Create applicableOn array from selectedApplicationIds
+      const applicableOn = Array.from(selectedApplicationIds).map((id) => {
+        const application = taxApplications.find((app) => app.id === id);
+        return {
+          id,
+          name: application?.name ?? "",
+        };
+      });
+
+      const taxPayload: TaxRequestPayload = {
+        ...formData,
+        rateType: selectedOption,
+        applicationIds: [...selectedApplicationIds],
+        applicableOn: applicableOn,
       };
-      await createTax(TaxPayload);
-      setTaxes([...taxes, TaxPayload]);
+
+      const response = (await createTax(taxPayload)) as { id: string };
+
+      // Assuming the API returns the created tax with an ID
+      const newTax = {
+        ...taxPayload,
+        id: response.id,
+        applicableOn,
+      };
+
+      setTaxes([...taxes, newTax]);
       reset();
-      setSelectedTaxes([]);
-      setSelectedOption(null);
+      setSelectedApplicationIds(new Set());
+      setSelectedOption("percentage");
       notify.success("Tax added successfully!");
     } catch (error) {
       notify.error("Failed to add tax.");
       logger.error(error);
     }
   };
-  const onTaxUpdate = async (updatedTaxIndex: number) => {
-    if (selectedTaxes.length === 0) {
+
+  const onTaxUpdate = async (formData: Tax) => {
+    if (selectedApplicationIds.size === 0) {
       notify.error("Please select at least one tax type.");
       return Promise.reject();
     }
 
-    if (!selectedOption) {
-      notify.error("Please select a rate type.");
+    if (!editingTaxId) {
+      notify.error("No tax selected for update.");
       return Promise.reject();
     }
 
-    const formData = getValues();
-    const updatedTaxes = taxes.map((tax, index) => {
-      if (index === updatedTaxIndex) {
+    try {
+      // Create applicableOn array from selectedApplicationIds
+      const applicableOn = Array.from(selectedApplicationIds).map((id) => {
+        const application = taxApplications.find((app) => app.id === id);
         return {
-          ...formData,
-          rateType: selectedOption,
-          applicableOn: [...selectedTaxes],
+          id,
+          name: application?.name ?? "",
         };
-      }
-      return tax;
-    });
+      });
+      const taxData: TaxRequestPayload = {
+        ...formData,
+        id: editingTaxId,
+        rateType: selectedOption,
+        applicationIds: [...selectedApplicationIds],
+        applicableOn: applicableOn,
+      };
+      await updateTax(editingTaxId, taxData);
+      setTaxes(
+        taxes.map((tax) => {
+          if (tax.id === editingTaxId) {
+            return { ...taxData, id: editingTaxId } as Tax;
+          }
+          return tax;
+        }),
+      );
 
-    setTaxes(updatedTaxes);
-    setEditingIndex(null);
-    reset();
-    setSelectedTaxes([]);
-    setSelectedOption(null);
-    notify.success("Tax updated successfully!");
-    return Promise.resolve(updatedTaxes);
+      setEditingTaxId(null);
+      reset();
+      setSelectedApplicationIds(new Set());
+      setSelectedOption("percentage");
+      notify.success("Tax updated successfully!");
+      await Promise.resolve();
+      return;
+    } catch (error) {
+      notify.error("Failed to update tax.");
+      logger.error(error);
+      return Promise.reject();
+    }
   };
 
-  const handleRadioChange = (value: string) => {
-    setSelectedOption((prev) => (prev === value ? null : value));
+  const handleRadioChange = (value: "percentage" | "fixed") => {
+    setSelectedOption(value);
   };
 
-  const handleEdit = (index: number) => {
-    const targetTax = taxes[index];
-    if (!targetTax) return;
+  const handleEdit = (tax: Tax) => {
+    // Validate the tax object has an ID
+    if (!tax.id || tax.id === "") {
+      notify.error("Cannot edit tax without an ID");
+      return;
+    }
 
-    setValue("name", targetTax.name);
-    setValue("rateValue", targetTax.rateValue);
-    setSelectedOption(targetTax.rateType);
-    setSelectedTaxes([...targetTax.applicableOn]);
+    setValue("id", tax.id);
+    setValue("name", tax.name);
+    setValue("rateValue", tax.rateValue);
+    setValue("rateType", tax.rateType);
+    setValue("applicableOn", tax.applicableOn);
+
+    setSelectedOption(tax.rateType);
+    setSelectedApplicationIds(new Set(tax.applicableOn.map((app) => app.id)));
     setFocus("name");
-    setEditingIndex(index);
+    setEditingTaxId(tax.id);
   };
 
-  const handleDelete = (index: number) => {
-    notify.confirmDelete(() => {
-      setTaxes(taxes.filter((_, i) => i !== index));
-      notify.success("Tax deleted successfully!");
+  const handleDelete = (tax: Tax) => {
+    // Validate the tax object has an ID
+    if (!tax.id || tax.id === "") {
+      notify.error("Cannot delete tax without an ID");
+      return;
+    }
+
+    notify.confirmDelete(async () => {
+      try {
+        if (!tax.id) {
+          notify.error("Tax ID is missing.");
+          return;
+        }
+
+        await deleteTax(tax.id);
+
+        // Update the local state after successful deletion
+        setTaxes(taxes.filter((t) => t.id !== tax.id));
+        notify.success("Tax deleted successfully!");
+      } catch (error) {
+        notify.error("Failed to delete tax.");
+        logger.error(error);
+      }
     });
   };
+
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const applications = await fetchTaxApplications();
+        setTaxApplications(applications);
+      } catch (error) {
+        console.error("Error fetching tax options:", error);
+        notify.error("Failed to fetch tax options.");
+      }
+    };
+
+    void fetchOptions();
+  }, []);
 
   useEffect(() => {
     if (data) {
       setTaxes(
         data.map((tax: Partial<Tax>) => ({
+          id: tax.id ?? "",
           name: tax.name ?? "",
           rateValue: tax.rateValue ?? 0,
-          rateType: tax.rateType ?? "Unknown", // Provide a default value if rateType is missing
-          applicableOn: tax.applicableOn ?? [], // Ensure applicableOn is an array
+          rateType: tax.rateType ?? "percentage",
+          applicableOn: tax.applicableOn ?? [],
         })),
       );
     }
@@ -211,42 +271,46 @@ const TaxAccounts = () => {
               value=""
             >
               <option value="" disabled>
-                Select a Tax Type
+                Select tax type
               </option>
-              {taxOptions.map((tax) => (
+              {taxApplications.map((application) => (
                 <option
-                  key={tax}
-                  value={tax}
-                  disabled={selectedTaxes.includes(tax)}
+                  key={application.id}
+                  value={application.id}
+                  disabled={selectedApplicationIds.has(application.id)}
                   className="option"
                 >
-                  {tax}
+                  {application.name}
                 </option>
               ))}
             </select>
           </div>
         </div>
 
-        {selectedTaxes.length > 0 && (
+        {selectedApplicationIds.size > 0 && (
           <div className="mb-4">
             <p className="font-medium">Selected Taxes:</p>
             <div className="flex flex-wrap gap-2 mt-2">
-              {selectedTaxes.map((tax) => (
-                <span
-                  key={tax}
-                  className="badge badge-primary flex items-center gap-2"
-                >
-                  {tax}
-                  <button
-                    onClick={() => {
-                      removeSelectedTax(tax);
-                    }}
-                    className="text-xs text-red-500 hover:text-red-700"
+              {taxApplications
+                .filter((application) =>
+                  selectedApplicationIds.has(application.id),
+                )
+                .map((application) => (
+                  <span
+                    key={application.id}
+                    className="badge badge-primary flex items-center gap-2"
                   >
-                    ✕
-                  </button>
-                </span>
-              ))}
+                    {application.name}
+                    <button
+                      onClick={() => {
+                        removeSelectedTax(application.id);
+                      }}
+                      className="text-xs text-red-500 hover:text-red-700"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
             </div>
           </div>
         )}
@@ -293,17 +357,15 @@ const TaxAccounts = () => {
 
         <Button
           onClick={
-            editingIndex !== null
-              ? handleSubmit(() => {
-                  void onTaxUpdate(editingIndex);
-                })
+            editingTaxId !== null
+              ? handleSubmit(onTaxUpdate)
               : handleSubmit(handleAddTax)
           }
           shape="info"
           pending={isSubmitting}
           className="mt-4"
         >
-          {editingIndex !== null ? "Update Tax" : "Add Tax"}
+          {editingTaxId !== null ? "Update Tax" : "Add Tax"}
         </Button>
       </div>
 
@@ -329,22 +391,26 @@ const TaxAccounts = () => {
                 >
                   <td className="p-3">{index + 1}</td>
                   <td className="p-3">{tax.name}</td>
-                  <td className="p-3">{tax.applicableOn.join(", ")}</td>
+                  <td className="p-3">
+                    {tax.applicableOn && tax.applicableOn.length > 0
+                      ? tax.applicableOn.map((x) => x.name).join(", ")
+                      : "None"}
+                  </td>
                   <td className="p-3">{tax.rateType}</td>
                   <td className="p-3">{tax.rateValue}</td>
                   <td className="p-3 flex justify-center">
                     <button
                       onClick={() => {
-                        handleEdit(index);
+                        handleEdit(tax);
                       }}
-                      className="flex items-center mt-1 justify-center"
+                      className="flex items-center mt-1 justify-center mr-2"
                     >
                       <PencilSquareIcon className="w-5 h-5 text-info" />
                     </button>
 
                     <button
                       onClick={() => {
-                        handleDelete(index);
+                        handleDelete(tax);
                       }}
                       className="flex items-center mt-1 justify-center"
                     >

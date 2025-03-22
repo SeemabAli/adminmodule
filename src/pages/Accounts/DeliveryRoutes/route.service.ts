@@ -19,11 +19,14 @@ export const fetchAllRoutes = async () => {
 };
 
 export const updateDeliveryRoute = async (id: string, data: DeliveryRoute) => {
-  const response = await sendApiRequest(`/delivery-routes/${id}`, {
-    method: "PUT",
-    withAuthorization: true,
-    data,
-  });
+  const response = await sendApiRequest<DeliveryRoute>(
+    `/delivery-routes/${id}`,
+    {
+      method: "PATCH",
+      withAuthorization: true,
+      data,
+    },
+  );
   return response;
 };
 

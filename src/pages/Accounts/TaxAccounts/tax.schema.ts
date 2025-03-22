@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+export type TaxApplication = {
+  id: string;
+  name: string;
+};
+
 export const taxSchema = z.object({
   id: z.string().optional(),
   name: z
@@ -12,7 +17,13 @@ export const taxSchema = z.object({
     .positive("Tax rate must be a positive number")
     .or(z.string().regex(/^\d+$/).transform(Number))
     .refine((val) => val > 0, "Tax rate must be greater than 0"),
+  applicableOn: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+    }),
+  ),
+  rateType: z.enum(["percentage", "fixed"]), // Fixed: Changed to array of strings, not nested arrays
 });
 
-// Type definition
-export type TaxFormData = z.infer<typeof taxSchema>;
+export type Tax = z.infer<typeof taxSchema>;

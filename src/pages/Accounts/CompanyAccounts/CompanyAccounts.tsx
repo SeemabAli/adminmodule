@@ -41,9 +41,9 @@ const CompanyAccounts = () => {
     },
   });
 
-  const handleAddCompany = async (newCompany: Company) => {
+  const handleAddCompany = async (newCompanyData: Company) => {
     try {
-      await createCompany(newCompany);
+      const newCompany = await createCompany(newCompanyData);
       setCompanies([...companies, newCompany]);
       reset();
       notify.success("Company added successfully.");
@@ -56,11 +56,11 @@ const CompanyAccounts = () => {
   const onCompanyUpdate = async (companyId: string) => {
     try {
       const updatedCompanyData = getValues();
-      await updateCompany(companyId, updatedCompanyData);
-
+      const updatedCompany = await updateCompany(companyId, updatedCompanyData);
+      console.log(updatedCompany);
       const updatedCompanies = companies.map((company) => {
         if (company.id === companyId) {
-          return { ...company, ...updatedCompanyData };
+          return updatedCompany;
         }
         return company;
       });

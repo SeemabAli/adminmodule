@@ -2,7 +2,7 @@ import { type Company } from "./company.schema";
 import { sendApiRequest } from "@/common/services/api.service";
 
 export const createCompany = async (data: Company) => {
-  const response = await sendApiRequest("/companies", {
+  const response = await sendApiRequest<Company>("/companies", {
     method: "POST",
     withAuthorization: true,
     data,
@@ -19,8 +19,8 @@ export const fetchAllCompanies = async () => {
 };
 
 export const updateCompany = async (id: string, data: Company) => {
-  const response = await sendApiRequest(`/companies/${id}`, {
-    method: "PUT",
+  const response = await sendApiRequest<Company>(`/companies/${id}`, {
+    method: "PATCH",
     withAuthorization: true,
     data,
   });

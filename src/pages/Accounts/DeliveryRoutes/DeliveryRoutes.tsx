@@ -71,7 +71,7 @@ const DeliveryRoutes = () => {
     const formValues = getValues();
 
     // Format the payload based on hasToll state
-    const updatedRoute = {
+    const updateRoutePayload = {
       name: formValues.name,
       code: formValues.code,
       toll: hasToll ? formValues.toll : undefined,
@@ -81,11 +81,15 @@ const DeliveryRoutes = () => {
       const targetRoute = routes[updatedRouteIndex];
       if (targetRoute?.id) {
         // Call updateDeliveryRoute API with the id and updated data
-        await updateDeliveryRoute(targetRoute.id, updatedRoute);
+
+        const updatedRoute = await updateDeliveryRoute(
+          targetRoute.id,
+          updateRoutePayload,
+        );
 
         const updatedRoutes = routes.map((route, index) => {
           if (index === updatedRouteIndex) {
-            return { ...updatedRoute, id: route.id };
+            return updatedRoute;
           }
           return route;
         });
