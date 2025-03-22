@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { notify } from "../../lib/notify";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
+import { Button } from "@/common/components/ui/Button";
 
 interface Phone {
   number: string;
@@ -622,13 +623,14 @@ const Customer = () => {
                     className="file-input file-input-bordered w-full md:w-1/2"
                     accept="image/*"
                   />
-                  <button
+                  <Button
                     onClick={handleAddSignature}
-                    className="btn btn-info mt-2"
+                    className="mt-4 md:w-1/8 "
+                    shape="info"
                     disabled={!signatureImage}
                   >
                     Add Signature
-                  </button>
+                  </Button>
                 </div>
 
                 {signatures.length > 0 && (
@@ -674,13 +676,13 @@ const Customer = () => {
         )}
 
         {currentStep === 2 && (
-          <div>
+          <div className="w-full">
             {/* Phone Numbers Section - required */}
-            <div className="mb-6 border-l-4 border-accent p-2">
-              <h3 className="text-xl font-semibold mb-2">
+            <div className="mb-8 border-l-4 border-accent p-4 bg-base-100 rounded-md shadow-sm">
+              <h3 className="text-xl font-semibold mb-4">
                 Phone Numbers <span className="text-error">*</span>
               </h3>
-              <div className="flex gap-4 mb-2 flex-wrap">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <input
                   type="text"
                   placeholder="Phone Number"
@@ -688,7 +690,7 @@ const Customer = () => {
                   onChange={(e) => {
                     setPhoneNumber(e.target.value);
                   }}
-                  className="input input-bordered"
+                  className="input input-bordered w-full"
                 />
                 <select
                   value={phoneStatus}
@@ -697,7 +699,7 @@ const Customer = () => {
                       e.target.value as "Ptcl" | "Mobile" | "Whatsapp",
                     );
                   }}
-                  className="select select-bordered"
+                  className="select select-bordered w-full"
                 >
                   <option value="Ptcl">Ptcl</option>
                   <option value="Mobile">Mobile</option>
@@ -705,7 +707,7 @@ const Customer = () => {
                 </select>
                 <button
                   onClick={handleAddPhone}
-                  className="btn btn-info"
+                  className="btn btn-info w-full"
                   disabled={!phoneNumber}
                 >
                   Add
@@ -745,35 +747,35 @@ const Customer = () => {
             </div>
 
             {/* Addresses Section - required */}
-            <div className="mb-6 border-l-4 border-accent p-2">
-              <h3 className="text-xl font-semibold mb-2">
+            <div className="mb-8 border-l-4 border-accent p-4 bg-base-100 rounded-md shadow-sm">
+              <h3 className="text-xl font-semibold mb-4">
                 Address <span className="text-error">*</span>
               </h3>
-              <div className="mb-2">
-                <div className="flex gap-4 mb-2 flex-wrap">
-                  <div className="flex-grow">
-                    <input
-                      type="text"
-                      placeholder="Address Text"
-                      value={addressText}
-                      onChange={(e) => {
-                        setAddressText(e.target.value);
-                      }}
-                      className="input input-bordered w-full"
-                    />
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="md:col-span-2">
+                  <input
+                    type="text"
+                    placeholder="Address Text"
+                    value={addressText}
+                    onChange={(e) => {
+                      setAddressText(e.target.value);
+                    }}
+                    className="input input-bordered w-full"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={openMapSelector}
-                    className="btn btn-secondary"
+                    className="btn btn-secondary w-full"
                   >
                     Select on Map
                   </button>
                   <button
                     onClick={handleAddAddress}
-                    className="btn btn-info"
+                    className="btn btn-info w-full"
                     disabled={!addressText}
                   >
-                    Add Address
+                    Add
                   </button>
                 </div>
               </div>
@@ -821,9 +823,9 @@ const Customer = () => {
               )}
             </div>
 
-            {/* SMS Send Pattern - NEW SECTION */}
-            <div className="mb-6">
-              <div className="flex items-center mb-2">
+            {/* SMS Send Pattern */}
+            <div className="mb-8 p-4 bg-base-100 rounded-md shadow-sm">
+              <div className="flex items-center mb-4">
                 <input
                   type="checkbox"
                   checked={smsEnabled}
@@ -839,7 +841,7 @@ const Customer = () => {
                 <div className="pl-6 mt-2">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block font-medium mb-1">
+                      <label className="block font-medium mb-2">
                         Frequency
                       </label>
                       <select
@@ -863,7 +865,7 @@ const Customer = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block font-medium mb-1">Send Via</label>
+                      <label className="block font-medium mb-2">Send Via</label>
                       <select
                         value={smsVia}
                         onChange={(e) => {
@@ -884,10 +886,10 @@ const Customer = () => {
             </div>
 
             {/* Other Images */}
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold mb-2">Other Images</h3>
-              <div className="flex gap-4 mb-2">
-                <div className="flex-1">
+            <div className="mb-8 p-4 bg-base-100 rounded-md shadow-sm">
+              <h3 className="text-xl font-semibold mb-4">Other Images</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="md:col-span-2">
                   <input
                     type="file"
                     onChange={handleOtherImageUpload}
@@ -897,7 +899,7 @@ const Customer = () => {
                 </div>
                 <button
                   onClick={handleAddOtherImage}
-                  className="btn btn-info"
+                  className="btn btn-info w-full"
                   disabled={!otherImage}
                 >
                   Add Image
@@ -941,54 +943,71 @@ const Customer = () => {
             </div>
 
             {/* Post-dated Cheques Section */}
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold mb-2">Post-dated Cheques</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
-                <input
-                  type="date"
-                  placeholder="Due Date"
-                  value={chequeDueDate}
-                  onChange={(e) => {
-                    setChequeDueDate(e.target.value);
-                  }}
-                  className="input input-bordered"
-                />
-                <input
-                  type="text"
-                  placeholder="Cheque Details"
-                  value={chequeDetails}
-                  onChange={(e) => {
-                    setChequeDetails(e.target.value);
-                  }}
-                  className="input input-bordered"
-                />
+            <div className="mb-8 p-4 bg-base-100 rounded-md shadow-sm">
+              <h3 className="text-xl font-semibold mb-4">Post-dated Cheques</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
+                  <label className="text-sm font-medium mb-1 block">
+                    Due Date
+                  </label>
+                  <input
+                    type="date"
+                    placeholder="Due Date"
+                    value={chequeDueDate}
+                    onChange={(e) => {
+                      setChequeDueDate(e.target.value);
+                    }}
+                    className="input input-bordered w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-1 block">
+                    Cheque Details
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Cheque Details"
+                    value={chequeDetails}
+                    onChange={(e) => {
+                      setChequeDetails(e.target.value);
+                    }}
+                    className="input input-bordered w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-1 block">
+                    Upload Cheque
+                  </label>
                   <input
                     type="file"
                     onChange={handleChequeImageUpload}
                     className="file-input file-input-bordered w-full"
                     accept="image/*"
                   />
+                </div>
+
+                <div className="md:col-span-3 flex justify-start mt-2">
                   {chequeImage && (
-                    <div className="mt-2">
+                    <div className="flex-shrink-0 mr-4">
                       <img
                         src={chequeImage}
                         alt="Cheque"
-                        className="w-32 h-20 object-cover rounded"
+                        className="w-24 h-16 object-cover rounded"
                       />
                     </div>
                   )}
-                </div>
-                <div className="md:col-span-2">
                   <button
                     onClick={handleAddCheque}
-                    className="btn btn-info w-full md:w-auto"
+                    className="btn btn-info"
                     disabled={!chequeDueDate || !chequeDetails}
                   >
                     Add Cheque
                   </button>
                 </div>
               </div>
+
               {postDatedCheques.length > 0 && (
                 <div className="overflow-x-auto">
                   <table className="table w-full">
