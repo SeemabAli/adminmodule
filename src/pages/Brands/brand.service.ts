@@ -1,6 +1,6 @@
 import { sendApiRequest } from "@/common/services/api.service";
 import { type BrandFormData } from "./brand.schema";
-import type { Tax } from "../Accounts/TaxAccounts/TaxAccounts";
+import type { Tax } from "@/pages/Accounts/TaxAccounts/tax.schema";
 
 type Freights = {
   routeName: string;
@@ -31,6 +31,23 @@ export const createBrand = async (data: BrandFormData) => {
 export const fetchAllBrands = async () => {
   const response = await sendApiRequest<GetBrandResponse[]>("/brands", {
     method: "GET",
+    withAuthorization: true,
+  });
+  return response;
+};
+
+export const updateBrand = async (id: string, data: BrandFormData) => {
+  const response = await sendApiRequest<GetBrandResponse>(`/brands/${id}`, {
+    method: "PATCH",
+    withAuthorization: true,
+    data,
+  });
+  return response;
+};
+
+export const deleteBrand = async (id: string) => {
+  const response = await sendApiRequest(`/brands/${id}`, {
+    method: "DELETE",
     withAuthorization: true,
   });
   return response;

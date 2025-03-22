@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
+/* eslint-disable @typescript-eslint/require-await */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 /* eslint-disable react-hooks/exhaustive-deps */
@@ -9,7 +11,12 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { brandSchema, type BrandFormData } from "./brand.schema";
-import { createBrand, fetchAllBrands } from "./brand.service";
+import {
+  createBrand,
+  fetchAllBrands,
+  updateBrand,
+  deleteBrand,
+} from "./brand.service";
 import { logger } from "@/lib/logger";
 import { useService } from "@/common/hooks/custom/useService";
 import { ErrorModal } from "@/common/components/Error";
@@ -47,12 +54,12 @@ const Brands = () => {
   const [taxIds, setTaxIds] = useState<string[]>([]);
   const [availableTaxes, setAvailableTaxes] = useState<Tax[]>([]);
   const [step, setStep] = useState(1);
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingBrandId, setEditingBrandId] = useState<string | null>(null);
   const [isInEditMode, setIsInEditMode] = useState(false);
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [companies, setCompanies] = useState<Company[]>([]);
   const [routes, setRoutes] = useState<DeliveryRoute[]>([]);
-  const [expandedRoutes, setExpandedRoutes] = useState<number | null>(null);
+  const [expandedRoutes, setExpandedRoutes] = useState<string | null>(null);
   const [routeInputs, setRouteInputs] = useState<
     {
       routeId: string;
@@ -162,9 +169,11 @@ const Brands = () => {
           truckSharePerBag: null,
         })),
       );
-    } else if (editingIndex !== null) {
+    } else if (editingBrandId !== null) {
       // If in edit mode, populate with existing values
-      const brand = brands[editingIndex];
+      const brand = brands.find((b) => b.id === editingBrandId);
+      if (!brand) return;
+
       const initializedRouteInputs = routes.map((route) => {
         const existingRoute = brand?.freights.find(
           (r) => r.routeId === route.id,
@@ -268,8 +277,8 @@ const Brands = () => {
     };
 
     // If we're editing, include the ID
-    if (isInEditMode && editingIndex !== null && brands[editingIndex]?.id) {
-      brandData.id = brands[editingIndex].id;
+    if (isInEditMode && editingBrandId !== null) {
+      brandData.id = editingBrandId;
     }
 
     // Prepare payload according to the API schema
@@ -296,7 +305,13 @@ const Brands = () => {
     };
 
     try {
-      await createBrand(payload);
+      if (isInEditMode && editingBrandId) {
+        // Update existing brand
+        await updateBrand(editingBrandId, payload);
+      } else {
+        // Create new brand
+        await createBrand(payload);
+      }
 
       // Find company name for display in the table
       const companyName = companies.find(
@@ -313,10 +328,12 @@ const Brands = () => {
       };
 
       // Update local state
-      if (isInEditMode && editingIndex !== null) {
-        const updatedBrands = [...brands];
-        updatedBrands[editingIndex] = newBrand;
-        setBrands(updatedBrands);
+      if (isInEditMode && editingBrandId) {
+        setBrands((prevBrands) =>
+          prevBrands.map((brand) =>
+            brand.id === editingBrandId ? newBrand : brand,
+          ),
+        );
       } else {
         // Add new brand to state
         setBrands([...brands, newBrand]);
@@ -330,7 +347,7 @@ const Brands = () => {
       setRouteInputs([]);
       setStep(1);
       setIsInEditMode(false);
-      setEditingIndex(null);
+      setEditingBrandId(null);
 
       notify.success(
         isInEditMode
@@ -346,9 +363,9 @@ const Brands = () => {
   };
 
   // Edit Brand
-  const handleEditBrand = (index: number) => {
+  const handleEditBrand = (brandId: string) => {
     setIsInEditMode(true);
-    const brand = brands[index];
+    const brand = brands.find((b) => b.id === brandId);
     if (!brand) return;
 
     // Set form values as per schema
@@ -363,8 +380,28 @@ const Brands = () => {
 
     // Initialize with empty route inputs, they'll be populated in the initializeRouteInputs effect
     setRouteInputs([]);
-    setEditingIndex(index);
+    setEditingBrandId(brandId);
     setStep(1);
+  };
+
+  // Delete Brand
+  const handleDeleteBrand = async (brandId: string) => {
+    notify.confirmDelete(async () => {
+      try {
+        // Call API to delete brand
+        await deleteBrand(brandId);
+
+        // Update local state
+        setBrands((prevBrands) =>
+          prevBrands.filter((brand) => brand.id !== brandId),
+        );
+
+        notify.success("Brand deleted successfully!");
+      } catch (error) {
+        notify.error("Failed to delete brand");
+        logger.error(error);
+      }
+    });
   };
 
   // Remove tax from selected taxes
@@ -385,14 +422,6 @@ const Brands = () => {
         ? prev.filter((id) => id !== taxId)
         : [...prev, taxId],
     );
-  };
-
-  const handleDeleteBrand = (index: number) => {
-    notify.confirmDelete(() => {
-      // Here you would add API call to delete brand
-      setBrands((prev) => prev.filter((_, i) => i !== index));
-      notify.success("Brand deleted successfully!");
-    });
   };
 
   // Find company name by ID
@@ -647,7 +676,7 @@ const Brands = () => {
               {filteredBrands.map((brand, index) => (
                 <>
                   <tr
-                    key={index}
+                    key={brand.id}
                     className="border-b border-base-300 text-center"
                   >
                     <td>{index + 1}</td>
@@ -662,17 +691,19 @@ const Brands = () => {
                       className="cursor-pointer hover:bg-base-300"
                       onClick={() => {
                         setExpandedRoutes(
-                          expandedRoutes === index ? null : index,
+                          expandedRoutes === brand.id
+                            ? null
+                            : (brand.id ?? null),
                         );
                       }}
                     >
                       {countValidRoutes(brand.freights)} routes
-                      {expandedRoutes === index ? " ▲" : " ▼"}
+                      {expandedRoutes === brand.id ? " ▲" : " ▼"}
                     </td>
                     <td className="p-3 flex gap-2 justify-center">
                       <button
                         onClick={() => {
-                          handleEditBrand(index);
+                          brand.id && handleEditBrand(brand.id);
                         }}
                         className="flex items-center mt-2 justify-center"
                       >
@@ -681,7 +712,7 @@ const Brands = () => {
 
                       <button
                         onClick={() => {
-                          handleDeleteBrand(index);
+                          void handleDeleteBrand(brand.id ?? "");
                         }}
                         className="flex items-center mt-2 justify-center"
                       >
@@ -689,7 +720,7 @@ const Brands = () => {
                       </button>
                     </td>
                   </tr>
-                  {expandedRoutes === index && (
+                  {expandedRoutes === brand.id && (
                     <tr>
                       <td colSpan={10} className="p-0">
                         <div className="bg-base-100 p-3 rounded m-2 shadow-inner">
