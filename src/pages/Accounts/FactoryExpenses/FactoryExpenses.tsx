@@ -3,20 +3,20 @@ import { formatNumberWithCommas } from "@/utils/CommaSeparator";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
 import { useState } from "react";
 
+export type FactoryExpenseType = {
+  name: string;
+  date: string;
+  type: string;
+  fixedAmount?: number;
+  fixedPerTon?: number;
+  percentPerTon?: number;
+  rangeTonFrom?: string;
+  rangeTonValues?: Record<string, number>;
+  extraCharge: number;
+};
+
 const FactoryExpenseTypes = () => {
-  const [expenses, setExpenses] = useState<
-    {
-      name: string;
-      date: string;
-      type: string;
-      fixedAmount?: number;
-      fixedPerTon?: number;
-      percentPerTon?: number;
-      rangeTonFrom?: string;
-      rangeTonValues?: Record<string, number>;
-      extraCharge: number;
-    }[]
-  >([]);
+  const [expenses, setExpenses] = useState<FactoryExpenseType[]>([]);
 
   const today = new Date().toISOString().split("T")[0] ?? "";
   const [expenseName, setExpenseName] = useState("");

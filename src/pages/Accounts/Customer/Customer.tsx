@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { notify } from "../../lib/notify";
+import { notify } from "../../../lib/notify";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
 import { Button } from "@/common/components/ui/Button";
 

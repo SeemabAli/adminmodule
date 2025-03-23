@@ -5,11 +5,11 @@ import BankAccounts from "@/pages/Accounts/BankAccounts/BankAccounts";
 import TruckInformation from "@/pages/Accounts/TruckInformation";
 import DeliveryRoutes from "@/pages/Accounts/DeliveryRoutes/DeliveryRoutes";
 import TaxAccounts from "@/pages/Accounts/TaxAccounts/TaxAccounts";
-import FactoryExpenses from "@/pages/Accounts/FactoryExpenses";
+import FactoryExpenses from "@/pages/Accounts/FactoryExpenses/FactoryExpenses";
 import TruckOtherExpenses from "@/pages/Accounts/TruckOtherExpenses";
 import Brands from "@/pages/Brands/Brands";
 import TruckRoute from "@/pages/TruckRoute/TruckRoute";
-import Customer from "@/pages/Accounts/Customer";
+import Customer from "@/pages/Accounts/Customer/Customer";
 import {
   Route,
   createBrowserRouter,
@@ -17,7 +17,7 @@ import {
   RouterProvider,
 } from "react-router";
 import { Home } from "@/pages/home/Home";
-import { Purchase } from "@/pages/Accounts/Purchase";
+import { Purchase } from "@/pages/Accounts/Purchase/Purchase";
 import { RootLayout } from "@/common/layouts/rootLayout/RootLayout";
 import { AuthLayout } from "@/common/layouts/authLayout/AuthLayout";
 import { SigninPage } from "@/core/auth/pages/SigninPage";
