@@ -1,5 +1,5 @@
 import { sendApiRequest } from "@/common/services/api.service";
-import { type Customer } from "./customer.schema";
+import type { Customer } from "./customer.schema";
 
 export const createCustomer = async (data: Customer) => {
   const response = await sendApiRequest<Customer>("/customers", {

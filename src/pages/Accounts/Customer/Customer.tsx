@@ -1,97 +1,87 @@
-import { useState } from "react";
+/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
+import {
+  createCustomer,
+  fetchAllCustomers,
+  updateCustomer,
+  deleteCustomer,
+} from "./customer.service";
 import { notify } from "../../../lib/notify";
-import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
+import { useForm } from "react-hook-form";
 import { Button } from "@/common/components/ui/Button";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ErrorModal } from "@/common/components/Error";
+import { useService } from "@/common/hooks/custom/useService";
+import { customerSchema, type Customer } from "./customer.schema";
+import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
+import { type Phone } from "./customer.schema";
 
-interface Phone {
-  number: string;
-  status: "Ptcl" | "Mobile" | "Whatsapp";
-}
+// // Define proper types based on the schema
+// interface Phone {
+//   number: string;
+//   status: "Ptcl" | "Mobile" | "Whatsapp";
+// }
 
-interface PostDatedCheque {
-  dueDate: string;
-  details: string;
-  image: string;
-}
+// interface PostDatedCheque {
+//   dueDate: string;
+//   details: string;
+//   image: string;
+// }
 
-interface Signature {
-  image: string;
-}
+// interface Signature {
+//   image: string;
+// }
 
-interface Customer {
-  customerName: string;
-  acTitle: string;
-  dealingPerson: string;
-  reference: string;
-  cnicFront: string;
-  cnicBack: string;
-  ntn: string;
-  phones: Phone[];
-  addresses: { text: string; map: string }[];
-  route: string;
-  creditLimit: number;
-  postDatedCheques: PostDatedCheque[];
-  ledgerDetails: string;
-  ledgerNumber: number;
-  signatures: Signature[];
-  otherImages: string[];
-  smsPattern?: {
-    enabled: boolean;
-    frequency: "Daily" | "Weekly" | "Monthly" | "Yearly";
-    via: string;
-  };
-}
+// interface CustomerFormData {
+//   id?: string;
+//   customerName: string;
+//   acTitle: string;
+//   dealingPerson: string;
+//   reference: string;
+//   cnicFront: string;
+//   cnicBack: string;
+//   ntn: string;
+//   phones: Phone[];
+//   addresses: { text: string; map: string }[];
+//   route: string;
+//   creditLimit: number;
+//   postDatedCheques: PostDatedCheque[];
+//   ledgerDetails: string;
+//   ledgerNumber: number;
+//   signatures: Signature[];
+//   otherImages: string[];
+//   smsPattern?: {
+//     enabled: boolean;
+//     frequency: "Daily" | "Weekly" | "Monthly" | "Yearly";
+//     via: string;
+//   };
+// }
 
 // SMS Via options
 const smsViaOptions = ["SMS", "WhatsApp", "Email", "Push Notification"];
 const smsFrequencyOptions = ["Daily", "Weekly", "Monthly", "Yearly"];
 
-const Customer = () => {
+const Customer: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [customerName, setCustomerName] = useState("");
-  const [acTitle, setAcTitle] = useState("");
-  const [dealingPerson, setDealingPerson] = useState("");
-  const [reference, setReference] = useState("");
-  const [cnicFront, setCnicFront] = useState("");
-  const [cnicBack, setCnicBack] = useState("");
-  const [ntn, setNtn] = useState("");
-  const [phones, setPhones] = useState<Phone[]>([]);
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [phoneStatus, setPhoneStatus] = useState<
     "Ptcl" | "Mobile" | "Whatsapp"
   >("Mobile");
-  const [addresses, setAddresses] = useState<{ text: string; map: string }[]>(
-    [],
-  );
   const [addressText, setAddressText] = useState("");
   const [addressMap, setAddressMap] = useState("");
-  const [route, setRoute] = useState("");
-  const [creditLimit, setCreditLimit] = useState("");
-  const [postDatedCheques, setPostDatedCheques] = useState<PostDatedCheque[]>(
-    [],
-  );
-  const [signatures, setSignatures] = useState<Signature[]>([]);
   const [chequeDueDate, setChequeDueDate] = useState("");
   const [signatureImage, setSignatureImage] = useState("");
   const [chequeDetails, setChequeDetails] = useState("");
   const [chequeImage, setChequeImage] = useState("");
-  const [ledgerDetails, setLedgerDetails] = useState("");
-  const [ledgerNumber, setLedgerNumber] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [otherImages, setOtherImages] = useState<string[]>([]);
   const [otherImage, setOtherImage] = useState("");
 
   // Map state
   const [showMap, setShowMap] = useState(false);
   const [mapSearchQuery, setMapSearchQuery] = useState("");
-
-  // SMS Pattern state
-  const [smsEnabled, setSmsEnabled] = useState(false);
-  const [smsFrequency, setSmsFrequency] = useState<
-    "Daily" | "Weekly" | "Monthly" | "Yearly"
-  >("Monthly");
-  const [smsVia, setSmsVia] = useState("SMS");
 
   // For sending SMS to existing customers
   const [showSmsModal, setShowSmsModal] = useState(false);
@@ -99,10 +89,51 @@ const Customer = () => {
     number[]
   >([]);
 
+  // Use the API service
+  const { error, data, isLoading } = useService(fetchAllCustomers);
+
+  // Initialize React Hook Form
+  const { register, setValue, setFocus, getValues, reset, watch } =
+    useForm<Customer>({
+      resolver: zodResolver(customerSchema),
+      defaultValues: {
+        customerName: "",
+        acTitle: "",
+        dealingPerson: "",
+        reference: "",
+        cnicFront: "",
+        cnicBack: "",
+        ntn: "",
+        phones: [],
+        addresses: [],
+        route: "",
+        creditLimit: 0,
+        postDatedCheques: [],
+        ledgerDetails: "",
+        ledgerNumber: 0,
+        signatures: [],
+        otherImages: [],
+      },
+    });
+
+  // Watch values from the form
+  const watchedValues = watch();
+
+  // SMS Pattern state - kept separate from the form
+  const [smsEnabled, setSmsEnabled] = useState(false);
+  const [smsFrequency, setSmsFrequency] = useState<
+    "Daily" | "Weekly" | "Monthly" | "Yearly"
+  >("Monthly");
+  const [smsVia, setSmsVia] = useState("SMS");
+
   const handleNextStep = () => {
     if (currentStep === 1) {
       // Validate only required fields for step 1
-      if (!customerName || !acTitle || !route) {
+      if (
+        !watchedValues.customerName ||
+        !watchedValues.acTitle ||
+        !watchedValues.route
+      ) {
         notify.error(
           "Please complete all required fields: Customer Name, A/C Title, and Route",
         );
@@ -123,13 +154,20 @@ const Customer = () => {
       notify.error("Please enter a phone number");
       return;
     }
-    setPhones([...phones, { number: phoneNumber, status: phoneStatus }]);
+    const currentPhones = watchedValues.phones || [];
+    setValue("phones", [
+      ...currentPhones,
+      { number: phoneNumber, status: phoneStatus } as Phone,
+    ]);
     setPhoneNumber("");
     setPhoneStatus("Mobile");
   };
 
   const handleRemovePhone = (index: number) => {
-    setPhones(phones.filter((_, i) => i !== index));
+    const currentPhones = [...watchedValues.phones];
+    currentPhones.splice(index, 1);
+    //TODO: Fix this
+    // setValue("phones", currentPhones);
   };
 
   const handleAddAddress = () => {
@@ -137,19 +175,27 @@ const Customer = () => {
       notify.error("Please enter an address");
       return;
     }
-    setAddresses([...addresses, { text: addressText, map: addressMap }]);
+    const currentAddresses = watchedValues.addresses || [];
+    setValue("addresses", [
+      ...currentAddresses,
+      { text: addressText, map: addressMap },
+    ]);
     setAddressText("");
     setAddressMap("");
   };
 
   const handleRemoveAddress = (index: number) => {
-    setAddresses(addresses.filter((_, i) => i !== index));
+    const currentAddresses = [...watchedValues.addresses];
+    currentAddresses.splice(index, 1);
+    //TODO: Fix this
+    // setValue("addresses", currentAddresses.length > 0 ? currentAddresses : [{ text: "", map: "" }]);
   };
 
   const handleAddCheque = () => {
     if (!chequeDueDate || !chequeDetails) return;
-    setPostDatedCheques([
-      ...postDatedCheques,
+    const currentCheques = watchedValues.postDatedCheques ?? [];
+    setValue("postDatedCheques", [
+      ...currentCheques,
       { dueDate: chequeDueDate, details: chequeDetails, image: chequeImage },
     ]);
     setChequeDueDate("");
@@ -159,101 +205,89 @@ const Customer = () => {
 
   const handleAddSignature = () => {
     if (!signatureImage) return;
-    setSignatures([...signatures, { image: signatureImage }]);
+    const currentSignatures = watchedValues.signatures ?? [];
+    setValue("signatures", [...currentSignatures, { image: signatureImage }]);
     setSignatureImage("");
   };
 
   const handleRemoveSignature = (index: number) => {
-    setSignatures(signatures.filter((_, i) => i !== index));
+    const currentSignatures = [...(watchedValues.signatures ?? [])];
+    currentSignatures.splice(index, 1);
+    setValue("signatures", currentSignatures);
   };
 
   const handleRemoveCheque = (index: number) => {
-    setPostDatedCheques(postDatedCheques.filter((_, i) => i !== index));
+    const currentCheques = [...(watchedValues.postDatedCheques ?? [])];
+    currentCheques.splice(index, 1);
+    setValue("postDatedCheques", currentCheques);
   };
 
-  const handleSave = () => {
-    // Validate only required fields
-    if (!customerName || !acTitle || !route) {
-      notify.error(
-        "Please complete all required fields: Customer Name, A/C Title, and Route",
-      );
-      return;
+  const handleSave = async (formData: Customer) => {
+    try {
+      // Add SMS pattern if enabled
+      const customerData = {
+        ...formData,
+        name: formData.customerName,
+        address:
+          formData.addresses && formData.addresses.length > 0
+            ? (formData.addresses[0]?.text ?? "")
+            : "",
+        phone:
+          formData.phones.length > 0 ? (formData.phones[0]?.number ?? "") : "",
+        email: "", // Add logic to get email if available
+        smsPattern: smsEnabled
+          ? {
+              enabled: smsEnabled,
+              frequency: smsFrequency,
+              via: smsVia,
+            }
+          : undefined,
+      };
+
+      if (editingIndex !== null && customers[editingIndex]?.id) {
+        // Update existing customer
+        const updatedCustomer = await updateCustomer(
+          customers[editingIndex].id,
+          customerData,
+        );
+
+        const updatedCustomers = [...customers];
+        updatedCustomers[editingIndex] = {
+          ...customers[editingIndex],
+          ...updatedCustomer,
+        };
+        setCustomers(updatedCustomers);
+        notify.success("Customer updated successfully!");
+      } else {
+        // Create new customer
+        const newCustomer = await createCustomer(customerData);
+        setCustomers([...customers, { ...newCustomer, ...formData }]);
+        notify.success("Customer saved successfully!");
+      }
+
+      // Reset form and state
+      resetForm();
+    } catch (error) {
+      notify.error("Failed to save customer.");
+      logger.error(error);
     }
-
-    // Validate phone number if entered
-    if (phoneNumber && phones.length === 0) {
-      notify.error("Please add the phone number or clear the field");
-      return;
-    }
-
-    // Validate address if entered
-    if (addressText && addresses.length === 0) {
-      notify.error("Please add the address or clear the field");
-      return;
-    }
-
-    const newCustomer: Customer = {
-      customerName,
-      acTitle,
-      dealingPerson,
-      reference,
-      cnicFront,
-      cnicBack,
-      ntn,
-      phones,
-      addresses,
-      route,
-      creditLimit: Number(creditLimit) || 0,
-      postDatedCheques,
-      ledgerDetails,
-      ledgerNumber: Number(ledgerNumber) || 0,
-      signatures,
-      otherImages,
-      smsPattern: smsEnabled
-        ? {
-            enabled: smsEnabled,
-            frequency: smsFrequency,
-            via: smsVia,
-          }
-        : undefined,
-    };
-
-    if (editingIndex !== null) {
-      const updatedCustomers = [...customers];
-      updatedCustomers[editingIndex] = newCustomer;
-      setCustomers(updatedCustomers);
-      setEditingIndex(null);
-    } else {
-      setCustomers([...customers, newCustomer]);
-    }
-
-    // Reset all form fields
-    resetForm();
-    notify.success("Customer saved successfully.");
   };
 
   const resetForm = () => {
-    setCustomerName("");
-    setAcTitle("");
-    setDealingPerson("");
-    setReference("");
-    setCnicFront("");
-    setCnicBack("");
-    setNtn("");
-    setPhones([]);
-    setAddresses([]);
-    setRoute("");
-    setCreditLimit("");
-    setPostDatedCheques([]);
-    setLedgerDetails("");
-    setLedgerNumber("");
-    setSignatures([]);
-    setOtherImages([]);
+    reset();
+    setPhoneNumber("");
+    setPhoneStatus("Mobile");
+    setAddressText("");
+    setAddressMap("");
+    setChequeDueDate("");
+    setSignatureImage("");
+    setChequeDetails("");
+    setChequeImage("");
+    setOtherImage("");
     setSmsEnabled(false);
     setSmsFrequency("Monthly");
     setSmsVia("SMS");
-
-    // Reset to step 1
+    setEditingIndex(null);
     setCurrentStep(1);
   };
 
@@ -261,24 +295,26 @@ const Customer = () => {
     const customer = customers[index];
     if (!customer) return;
 
-    setCustomerName(customer.customerName);
-    setAcTitle(customer.acTitle);
-    setDealingPerson(customer.dealingPerson || "");
-    setReference(customer.reference || "");
-    setCnicFront(customer.cnicFront || "");
-    setCnicBack(customer.cnicBack || "");
-    setNtn(customer.ntn || "");
-    setPhones(customer.phones || []);
-    setAddresses(customer.addresses || []);
-    setRoute(customer.route);
-    setCreditLimit(customer.creditLimit ? customer.creditLimit.toString() : "");
-    setPostDatedCheques(customer.postDatedCheques || []);
-    setLedgerDetails(customer.ledgerDetails || "");
-    setSignatures(customer.signatures || []);
-    setLedgerNumber(
-      customer.ledgerNumber ? customer.ledgerNumber.toString() : "",
-    );
-    setOtherImages(customer.otherImages || []);
+    // Reset form first
+    reset();
+
+    // Set all form fields
+    setValue("customerName", customer.customerName);
+    setValue("acTitle", customer.acTitle);
+    setValue("dealingPerson", customer.dealingPerson || "");
+    setValue("reference", customer.reference || "");
+    setValue("cnicFront", customer.cnicFront || "");
+    setValue("cnicBack", customer.cnicBack || "");
+    setValue("ntn", customer.ntn || "");
+    setValue("phones", customer.phones || []);
+    setValue("addresses", customer.addresses || []);
+    setValue("route", customer.route);
+    setValue("creditLimit", customer.creditLimit || 0);
+    setValue("postDatedCheques", customer.postDatedCheques || []);
+    setValue("ledgerDetails", customer.ledgerDetails || "");
+    setValue("ledgerNumber", customer.ledgerNumber || 0);
+    setValue("signatures", customer.signatures || []);
+    setValue("otherImages", customer.otherImages || []);
 
     // Set SMS pattern if it exists
     if (customer.smsPattern) {
@@ -293,13 +329,26 @@ const Customer = () => {
 
     setEditingIndex(index);
     setCurrentStep(1);
+    setFocus("customerName");
     notify.success("Customer loaded for editing.");
   };
 
   const handleDelete = (index: number) => {
-    notify.confirmDelete(() => {
-      setCustomers((prev) => prev.filter((_, i) => i !== index));
-      notify.success("Customer deleted successfully.");
+    const customer = customers[index];
+    if (!customer?.id) {
+      notify.error("Customer ID is missing.");
+      return;
+    }
+
+    notify.confirmDelete(async () => {
+      try {
+        await deleteCustomer(customer.id!);
+        setCustomers(customers.filter((_, i) => i !== index));
+        notify.success("Customer deleted successfully!");
+      } catch (error) {
+        notify.error("Failed to delete customer.");
+        logger.error(error);
+      }
     });
   };
 
@@ -308,7 +357,7 @@ const Customer = () => {
       const file = e.target.files[0];
       const reader = new FileReader();
       reader.onloadend = () => {
-        setCnicFront(reader.result as string);
+        setValue("cnicFront", reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -319,7 +368,7 @@ const Customer = () => {
       const file = e.target.files[0];
       const reader = new FileReader();
       reader.onloadend = () => {
-        setCnicBack(reader.result as string);
+        setValue("cnicBack", reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -365,13 +414,16 @@ const Customer = () => {
       notify.error("Please select an image first.");
       return;
     }
-    setOtherImages([...otherImages, otherImage]);
+    const currentImages = watchedValues.otherImages || [];
+    setValue("otherImages", [...currentImages, otherImage]);
     setOtherImage("");
     notify.success("Image added successfully!");
   };
 
   const handleRemoveOtherImage = (index: number) => {
-    setOtherImages(otherImages.filter((_, i) => i !== index));
+    const currentImages = [...(watchedValues.otherImages || [])];
+    currentImages.splice(index, 1);
+    setValue("otherImages", currentImages);
     notify.success("Image removed successfully!");
   };
 
@@ -385,9 +437,6 @@ const Customer = () => {
   };
 
   const handleMapSearch = () => {
-    // In a real implementation, this would use the Google Maps API to search for the location
-    // and update the addressMap state with the coordinates
-    // For now, we'll just simulate this behavior
     if (mapSearchQuery) {
       setAddressMap(
         `https://maps.google.com/?q=${encodeURIComponent(mapSearchQuery)}`,
@@ -436,6 +485,25 @@ const Customer = () => {
     closeSmsModal();
   };
 
+  // Load data from API
+  useEffect(() => {
+    if (data) {
+      setCustomers(data);
+    }
+  }, [data]);
+
+  if (error) {
+    return (
+      <ErrorModal
+        message={
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch customer data"
+        }
+      />
+    );
+  }
+
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-4">
@@ -454,10 +522,7 @@ const Customer = () => {
               <input
                 type="text"
                 placeholder="Enter Full Name"
-                value={customerName}
-                onChange={(e) => {
-                  setCustomerName(e.target.value);
-                }}
+                {...register("customerName")}
                 className="input input-bordered w-full"
               />
             </div>
@@ -468,10 +533,7 @@ const Customer = () => {
               <input
                 type="text"
                 placeholder="Enter Account Title"
-                value={acTitle}
-                onChange={(e) => {
-                  setAcTitle(e.target.value);
-                }}
+                {...register("acTitle")}
                 className="input input-bordered w-full"
               />
             </div>
@@ -482,10 +544,7 @@ const Customer = () => {
               <input
                 type="text"
                 placeholder="Enter Route"
-                value={route}
-                onChange={(e) => {
-                  setRoute(e.target.value);
-                }}
+                {...register("route")}
                 className="input input-bordered w-full"
               />
             </div>
@@ -496,10 +555,7 @@ const Customer = () => {
               <input
                 type="text"
                 placeholder="Enter Name"
-                value={dealingPerson}
-                onChange={(e) => {
-                  setDealingPerson(e.target.value);
-                }}
+                {...register("dealingPerson")}
                 className="input input-bordered w-full"
               />
             </div>
@@ -508,10 +564,7 @@ const Customer = () => {
               <input
                 type="text"
                 placeholder="Enter Name"
-                value={reference}
-                onChange={(e) => {
-                  setReference(e.target.value);
-                }}
+                {...register("reference")}
                 className="input input-bordered w-full"
               />
             </div>
@@ -525,10 +578,10 @@ const Customer = () => {
                 className="file-input file-input-bordered w-full"
                 accept="image/*"
               />
-              {cnicFront && (
+              {watchedValues.cnicFront && (
                 <div className="mt-2">
                   <img
-                    src={cnicFront}
+                    src={watchedValues.cnicFront}
                     alt="CNIC Front"
                     className="w-32 h-20 object-cover rounded"
                   />
@@ -543,10 +596,10 @@ const Customer = () => {
                 className="file-input file-input-bordered w-full"
                 accept="image/*"
               />
-              {cnicBack && (
+              {watchedValues.cnicBack && (
                 <div className="mt-2">
                   <img
-                    src={cnicBack}
+                    src={watchedValues.cnicBack}
                     alt="CNIC Back"
                     className="w-32 h-20 object-cover rounded"
                   />
@@ -560,10 +613,7 @@ const Customer = () => {
               <input
                 type="text"
                 placeholder="Enter Number"
-                value={ntn}
-                onChange={(e) => {
-                  setNtn(e.target.value);
-                }}
+                {...register("ntn")}
                 className="input input-bordered w-full"
               />
             </div>
@@ -574,10 +624,7 @@ const Customer = () => {
               <input
                 type="number"
                 placeholder="Enter Credit Limit"
-                value={creditLimit}
-                onChange={(e) => {
-                  setCreditLimit(e.target.value);
-                }}
+                {...register("creditLimit", { valueAsNumber: true })}
                 className="input input-bordered w-full"
               />
             </div>
@@ -586,12 +633,9 @@ const Customer = () => {
             <div>
               <label className="block font-medium mb-1">Ledger Number</label>
               <input
-                type="text"
-                value={ledgerNumber}
+                type="number"
                 placeholder="Enter Ledger Number"
-                onChange={(e) => {
-                  setLedgerNumber(e.target.value);
-                }}
+                {...register("ledgerNumber", { valueAsNumber: true })}
                 className="input input-bordered w-full"
               />
             </div>
@@ -600,11 +644,8 @@ const Customer = () => {
             <div className="md:col-span-2">
               <label className="block font-medium mb-1">Ledger Details</label>
               <textarea
-                value={ledgerDetails}
+                {...register("ledgerDetails")}
                 placeholder="Enter Ledger Details"
-                onChange={(e) => {
-                  setLedgerDetails(e.target.value);
-                }}
                 className="textarea textarea-bordered w-full"
                 rows={3}
               />
@@ -615,8 +656,6 @@ const Customer = () => {
               <div className="flex flex-col gap-2">
                 <h3 className="text-lg font-semibold mb-2">Signature</h3>
                 <div className="flex-1 flex flex-col">
-                  {" "}
-                  {/* Use flex-col to stack elements vertically */}
                   <input
                     type="file"
                     onChange={handleSignatureImageUpload}
@@ -625,7 +664,7 @@ const Customer = () => {
                   />
                   <Button
                     onClick={handleAddSignature}
-                    className="mt-4 md:w-1/8 "
+                    className="mt-4 md:w-1/8"
                     shape="info"
                     disabled={!signatureImage}
                   >
@@ -633,7 +672,7 @@ const Customer = () => {
                   </Button>
                 </div>
 
-                {signatures.length > 0 && (
+                {(watchedValues.signatures ?? []).length > 0 && (
                   <div className="overflow-x-auto">
                     <table className="table w-1/4">
                       <thead>
@@ -643,29 +682,31 @@ const Customer = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {signatures.map((signature, index) => (
-                          <tr key={index}>
-                            <td>
-                              {signature.image && (
-                                <img
-                                  src={signature.image}
-                                  alt="Signature"
-                                  className="w-16 h-12 object-cover rounded"
-                                />
-                              )}
-                            </td>
-                            <td>
-                              <button
-                                onClick={() => {
-                                  handleRemoveSignature(index);
-                                }}
-                                className="justify-center"
-                              >
-                                <TrashIcon className="w-5 h-5 text-red-500" />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                        {(watchedValues.signatures ?? []).map(
+                          (signature, index) => (
+                            <tr key={index}>
+                              <td>
+                                {signature.image && (
+                                  <img
+                                    src={signature.image}
+                                    alt="Signature"
+                                    className="w-16 h-12 object-cover rounded"
+                                  />
+                                )}
+                              </td>
+                              <td>
+                                <button
+                                  onClick={() => {
+                                    handleRemoveSignature(index);
+                                  }}
+                                  className="justify-center"
+                                >
+                                  <TrashIcon className="w-5 h-5 text-red-500" />
+                                </button>
+                              </td>
+                            </tr>
+                          ),
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -713,7 +754,7 @@ const Customer = () => {
                   Add
                 </button>
               </div>
-              {phones.length > 0 && (
+              {watchedValues.phones.length > 0 && (
                 <div className="overflow-x-auto">
                   <table className="table w-full">
                     <thead>
@@ -724,7 +765,7 @@ const Customer = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {phones.map((phone, index) => (
+                      {watchedValues.phones.map((phone, index) => (
                         <tr key={index}>
                           <td>{phone.number}</td>
                           <td>{phone.status}</td>
@@ -779,7 +820,7 @@ const Customer = () => {
                   </button>
                 </div>
               </div>
-              {addresses.length > 0 && (
+              {watchedValues.addresses.length > 0 && (
                 <div className="overflow-x-auto">
                   <table className="table w-full">
                     <thead>
@@ -790,7 +831,7 @@ const Customer = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {addresses.map((address, index) => (
+                      {watchedValues.addresses.map((address, index) => (
                         <tr key={index}>
                           <td>{address.text}</td>
                           <td>
@@ -905,7 +946,7 @@ const Customer = () => {
                   Add Image
                 </button>
               </div>
-              {otherImages.length > 0 && (
+              {(watchedValues.otherImages ?? []).length > 0 && (
                 <div className="overflow-x-auto">
                   <table className="table w-full">
                     <thead>
@@ -915,7 +956,7 @@ const Customer = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {otherImages.map((image, index) => (
+                      {(watchedValues.otherImages ?? []).map((image, index) => (
                         <tr key={index}>
                           <td>
                             <img
@@ -1008,7 +1049,7 @@ const Customer = () => {
                 </div>
               </div>
 
-              {postDatedCheques.length > 0 && (
+              {(watchedValues.postDatedCheques ?? []).length > 0 && (
                 <div className="overflow-x-auto">
                   <table className="table w-full">
                     <thead>
@@ -1020,31 +1061,33 @@ const Customer = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {postDatedCheques.map((cheque, index) => (
-                        <tr key={index}>
-                          <td>{cheque.dueDate}</td>
-                          <td>{cheque.details}</td>
-                          <td>
-                            {cheque.image && (
-                              <img
-                                src={cheque.image}
-                                alt="Cheque"
-                                className="w-16 h-12 object-cover rounded"
-                              />
-                            )}
-                          </td>
-                          <td>
-                            <button
-                              onClick={() => {
-                                handleRemoveCheque(index);
-                              }}
-                              className="justify-center"
-                            >
-                              <TrashIcon className="w-5 h-5 text-red-500" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                      {(watchedValues.postDatedCheques ?? []).map(
+                        (cheque, index) => (
+                          <tr key={index}>
+                            <td>{cheque.dueDate}</td>
+                            <td>{cheque.details}</td>
+                            <td>
+                              {cheque.image && (
+                                <img
+                                  src={cheque.image}
+                                  alt="Cheque"
+                                  className="w-16 h-12 object-cover rounded"
+                                />
+                              )}
+                            </td>
+                            <td>
+                              <button
+                                onClick={() => {
+                                  handleRemoveCheque(index);
+                                }}
+                                className="justify-center"
+                              >
+                                <TrashIcon className="w-5 h-5 text-red-500" />
+                              </button>
+                            </td>
+                          </tr>
+                        ),
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1070,7 +1113,10 @@ const Customer = () => {
               Next
             </button>
           ) : (
-            <button className="btn btn-success" onClick={handleSave}>
+            <button
+              className="btn btn-success"
+              onClick={() => handleSave(getValues())}
+            >
               {editingIndex !== null ? "Update" : "Save"}
             </button>
           )}
@@ -1078,6 +1124,7 @@ const Customer = () => {
       </div>
 
       {/* Customers List */}
+      {isLoading && <div className="skeleton h-28 w-full"></div>}
       {customers.length > 0 && (
         <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
           <div className="flex justify-between mb-4">
