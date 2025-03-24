@@ -30,23 +30,20 @@ export function FormField<T extends FieldValues>({
       <label className="label font-medium">
         <span className="label-text text-base-content ">{label}</span>
       </label>
-
-      <input
-        {...register(name)}
-        className="input input-bordered w-full mb-2 bg-base-100 text-base-content focus:outline-none focus:ring-2 focus:ring-primary"
-        {...rest}
-      />
-
-      {/* Slot for Additional Content (Like Icons) */}
-      {children && (
-        <span className="absolute inset-y-0 right-1 top-4 flex items-center">
-          {children}
-        </span>
-      )}
-
-      {/* Error Message */}
+      <div className="relative">
+        <input
+          {...register(name)}
+          className="input input-bordered w-full bg-base-100 text-base-content focus:outline-none focus:ring-2 focus:ring-info"
+          {...rest}
+        />
+        {children && (
+          <span className="absolute inset-y-0 right-1 flex items-center">
+            {children}
+          </span>
+        )}
+      </div>
       {errorMessage && (
-        <span className="text-error text-sm mt-1">{errorMessage}</span>
+        <span className="text-error text-xs mt-1">{errorMessage}</span>
       )}
     </div>
   );
