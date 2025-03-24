@@ -4,10 +4,15 @@ import { ApiException } from "@/utils/exceptions";
 import type { AxiosError, AxiosRequestConfig } from "axios";
 import axios from "axios";
 
+export type FormError = {
+  formErrors: string[];
+  fieldErrors: Record<string, string[]>;
+};
 export type ApiError = {
   message: string;
   statusCode: number;
   code: string;
+  errors?: FormError;
 };
 
 export type ApiRequestConfig = {
@@ -30,8 +35,8 @@ export async function sendApiRequest<R>(
   } catch (error) {
     logger.error(error, "ApiService");
     if (isAxiosError<ApiError>(error) && error.response) {
-      const { message, statusCode, code } = error.response.data;
-      throw new ApiException(message, statusCode, code);
+      const { message, statusCode, code, errors } = error.response.data;
+      throw new ApiException(message, statusCode, code, errors);
     } else {
       throw error;
     }
