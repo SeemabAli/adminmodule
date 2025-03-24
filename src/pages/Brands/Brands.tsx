@@ -1,15 +1,15 @@
-/* eslint-disable @typescript-eslint/no-unused-expressions */
-/* eslint-disable @typescript-eslint/require-await */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-
-/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-confusing-void-expression */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { notify } from "@/lib/notify";
 import { FormField } from "@/common/components/ui/form/FormField";
 import { useForm } from "react-hook-form";
 import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ErrorModal } from "@/common/components/Error";
+import { useService } from "@/common/hooks/custom/useService";
 import { brandSchema, type BrandFormData } from "./brand.schema";
 import {
   createBrand,
@@ -17,28 +17,25 @@ import {
   updateBrand,
   deleteBrand,
 } from "./brand.service";
-import { logger } from "@/lib/logger";
-import { useService } from "@/common/hooks/custom/useService";
-import { ErrorModal } from "@/common/components/Error";
 import type { Company } from "../Accounts/CompanyAccounts/company.schema";
 import { fetchAllCompanies } from "../Accounts/CompanyAccounts/company.service";
-import { fetchAllRoutes } from "../Accounts/DeliveryRoutes/route.service";
 import type { DeliveryRoute } from "../Accounts/DeliveryRoutes/deliveryRoute.schema";
+import { fetchAllRoutes } from "../Accounts/DeliveryRoutes/route.service";
 import { fetchAllTaxes } from "../Accounts/TaxAccounts/tax.service";
 import TrashIcon from "@heroicons/react/24/solid/TrashIcon";
-import { PencilSquareIcon } from "@heroicons/react/24/solid";
+import PencilSquareIcon from "@heroicons/react/24/solid/PencilSquareIcon";
+import { ApiException } from "@/utils/exceptions";
 
 // Additional properties not in the schema but used in the component
 type BrandExtended = BrandFormData & {
   lessCommission: boolean;
   taxes: Tax[];
-  freights: {
-    routeId: string;
-    amountPerBag: number;
-    truckSharePerBag: number;
-  }[];
-  companyId: string;
-  companyName?: string; // For display purposes only
+  freights: FreightItem[];
+  company: {
+    id?: string;
+    name: string;
+    address: string;
+  };
 };
 
 // Type for the Tax entity
@@ -47,37 +44,48 @@ type Tax = {
   name: string;
 };
 
+// Type for freight items
+type FreightItem = {
+  routeId: string;
+  amountPerBag: number;
+  truckSharePerBag: number;
+  route?: {
+    id: string;
+    name: string;
+    code: string;
+  };
+};
+
+// Type for route input in the form
+type RouteInput = {
+  routeId: string;
+  amountPerBag: number | null;
+  truckSharePerBag: number | null;
+};
+
 const Brands = () => {
+  // State management
   const [brands, setBrands] = useState<BrandExtended[]>([]);
   const [lessCommission, setLessCommission] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [taxIds, setTaxIds] = useState<string[]>([]);
   const [availableTaxes, setAvailableTaxes] = useState<Tax[]>([]);
-  const [step, setStep] = useState(1);
-  const [editingBrandId, setEditingBrandId] = useState<string | null>(null);
-  const [isInEditMode, setIsInEditMode] = useState(false);
-  const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [companies, setCompanies] = useState<Company[]>([]);
   const [routes, setRoutes] = useState<DeliveryRoute[]>([]);
+  const [routeInputs, setRouteInputs] = useState<RouteInput[]>([]);
+
+  // UI state
+  const [step, setStep] = useState(1);
+  const [editingBrandId, setEditingBrandId] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [expandedRoutes, setExpandedRoutes] = useState<string | null>(null);
-  const [routeInputs, setRouteInputs] = useState<
-    {
-      routeId: string;
-      amountPerBag: number | null;
-      truckSharePerBag: number | null;
-    }[]
-  >([]);
 
-  // Use the service hook pattern for API calls
-  const {
-    error: fetchBrandsError,
-    data: brandsData,
-    isLoading: isBrandDataLoading,
-  } = useService(fetchAllBrands);
-
+  // Form setup with React Hook Form
   const {
     register,
     formState: { errors, isSubmitting },
+    handleSubmit,
     reset,
     setValue,
     getValues,
@@ -92,62 +100,74 @@ const Brands = () => {
     },
   });
 
+  // Service hooks for API calls
+  const {
+    error: fetchBrandsError,
+    data: brandsData,
+    isLoading: isBrandsLoading,
+  } = useService(fetchAllBrands);
+
+  // Data fetching for companies, routes, and taxes
   useEffect(() => {
-    const fetchCompanies = async () => {
+    const fetchCompaniesData = async () => {
       try {
-        const response = await fetchAllCompanies();
-        setCompanies(response);
-      } catch (error: unknown) {
+        const companiesData = await fetchAllCompanies();
+        setCompanies(companiesData);
+      } catch (error) {
         logger.error("Failed to fetch companies", error);
+        notify.error("Could not load companies data");
       }
     };
-    void fetchCompanies();
 
-    const fetchRoutes = async () => {
+    const fetchRoutesData = async () => {
       try {
-        const response = await fetchAllRoutes();
-        setRoutes(response);
-      } catch (error: unknown) {
+        const routesData = await fetchAllRoutes();
+        setRoutes(routesData);
+      } catch (error) {
         logger.error("Failed to fetch routes", error);
+        notify.error("Could not load routes data");
       }
     };
-    void fetchRoutes();
 
-    // Fetch Taxes data
-    const fetchTaxes = async () => {
-      // Fetch taxes from API
+    const fetchTaxesData = async () => {
       try {
-        const response = await fetchAllTaxes();
+        const taxesData = await fetchAllTaxes();
         setAvailableTaxes(
-          response.map((tax: any) => ({
+          taxesData.map((tax: any) => ({
             id: tax.id,
             name: tax.name,
           })),
         );
-      } catch (error: unknown) {
+      } catch (error) {
         logger.error("Failed to fetch taxes", error);
+        notify.error("Could not load taxes data");
       }
     };
-    void fetchTaxes();
+
+    void fetchCompaniesData();
+    void fetchRoutesData();
+    void fetchTaxesData();
   }, []);
 
-  // Update state when data is received from the API
+  // Process brands data when it's loaded
   useEffect(() => {
     if (brandsData) {
-      // Map API response to BrandExtended type
-      const fetchedBrands = brandsData.map((brand: any) => ({
+      const processedBrands = brandsData.map((brand: any) => ({
         id: brand.id,
         name: brand.name,
         code: brand.code,
         weightPerBagKg: brand.weightPerBagKg,
         commissionPerBag: brand.commissionPerBag,
-        lessCommission: brand.lessCommission ?? false,
+        lessCommission: brand.hasPurchaseCommission ?? false,
         taxes: brand.taxes ?? [],
         freights: brand.freights ?? [],
-        companyId: brand.companyId,
-        companyName: brand.companyName,
+        company: {
+          id: brand.company?.id,
+          name: brand.company?.name ?? "",
+          address: brand.company?.address ?? "",
+        },
       }));
-      setBrands(fetchedBrands);
+      setBrands(processedBrands);
     }
   }, [brandsData]);
 
@@ -157,38 +177,6 @@ const Brands = () => {
       initializeRouteInputs();
     }
   }, [step, routeInputs.length]);
-
-  // Initialize route inputs when moving to step 2
-  const initializeRouteInputs = () => {
-    // Initialize with empty values if in add mode
-    if (!isInEditMode) {
-      setRouteInputs(
-        routes.map((route) => ({
-          routeId: route.id ?? "", // Provide a fallback empty string if route.id is undefined
-          amountPerBag: null,
-          truckSharePerBag: null,
-        })),
-      );
-    } else if (editingBrandId !== null) {
-      // If in edit mode, populate with existing values
-      const brand = brands.find((b) => b.id === editingBrandId);
-      if (!brand) return;
-
-      const initializedRouteInputs = routes.map((route) => {
-        const existingRoute = brand?.freights.find(
-          (r) => r.routeId === route.id,
-        );
-        return {
-          routeId: route.id ?? "", // Ensure routeId is always a string
-          amountPerBag: existingRoute ? existingRoute.amountPerBag : null,
-          truckSharePerBag: existingRoute
-            ? existingRoute.truckSharePerBag
-            : null,
-        };
-      });
-      setRouteInputs(initializedRouteInputs);
-    }
-  };
 
   // Handle API errors
   if (fetchBrandsError) {
@@ -203,58 +191,103 @@ const Brands = () => {
     );
   }
 
-  const handleNext = async () => {
-    // Validate first step fields
+  // Initialize route inputs with existing data or empty values
+  const initializeRouteInputs = () => {
+    if (!isEditMode) {
+      // Create empty inputs for all routes when adding a new brand
+      setRouteInputs(
+        routes.map((route) => ({
+          routeId: route.id ?? "",
+          amountPerBag: null,
+          truckSharePerBag: null,
+        })),
+      );
+    } else if (editingBrandId) {
+      // Populate with existing values when editing
+      const brand = brands.find((b) => b.id === editingBrandId);
+      if (!brand) return;
+
+      const existingRouteInputs = routes.map((route) => {
+        const existingFreight = brand.freights.find(
+          (f) => f.routeId === route.id,
+        );
+        return {
+          routeId: route.id ?? "",
+          amountPerBag: existingFreight ? existingFreight.amountPerBag : null,
+          truckSharePerBag: existingFreight
+            ? existingFreight.truckSharePerBag
+            : null,
+        };
+      });
+      setRouteInputs(existingRouteInputs);
+    }
+  };
+
+  // Validate and move to next step
+  const handleNextStep = async () => {
     const isValid = await trigger(["name", "code"]);
-    if (!isValid || !selectedCompanyId) {
-      if (!selectedCompanyId) {
-        notify.error("Please select a company");
-      }
+    if (!isValid) return;
+
+    if (!selectedCompanyId) {
+      notify.error("Please select a company");
       return;
     }
+
     setStep(2);
   };
 
-  const handleBack = () => {
+  // Move back to previous step
+  const handlePreviousStep = () => {
     setStep(1);
   };
 
-  // Handle route input change
+  // Handle route input changes
   const handleRouteInputChange = (
     index: number,
     field: "amountPerBag" | "truckSharePerBag",
-    value: number,
+    value: number | null,
   ) => {
-    const updatedRouteInputs = [...routeInputs];
-    if (updatedRouteInputs[index]) {
-      updatedRouteInputs[index][field] = value;
+    const updatedInputs = [...routeInputs];
+    if (updatedInputs[index]) {
+      updatedInputs[index][field] = value;
+      setRouteInputs(updatedInputs);
     }
-    setRouteInputs(updatedRouteInputs);
   };
 
-  // Count valid routes (with both amountPerBag and truckSharePerBag)
-  const countValidRoutes = (freights: any[]) => {
+  // Count valid routes (with both values set)
+  const countValidRoutes = (freights: FreightItem[]) => {
     return freights.filter(
       (freight) =>
-        freight.amountPerBag !== null &&
-        freight.truckSharePerBag !== null &&
-        freight.amountPerBag !== undefined &&
-        freight.truckSharePerBag !== undefined,
+        freight.amountPerBag !== null && freight.truckSharePerBag !== null,
     ).length;
   };
 
-  // Save or Update Brand
+  // Handle tax selection toggle
+  const handleTaxToggle = (taxId: string) => {
+    setTaxIds((prev) =>
+      prev.includes(taxId)
+        ? prev.filter((id) => id !== taxId)
+        : [...prev, taxId],
+    );
+  };
+
+  // Remove a tax from selection
+  const handleRemoveTax = (taxId: string) => {
+    setTaxIds((prev) => prev.filter((id) => id !== taxId));
+  };
+
+  // Save or update brand
   const handleSaveBrand = async () => {
     // Validate second step fields
     const isValid = await trigger(["weightPerBagKg", "commissionPerBag"]);
-    if (!isValid || taxIds.length === 0) {
-      if (taxIds.length === 0) {
-        notify.error("Please select at least one tax");
-      }
+    if (!isValid) return;
+
+    if (taxIds.length === 0) {
+      notify.error("Please select at least one tax");
       return;
     }
 
-    // Filter out routes that have both amountPerBag and truckSharePerBag values
+    // Filter valid freights (with both values)
     const validFreights = routeInputs.filter(
       (route) => route.amountPerBag !== null && route.truckSharePerBag !== null,
     );
@@ -268,20 +301,20 @@ const Brands = () => {
 
     const formValues = getValues();
 
-    // Prepare data for API submission - conforming to the schema
+    // Prepare data for API
     const brandData: BrandFormData = {
       name: formValues.name,
       code: formValues.code,
-      weightPerBagKg: Number(formValues.weightPerBagKg), // Convert to number
-      commissionPerBag: Number(formValues.commissionPerBag), // Convert to number
+      weightPerBagKg: Number(formValues.weightPerBagKg),
+      commissionPerBag: Number(formValues.commissionPerBag),
     };
 
-    // If we're editing, include the ID
-    if (isInEditMode && editingBrandId !== null) {
+    // Include ID if editing
+    if (isEditMode && editingBrandId) {
       brandData.id = editingBrandId;
     }
 
-    // Prepare payload according to the API schema
+    // Prepare API payload
     const payload = {
       ...brandData,
       companyId: selectedCompanyId,
@@ -291,21 +324,20 @@ const Brands = () => {
         .filter(
           (
             route,
-          ): route is {
-            routeId: string;
+          ): route is RouteInput & {
             amountPerBag: number;
             truckSharePerBag: number;
           } => route.amountPerBag !== null && route.truckSharePerBag !== null,
         )
         .map((freight) => ({
           ...freight,
-          amountPerBag: Math.round(freight.amountPerBag), // Round to integer
-          truckSharePerBag: Math.round(freight.truckSharePerBag), // Round to integer
+          amountPerBag: Math.round(freight.amountPerBag),
+          truckSharePerBag: Math.round(freight.truckSharePerBag),
         })),
     };
 
     try {
-      if (isInEditMode && editingBrandId) {
+      if (isEditMode && editingBrandId) {
         // Update existing brand
         await updateBrand(editingBrandId, payload);
       } else {
@@ -313,89 +345,92 @@ const Brands = () => {
         await createBrand(payload);
       }
 
-      // Find company name for display in the table
-      const companyName = companies.find(
-        (c) => c.id === selectedCompanyId,
-      )?.name;
+      // Find company details for display
+      const company = companies.find((c) => c.id === selectedCompanyId);
 
-      // Create a displayable version of the brand for local state
-      const newBrand: BrandExtended = {
+      // Prepare for local state update
+      const brandForState: BrandExtended = {
         ...payload,
-        companyName: companyName ?? selectedCompanyId,
+        company: {
+          id: selectedCompanyId,
+          name: company?.name ?? "",
+          address: company?.address ?? "",
+        },
         taxes: taxIds
-          .map((id) => availableTaxes.find((tax) => tax.id === id)!)
-          .filter(Boolean),
+          .map((id) => availableTaxes.find((tax) => tax.id === id))
+          .filter(Boolean) as Tax[],
       };
 
       // Update local state
-      if (isInEditMode && editingBrandId) {
-        setBrands((prevBrands) =>
-          prevBrands.map((brand) =>
-            brand.id === editingBrandId ? newBrand : brand,
+      if (isEditMode && editingBrandId) {
+        setBrands((prev) =>
+          prev.map((brand) =>
+            brand.id === editingBrandId
+              ? { ...brandForState, id: editingBrandId }
+              : brand,
           ),
         );
       } else {
-        // Add new brand to state
-        setBrands([...brands, newBrand]);
+        setBrands((prev) => [...prev, brandForState]);
       }
 
-      // Reset form
-      reset();
-      setSelectedCompanyId("");
-      setLessCommission(false);
-      setTaxIds([]);
-      setRouteInputs([]);
-      setStep(1);
-      setIsInEditMode(false);
-      setEditingBrandId(null);
-
+      // Reset form state
+      resetFormState();
       notify.success(
-        isInEditMode
+        isEditMode
           ? "Brand updated successfully!"
           : "Brand added successfully!",
       );
     } catch (error) {
-      notify.error(
-        isInEditMode ? "Failed to update brand" : "Failed to add brand",
-      );
-      logger.error(error);
+      if (error instanceof ApiException && error.statusCode === 409) {
+        notify.error("Brand with this code already exists.");
+      } else {
+        notify.error(
+          isEditMode ? "Failed to update brand" : "Failed to add brand",
+        );
+        logger.error(error);
+      }
     }
   };
 
-  // Edit Brand
+  // Reset all form state
+  const resetFormState = () => {
+    reset();
+    setSelectedCompanyId("");
+    setLessCommission(false);
+    setTaxIds([]);
+    setRouteInputs([]);
+    setStep(1);
+    setIsEditMode(false);
+    setEditingBrandId(null);
+  };
+
+  // Edit brand
   const handleEditBrand = (brandId: string) => {
-    setIsInEditMode(true);
+    setIsEditMode(true);
     const brand = brands.find((b) => b.id === brandId);
     if (!brand) return;
 
-    // Set form values as per schema
+    // Populate form with existing data
     setValue("name", brand.name);
     setValue("code", brand.code);
     setValue("weightPerBagKg", brand.weightPerBagKg);
     setValue("commissionPerBag", brand.commissionPerBag);
 
-    setSelectedCompanyId(brand.companyId);
+    setSelectedCompanyId(brand.company?.id ?? "");
     setLessCommission(brand.lessCommission);
-    setTaxIds([...brand.taxes.map((tax) => tax.id)]);
-
-    // Initialize with empty route inputs, they'll be populated in the initializeRouteInputs effect
+    setTaxIds(brand.taxes.map((tax) => tax.id));
     setRouteInputs([]);
     setEditingBrandId(brandId);
     setStep(1);
   };
 
-  // Delete Brand
-  const handleDeleteBrand = async (brandId: string) => {
+  // Delete brand
+  const handleDeleteBrand = (brandId: string) => {
     notify.confirmDelete(async () => {
       try {
-        // Call API to delete brand
         await deleteBrand(brandId);
-
-        // Update local state
-        setBrands((prevBrands) =>
-          prevBrands.filter((brand) => brand.id !== brandId),
-        );
-
+        setBrands((prev) => prev.filter((brand) => brand.id !== brandId));
         notify.success("Brand deleted successfully!");
       } catch (error) {
         notify.error("Failed to delete brand");
@@ -404,272 +439,272 @@ const Brands = () => {
     });
   };
 
-  // Remove tax from selected taxes
-  const handleRemoveTax = (taxIdToRemove: string) => {
-    setTaxIds(taxIds.filter((id) => id !== taxIdToRemove));
-  };
-
-  // Filtered brands based on search query
+  // Filter brands based on search term
   const filteredBrands = brands.filter(
     (brand) =>
-      brand.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      brand.code.toLowerCase().includes(searchQuery.toLowerCase()),
+      brand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      brand.code.toLowerCase().includes(searchTerm.toLowerCase()),
   );
-
-  const handleTaxChange = (taxId: string) => {
-    setTaxIds((prev) =>
-      prev.includes(taxId)
-        ? prev.filter((id) => id !== taxId)
-        : [...prev, taxId],
-    );
-  };
-
-  // Find company name by ID
-  const getCompanyNameById = (id: string) => {
-    const company = companies.find((c) => c.id === id);
-    return company ? company.name : id;
-  };
-
-  // Get tax name by ID
-  const getTaxNameById = (id: string) => {
-    const tax = availableTaxes.find((t) => t.id === id);
-    return tax ? tax.name : id;
-  };
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold">Brand Management</h2>
+      <h2 className="text-2xl font-bold mb-4">Brand Management</h2>
 
       {/* Search Bar */}
-      <input
-        type="text"
-        placeholder="Search by Brand Name or Short Code"
-        value={searchQuery}
-        onChange={(e) => {
-          setSearchQuery(e.target.value);
-        }}
-        className="input input-bordered w-full mb-4"
-      />
+      <div className="mb-4">
+        <label className="block mb-1 font-medium">Search</label>
+        <input
+          type="text"
+          placeholder="Search by Brand Name or Short Code"
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+          }}
+          className="input input-bordered w-full"
+        />
+      </div>
 
-      <div className="bg-base-200 p-4 rounded-lg shadow-md">
+      {/* Brand Form */}
+      <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
         {step === 1 ? (
           <>
-            <label className="block mb-1 font-medium relative w-full top-1 left-0.5">
-              Company Name
-            </label>
-            <select
-              className="select select-bordered w-full mb-2 left-0.5"
-              value={selectedCompanyId}
-              onChange={(e) => {
-                setSelectedCompanyId(e.target.value);
-              }}
-            >
-              <option value="">Select Company</option>
-              {companies.map((company) => (
-                <option key={company.id} value={company.id}>
-                  {company.name}
-                </option>
-              ))}
-            </select>
-            <FormField
-              type="text"
-              placeholder="Enter Brand Name"
-              name="name"
-              label="Brand Name"
-              register={register}
-              errorMessage={errors.name?.message}
-            />
-            <FormField
-              type="text"
-              placeholder="Enter Brand Short Code"
-              name="code"
-              label="Brand Short Code"
-              register={register}
-              errorMessage={errors.code?.message}
-            />
+            {/* Step 1: Basic Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="col-span-2">
+                <label className="block mb-1 font-medium">Company Name</label>
+                <select
+                  className="select select-bordered w-full mb-2"
+                  value={selectedCompanyId}
+                  onChange={(e) => {
+                    setSelectedCompanyId(e.target.value);
+                  }}
+                >
+                  <option value="">Select Company</option>
+                  {companies.map((company) => (
+                    <option key={company.id} value={company.id}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <button className="btn btn-info mt-4" onClick={handleNext}>
+              <FormField
+                type="text"
+                placeholder="Brand Name"
+                name="name"
+                label="Brand Name"
+                register={register}
+                errorMessage={errors.name?.message}
+              />
+
+              <FormField
+                type="text"
+                placeholder="Brand Short Code"
+                name="code"
+                label="Brand Short Code"
+                register={register}
+                errorMessage={errors.code?.message}
+              />
+            </div>
+
+            <Button onClick={handleNextStep} shape="info" className="mt-4">
               Next
-            </button>
+            </Button>
           </>
         ) : (
           <>
-            <FormField
-              type="number"
-              placeholder="Enter Weight"
-              name="weightPerBagKg"
-              label="KG Per Bag"
-              register={register}
-              errorMessage={errors.weightPerBagKg?.message}
-            />
-
-            <FormField
-              type="number"
-              placeholder="Enter Amount"
-              name="commissionPerBag"
-              label="Commission Per Bag"
-              register={register}
-              errorMessage={errors.commissionPerBag?.message}
-            />
-            <label className="flex items-center gap-2 mb-2 text-sm">
-              <input
-                type="checkbox"
-                checked={lessCommission}
-                onChange={(e) => {
-                  setLessCommission(e.target.checked);
-                }}
+            {/* Step 2: Additional Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <FormField
+                type="number"
+                placeholder="Weight in KG"
+                name="weightPerBagKg"
+                label="KG Per Bag"
+                register={register}
+                errorMessage={errors.weightPerBagKg?.message}
               />
-              Less Commission at Purchase Time
-            </label>
-            <label className="block mb-1 font-medium relative w-full top-1 left-0.5">
-              Taxes
-            </label>
-            <select
-              className="select select-bordered w-full mb-2 left-0.5"
-              value=""
-              onChange={(e) => {
-                if (e.target.value) {
-                  handleTaxChange(e.target.value);
-                }
-              }}
-            >
-              <option value="">Select Taxes</option>
-              {availableTaxes.map((tax) => (
-                <option
-                  key={tax.id}
-                  value={tax.id}
-                  disabled={taxIds.includes(tax.id)}
-                >
-                  {tax.name}
-                </option>
-              ))}
-            </select>
 
-            {/* Display selected taxes */}
-            {taxIds.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-4">
-                {taxIds.map((taxId) => (
-                  <div key={taxId} className="badge badge-info pr-0">
-                    {getTaxNameById(taxId)}
-                    <button
-                      className="btn-sm btn-circle text-red-500"
-                      onClick={() => {
-                        handleRemoveTax(taxId);
-                      }}
-                    >
-                      ✕
-                    </button>
-                  </div>
+              <FormField
+                type="number"
+                placeholder="Commission Amount"
+                name="commissionPerBag"
+                label="Commission Per Bag"
+                register={register}
+                errorMessage={errors.commissionPerBag?.message}
+              />
+            </div>
+
+            <div className="mt-2">
+              <label className="flex items-center gap-2 mb-2">
+                <input
+                  type="checkbox"
+                  checked={lessCommission}
+                  onChange={(e) => {
+                    setLessCommission(e.target.checked);
+                  }}
+                  className="checkbox-info"
+                />
+                <span>Less Commission at Purchase Time</span>
+              </label>
+            </div>
+
+            {/* Tax Selection */}
+            <div className="mt-2">
+              <label className="block mb-1 font-medium">Taxes</label>
+              <select
+                className="select select-bordered w-full mb-2"
+                value=""
+                onChange={(e) => {
+                  if (e.target.value) handleTaxToggle(e.target.value);
+                }}
+              >
+                <option value="">Select Taxes</option>
+                {availableTaxes.map((tax) => (
+                  <option
+                    key={tax.id}
+                    value={tax.id}
+                    disabled={taxIds.includes(tax.id)}
+                  >
+                    {tax.name}
+                  </option>
                 ))}
-              </div>
-            )}
+              </select>
 
-            <label className="block mb-2 font-medium">
-              Add Freight & Truck Share
-            </label>
-            <div className="overflow-x-auto mb-4">
-              <table className="table w-full">
-                <thead>
-                  <tr className="bg-base-300">
-                    <th>Route</th>
-                    <th>Amount Per Bag</th>
-                    <th>Truck Share Per Bag</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {routes.map((route, index) => {
-                    const routeInput = routeInputs.find(
-                      (r) => r.routeId === route.id,
-                    ) ?? {
-                      routeId: route.id,
-                      amountPerBag: null,
-                      truckSharePerBag: null,
-                    };
-                    const routeInputIndex = routeInputs.findIndex(
-                      (r) => r.routeId === route.id,
-                    );
-
+              {/* Selected Taxes Display */}
+              {taxIds.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {taxIds.map((taxId) => {
+                    const tax = availableTaxes.find((t) => t.id === taxId);
                     return (
-                      <tr key={route.id}>
-                        <td>{route.code}</td>
-                        <td>
-                          <input
-                            type="number"
-                            placeholder="Enter Amount Per Bag"
-                            className="input input-bordered input-sm w-full"
-                            value={routeInput.amountPerBag ?? ""}
-                            onChange={(e) => {
-                              handleRouteInputChange(
-                                routeInputIndex !== -1
-                                  ? routeInputIndex
-                                  : index,
-                                "amountPerBag",
-                                e.target.value === ""
-                                  ? 0
-                                  : parseFloat(e.target.value),
-                              );
-                            }}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            placeholder="Enter Truck Share"
-                            className="input input-bordered input-sm w-full"
-                            value={routeInput.truckSharePerBag ?? ""}
-                            onChange={(e) => {
-                              handleRouteInputChange(
-                                routeInputIndex !== -1
-                                  ? routeInputIndex
-                                  : index,
-                                "truckSharePerBag",
-                                e.target.value === ""
-                                  ? 0
-                                  : parseFloat(e.target.value),
-                              );
-                            }}
-                          />
-                        </td>
-                      </tr>
+                      <div key={taxId} className="badge badge-info gap-1">
+                        {tax?.name}
+                        <button
+                          className="ml-1"
+                          onClick={() => {
+                            handleRemoveTax(taxId);
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
+                </div>
+              )}
+            </div>
+
+            {/* Route Freight Configuration */}
+            <div className="mt-4">
+              <label className="block mb-2 font-medium">
+                Freight & Truck Share Configuration
+              </label>
+              <div className="overflow-x-auto mb-4">
+                <table className="table w-full">
+                  <thead>
+                    <tr className="bg-base-300">
+                      <th>Route</th>
+                      <th>Freight Amount</th>
+                      <th>Truck Share</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {routes.map((route, index) => {
+                      const routeInput = routeInputs.find(
+                        (r) => r.routeId === route.id,
+                      ) ?? {
+                        routeId: route.id ?? "",
+                        amountPerBag: null,
+                        truckSharePerBag: null,
+                      };
+                      const routeIndex = routeInputs.findIndex(
+                        (r) => r.routeId === route.id,
+                      );
+                      const effectiveIndex =
+                        routeIndex !== -1 ? routeIndex : index;
+
+                      return (
+                        <tr key={route.id}>
+                          <td>{route.code}</td>
+                          <td>
+                            <input
+                              type="number"
+                              placeholder="Freight Amount"
+                              className="input input-bordered input-sm w-full"
+                              value={routeInput.amountPerBag ?? ""}
+                              onChange={(e) => {
+                                const value =
+                                  e.target.value === ""
+                                    ? null
+                                    : parseFloat(e.target.value);
+                                handleRouteInputChange(
+                                  effectiveIndex,
+                                  "amountPerBag",
+                                  value,
+                                );
+                              }}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              placeholder="Truck Share"
+                              className="input input-bordered input-sm w-full"
+                              value={routeInput.truckSharePerBag ?? ""}
+                              onChange={(e) => {
+                                const value =
+                                  e.target.value === ""
+                                    ? null
+                                    : parseFloat(e.target.value);
+                                handleRouteInputChange(
+                                  effectiveIndex,
+                                  "truckSharePerBag",
+                                  value,
+                                );
+                              }}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <div className="flex justify-between mt-4">
-              <button className="btn btn-secondary" onClick={handleBack}>
+              <Button onClick={handlePreviousStep} shape="secondary">
                 Back
-              </button>
+              </Button>
               <Button
+                onClick={handleSubmit(handleSaveBrand)}
                 shape="info"
-                pending={isSubmitting || isBrandDataLoading}
-                onClick={handleSaveBrand}
+                pending={isSubmitting}
               >
-                {isInEditMode ? "Update Brand" : "Save Brand"}
+                {isEditMode ? "Update Brand" : "Save Brand"}
               </Button>
             </div>
           </>
         )}
       </div>
+
       {/* Brands Table */}
-      {isBrandDataLoading ? (
-        <div className="skeleton h-32 w-full mt-4"></div>
+      {isBrandsLoading ? (
+        <div className="skeleton h-28 w-full"></div>
       ) : filteredBrands.length > 0 ? (
-        <div className="overflow-x-auto mt-4">
+        <div className="overflow-x-auto">
           <table className="table w-full bg-base-200 rounded-lg shadow-md">
             <thead>
               <tr className="bg-base-300 text-base-content text-center">
-                <th>#</th>
-                <th>Brand Name</th>
-                <th>Short Code</th>
-                <th>Company</th>
-                <th>KG/Bag</th>
-                <th>Commission</th>
-                <th>Less Comm.</th>
-                <th>Tax</th>
-                <th>Routes</th>
-                <th>Actions</th>
+                <th className="p-3">#</th>
+                <th className="p-3">Brand Name</th>
+                <th className="p-3">Short Code</th>
+                <th className="p-3">Company</th>
+                <th className="p-3">KG/Bag</th>
+                <th className="p-3">Commission</th>
+                <th className="p-3">Less Comm.</th>
+                <th className="p-3">Taxes</th>
+                <th className="p-3">Routes</th>
+                <th className="p-3">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -679,16 +714,22 @@ const Brands = () => {
                     key={brand.id}
                     className="border-b border-base-300 text-center"
                   >
-                    <td>{index + 1}</td>
-                    <td>{brand.name}</td>
-                    <td>{brand.code}</td>
-                    <td>{getCompanyNameById(brand.companyId)}</td>
-                    <td>{Math.round(brand.weightPerBagKg)}</td>
-                    <td>{Math.round(brand.commissionPerBag)}</td>
-                    <td>{brand.lessCommission ? "Yes" : "No"}</td>
-                    <td>{brand.taxes.map((tax) => tax.name).join(", ")}</td>
+                    <td className="p-3">{index + 1}</td>
+                    <td className="p-3">{brand.name}</td>
+                    <td className="p-3">{brand.code}</td>
+                    <td className="p-3">{brand.company?.name ?? "N/A"}</td>
+                    <td className="p-3">{Math.round(brand.weightPerBagKg)}</td>
+                    <td className="p-3">
+                      {Math.round(brand.commissionPerBag)}
+                    </td>
+                    <td className="p-3">
+                      {brand.lessCommission ? "Yes" : "No"}
+                    </td>
+                    <td className="p-3">
+                      {brand.taxes.map((tax) => tax.name).join(", ")}
+                    </td>
                     <td
-                      className="cursor-pointer hover:bg-base-300"
+                      className="p-3 cursor-pointer hover:bg-base-300"
                       onClick={() => {
                         setExpandedRoutes(
                           expandedRoutes === brand.id
@@ -702,24 +743,21 @@ const Brands = () => {
                     </td>
                     <td className="p-3 flex gap-2 justify-center">
                       <button
-                        onClick={() => {
-                          brand.id && handleEditBrand(brand.id);
-                        }}
+                        onClick={() => brand.id && handleEditBrand(brand.id)}
                         className="flex items-center mt-2 justify-center"
                       >
                         <PencilSquareIcon className="w-5 h-5 text-info" />
                       </button>
-
                       <button
-                        onClick={() => {
-                          void handleDeleteBrand(brand.id ?? "");
-                        }}
+                        onClick={() => brand.id && handleDeleteBrand(brand.id)}
                         className="flex items-center mt-2 justify-center"
                       >
                         <TrashIcon className="w-5 h-5 text-red-500" />
                       </button>
                     </td>
                   </tr>
+
+                  {/* Expanded Routes Details */}
                   {expandedRoutes === brand.id && (
                     <tr>
                       <td colSpan={10} className="p-0">
@@ -727,19 +765,29 @@ const Brands = () => {
                           <table className="table w-full">
                             <thead>
                               <tr className="bg-base-200">
-                                <th>Amount Per Bag</th>
-                                <th>Truck Share Per Bag</th>
+                                <th>Route</th>
+                                <th>Freight Amount</th>
+                                <th>Truck Share</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {brand.freights.map((freight, freightIndex) => (
-                                <tr key={freightIndex}>
-                                  <td>{Math.round(freight.amountPerBag)}</td>
-                                  <td>
-                                    {Math.round(freight.truckSharePerBag)}
-                                  </td>
-                                </tr>
-                              ))}
+                              {brand.freights.map((freight, freightIndex) => {
+                                const routeCode =
+                                  freight.route?.code ??
+                                  routes.find((r) => r.id === freight.routeId)
+                                    ?.code ??
+                                  freight.routeId;
+
+                                return (
+                                  <tr key={freightIndex}>
+                                    <td>{routeCode}</td>
+                                    <td>{Math.round(freight.amountPerBag)}</td>
+                                    <td>
+                                      {Math.round(freight.truckSharePerBag)}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>
@@ -752,8 +800,8 @@ const Brands = () => {
           </table>
         </div>
       ) : (
-        <div className="bg-base-200 p-4 mt-4 rounded-lg shadow-md mb-6 text-center text-gray-500">
-          No brands added yet.
+        <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6 text-center text-gray-500">
+          No brands found.
         </div>
       )}
     </div>
