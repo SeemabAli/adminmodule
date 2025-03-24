@@ -17,6 +17,7 @@ import { useService } from "@/common/hooks/custom/useService";
 import { ErrorModal } from "@/common/components/Error";
 import { TrashIcon } from "@heroicons/react/24/solid";
 import { PencilSquareIcon } from "@heroicons/react/24/solid";
+import { ApiException } from "@/utils/exceptions";
 
 const CompanyAccounts = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -48,8 +49,15 @@ const CompanyAccounts = () => {
       reset();
       notify.success("Company added successfully.");
     } catch (error: unknown) {
-      notify.error("Failed to add company.");
       logger.error(error);
+
+      if (error instanceof ApiException) {
+        if (error.statusCode == 409) {
+          notify.error("Company already exists.");
+        }
+        return;
+      }
+      notify.error("Failed to add company.");
     }
   };
 
@@ -86,16 +94,18 @@ const CompanyAccounts = () => {
     setEditingId(companyId);
   };
 
-  const handleDelete = async (companyId: string) => {
+  const handleDelete = (companyId: string) => {
     console.log("companyId", companyId);
-    try {
-      await deleteCompany(companyId);
-      setCompanies(companies.filter((company) => company.id !== companyId));
-      notify.success("Company deleted successfully.");
-    } catch (error: unknown) {
-      notify.error("Failed to delete company.");
-      logger.error(error);
-    }
+    notify.confirmDelete(async () => {
+      try {
+        await deleteCompany(companyId);
+        setCompanies(companies.filter((company) => company.id !== companyId));
+        notify.success("Company deleted successfully.");
+      } catch (error: unknown) {
+        notify.error("Failed to delete company.");
+        logger.error(error);
+      }
+    });
   };
 
   useEffect(() => {
@@ -184,7 +194,7 @@ const CompanyAccounts = () => {
 
                     <button
                       onClick={() => {
-                        void handleDelete(company.id ?? "");
+                        handleDelete(company.id ?? "");
                       }}
                       className="flex items-center mt-2 justify-center"
                     >

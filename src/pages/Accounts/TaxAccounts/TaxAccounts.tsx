@@ -18,6 +18,7 @@ import { logger } from "@/lib/logger";
 import { ErrorModal } from "@/common/components/Error";
 import PencilSquareIcon from "@heroicons/react/24/solid/PencilSquareIcon";
 import TrashIcon from "@heroicons/react/24/solid/TrashIcon";
+import { ApiException } from "@/utils/exceptions";
 
 const TaxAccounts = () => {
   const [taxes, setTaxes] = useState<Tax[]>([]);
@@ -38,6 +39,7 @@ const TaxAccounts = () => {
     setValue,
     setFocus,
     reset,
+    watch,
   } = useForm<Tax>({
     resolver: zodResolver(taxSchema),
     defaultValues: {
@@ -48,6 +50,9 @@ const TaxAccounts = () => {
       applications: [],
     },
   });
+
+  // Watch the rate value to validate it before submission
+  const rateValue = watch("rateValue");
 
   const handleTaxChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedValue = e.target.value;
@@ -66,9 +71,25 @@ const TaxAccounts = () => {
     });
   };
 
+  const validateTaxRate = (
+    rateValue: number,
+    rateType: "percentage" | "fixed",
+  ): boolean => {
+    if (rateType === "percentage" && rateValue > 100) {
+      notify.error("Percentage rate cannot exceed 100%.");
+      return false;
+    }
+    return true;
+  };
+
   const handleAddTax = async (formData: Tax) => {
     if (selectedApplicationIds.size === 0) {
       notify.error("Please select at least one tax type.");
+      return;
+    }
+
+    // Validate tax rate based on type
+    if (!validateTaxRate(formData.rateValue, selectedOption)) {
       return;
     }
 
@@ -103,9 +124,20 @@ const TaxAccounts = () => {
       setSelectedApplicationIds(new Set());
       setSelectedOption("percentage");
       notify.success("Tax added successfully!");
-    } catch (error) {
-      notify.error("Failed to add tax.");
+    } catch (error: unknown) {
       logger.error(error);
+
+      if (error instanceof ApiException) {
+        if (error.statusCode === 409) {
+          if (selectedOption === "percentage") {
+            notify.error("Tax percentage should be under 100%.");
+          } else {
+            notify.error("Tax already exists.");
+          }
+        }
+        return;
+      }
+      notify.error("Failed to add tax.");
     }
   };
 
@@ -117,6 +149,11 @@ const TaxAccounts = () => {
 
     if (!editingTaxId) {
       notify.error("No tax selected for update.");
+      return Promise.reject();
+    }
+
+    // Validate tax rate based on type
+    if (!validateTaxRate(formData.rateValue, selectedOption)) {
       return Promise.reject();
     }
 
@@ -153,9 +190,22 @@ const TaxAccounts = () => {
       notify.success("Tax updated successfully!");
       await Promise.resolve();
       return;
-    } catch (error) {
-      notify.error("Failed to update tax.");
+    } catch (error: unknown) {
       logger.error(error);
+
+      if (error instanceof ApiException) {
+        if (error.statusCode === 409) {
+          if (selectedOption === "percentage") {
+            notify.error("Tax percentage should be under 100%.");
+          } else {
+            notify.error("Failed to update tax. It may already exist.");
+          }
+        } else {
+          notify.error("Failed to update tax.");
+        }
+      } else {
+        notify.error("Failed to update tax.");
+      }
       return Promise.reject();
     }
   };
@@ -346,12 +396,21 @@ const TaxAccounts = () => {
             </div>
             <FormField
               type="number"
-              placeholder="Enter Tax Rate"
+              placeholder={
+                selectedOption === "percentage"
+                  ? "Enter Tax Rate (0-100%)"
+                  : "Enter Fixed Rate"
+              }
               name="rateValue"
-              label="Tax Rate"
+              label={`Tax Rate ${selectedOption === "percentage" ? "(0-100%)" : ""}`}
               register={register}
               errorMessage={errors.rateValue?.message}
             />
+            {selectedOption === "percentage" && rateValue > 100 && (
+              <p className="text-red-500 text-sm mt-1">
+                Percentage rate cannot exceed 100%
+              </p>
+            )}
           </div>
         </div>
 

@@ -19,6 +19,7 @@ import {
 } from "./deliveryRoute.schema";
 import TrashIcon from "@heroicons/react/24/solid/TrashIcon";
 import PencilSquareIcon from "@heroicons/react/24/solid/PencilSquareIcon";
+import { ApiException } from "@/utils/exceptions";
 
 const DeliveryRoutes = () => {
   const [routes, setRoutes] = useState<DeliveryRoute[]>([]);
@@ -62,8 +63,15 @@ const DeliveryRoutes = () => {
       setHasToll(false);
       notify.success("Route added successfully!");
     } catch (error: unknown) {
-      notify.error("Failed to add route.");
       logger.error(error);
+
+      if (error instanceof ApiException) {
+        if (error.statusCode == 409) {
+          notify.error("Route already exists.");
+        }
+        return;
+      }
+      notify.error("Failed to add route.");
     }
   };
 
