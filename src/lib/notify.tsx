@@ -2,10 +2,16 @@ import { toast } from "react-hot-toast";
 
 export const notify = {
   success: (message = "Operation successful") =>
-    toast.success(message, { id: "success-toast" }),
+    toast.success(message, {
+      id: "success-toast",
+      duration: 3000, // 4 seconds duration
+    }),
 
   error: (message = "Something went wrong") =>
-    toast.error(message, { id: "error-toast" }),
+    toast.error(message, {
+      id: "error-toast",
+      duration: 3000, // 4 seconds duration
+    }),
 
   confirmDelete: (callback: () => void) => {
     toast(
@@ -33,7 +39,7 @@ export const notify = {
           </div>
         </div>
       ),
-      { duration: 6000 },
+      { duration: 3000 }, // Changed from 6000 to 4000 (4 seconds)
     );
   },
 };
