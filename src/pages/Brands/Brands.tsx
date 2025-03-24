@@ -549,10 +549,10 @@ const Brands = () => {
             {taxIds.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-4">
                 {taxIds.map((taxId) => (
-                  <div key={taxId} className="badge badge-info gap-2">
+                  <div key={taxId} className="badge badge-info pr-0">
                     {getTaxNameById(taxId)}
                     <button
-                      className="btn-xs btn-circle"
+                      className="btn-sm btn-circle text-red-500"
                       onClick={() => {
                         handleRemoveTax(taxId);
                       }}
