@@ -52,17 +52,17 @@ export const SigninPage = () => {
     <div className="flex justify-center items-center min-h-screen bg-[rgba(0,0,0,0.5)]">
       <div className="card w-full max-w-md bg-base-200 shadow-2xl rounded-xl p-8 mx-4">
         {/* Logo & Branding */}
-        <div className="flex flex-col items-center mb-6">
+        <div className="flex flex-col items-center mb-4">
           <img
             src={logo}
             alt="MB&CO Logo"
-            className="h-16 w-16 rounded-full shadow-lg"
+            className="h-16 w-16 rounded-full shadow-xl"
           />
           <h1 className="text-2xl font-bold mt-3">MB&CO</h1>
         </div>
 
         <h2 className="text-xl font-semibold text-center">Welcome Back</h2>
-        <p className="text-sm text-base-content text-center mb-6">
+        <p className="text-sm text-base-content text-center mb-4">
           Sign in to continue
         </p>
 

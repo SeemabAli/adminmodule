@@ -39,7 +39,7 @@ export function FormField<T extends FieldValues>({
 
       {/* Slot for Additional Content (Like Icons) */}
       {children && (
-        <span className="absolute inset-y-0 right-1 top-6 flex items-center">
+        <span className="absolute inset-y-0 right-1 top-4 flex items-center">
           {children}
         </span>
       )}
