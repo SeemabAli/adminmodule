@@ -1,9 +1,9 @@
 import { sendApiRequest } from "@/common/services/api.service";
 import type { Tax, TaxApplication } from "./tax.schema";
 
-export interface TaxRequestPayload extends Omit<Tax, "applicableOn"> {
+export interface TaxRequestPayload extends Omit<Tax, "applications"> {
   applicationIds: string[];
-  applicableOn?: { id: string; name: string }[];
+  applications?: { id: string; name: string }[];
 }
 
 export const createTax = async (data: TaxRequestPayload) => {

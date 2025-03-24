@@ -45,7 +45,7 @@ const TaxAccounts = () => {
       name: "",
       rateValue: 0,
       rateType: "percentage",
-      applicableOn: [],
+      applications: [],
     },
   });
 
@@ -73,8 +73,8 @@ const TaxAccounts = () => {
     }
 
     try {
-      // Create applicableOn array from selectedApplicationIds
-      const applicableOn = Array.from(selectedApplicationIds).map((id) => {
+      // Create applications array from selectedApplicationIds
+      const applications = Array.from(selectedApplicationIds).map((id) => {
         const application = taxApplications.find((app) => app.id === id);
         return {
           id,
@@ -86,7 +86,7 @@ const TaxAccounts = () => {
         ...formData,
         rateType: selectedOption,
         applicationIds: [...selectedApplicationIds],
-        applicableOn: applicableOn,
+        applications: applications,
       };
 
       const response = (await createTax(taxPayload)) as { id: string };
@@ -95,7 +95,7 @@ const TaxAccounts = () => {
       const newTax = {
         ...taxPayload,
         id: response.id,
-        applicableOn,
+        applications,
       };
 
       setTaxes([...taxes, newTax]);
@@ -121,8 +121,8 @@ const TaxAccounts = () => {
     }
 
     try {
-      // Create applicableOn array from selectedApplicationIds
-      const applicableOn = Array.from(selectedApplicationIds).map((id) => {
+      // Create applications array from selectedApplicationIds
+      const applications = Array.from(selectedApplicationIds).map((id) => {
         const application = taxApplications.find((app) => app.id === id);
         return {
           id,
@@ -134,7 +134,7 @@ const TaxAccounts = () => {
         id: editingTaxId,
         rateType: selectedOption,
         applicationIds: [...selectedApplicationIds],
-        applicableOn: applicableOn,
+        applications: applications,
       };
       await updateTax(editingTaxId, taxData);
       setTaxes(
@@ -175,10 +175,10 @@ const TaxAccounts = () => {
     setValue("name", tax.name);
     setValue("rateValue", tax.rateValue);
     setValue("rateType", tax.rateType);
-    setValue("applicableOn", tax.applicableOn);
+    setValue("applications", tax.applications);
 
     setSelectedOption(tax.rateType);
-    setSelectedApplicationIds(new Set(tax.applicableOn.map((app) => app.id)));
+    setSelectedApplicationIds(new Set(tax.applications.map((app) => app.id)));
     setFocus("name");
     setEditingTaxId(tax.id);
   };
@@ -231,7 +231,7 @@ const TaxAccounts = () => {
           name: tax.name ?? "",
           rateValue: tax.rateValue ?? 0,
           rateType: tax.rateType ?? "percentage",
-          applicableOn: tax.applicableOn ?? [],
+          applications: tax.applications ?? [],
         })),
       );
     }
@@ -392,8 +392,8 @@ const TaxAccounts = () => {
                   <td className="p-3">{index + 1}</td>
                   <td className="p-3">{tax.name}</td>
                   <td className="p-3">
-                    {tax.applicableOn && tax.applicableOn.length > 0
-                      ? tax.applicableOn.map((x) => x.name).join(", ")
+                    {tax.applications && tax.applications.length > 0
+                      ? tax.applications.map((x) => x.name).join(", ")
                       : "None"}
                   </td>
                   <td className="p-3">{tax.rateType}</td>

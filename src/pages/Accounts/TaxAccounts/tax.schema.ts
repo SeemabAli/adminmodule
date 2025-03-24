@@ -17,7 +17,7 @@ export const taxSchema = z.object({
     .positive("Tax rate must be a positive number")
     .or(z.string().regex(/^\d+$/).transform(Number))
     .refine((val) => val > 0, "Tax rate must be greater than 0"),
-  applicableOn: z.array(
+  applications: z.array(
     z.object({
       id: z.string(),
       name: z.string(),
