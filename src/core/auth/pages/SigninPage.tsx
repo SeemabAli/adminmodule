@@ -96,7 +96,7 @@ export const SigninPage = () => {
               <button
                 type="button"
                 onClick={togglePasswordVisibility}
-                className="absolute inset-y-0 right-1 flex items-center text-gray-300 hover:text-gray-800"
+                className="absolute inset-y-0 right-1 flex items-center text-gray-500 hover:text-gray-800"
               >
                 {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
               </button>
