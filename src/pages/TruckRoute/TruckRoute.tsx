@@ -1,66 +1,132 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
+import { useEffect, useState } from "react";
 import { notify } from "@/lib/notify";
-import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
-import { useState } from "react";
+import { FormField } from "@/common/components/ui/form/FormField";
+import { useForm } from "react-hook-form";
+import { Button } from "@/common/components/ui/Button";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { truckRouteSchema, type TruckRoute } from "./truckroute.schema";
+import {
+  createTruckRoute,
+  fetchAllTruckRoute,
+  updateTruckRoute,
+  deleteTruckRoute,
+} from "./truckroute.service";
+import { logger } from "@/lib/logger";
+import { useService } from "@/common/hooks/custom/useService";
+import { ErrorModal } from "@/common/components/Error";
+import { TrashIcon } from "@heroicons/react/24/solid";
+import { PencilSquareIcon } from "@heroicons/react/24/solid";
+import { ApiException } from "@/utils/exceptions";
 
 const TruckRoute = () => {
-  const [routes, setRoutes] = useState<
-    {
-      name: string;
-      shortCode: string;
-    }[]
-  >([]);
-
-  const [routeName, setRouteName] = useState("");
-  const [routeShortCode, setRouteShortCode] = useState("");
+  const [routes, setRoutes] = useState<TruckRoute[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
-  // Save or Update Route
-  const handleSaveRoute = () => {
-    if (routeName.trim() === "" || routeShortCode.trim() === "") return;
+  const { error, data, isLoading } = useService(fetchAllTruckRoute);
 
-    const newRoute = {
-      name: routeName,
-      shortCode: routeShortCode,
-    };
+  const {
+    register,
+    formState: { errors, isSubmitting },
+    handleSubmit,
+    setValue,
+    setFocus,
+    getValues,
+    reset,
+  } = useForm<TruckRoute>({
+    resolver: zodResolver(truckRouteSchema),
+    defaultValues: {
+      id: "",
+      name: "",
+      shortCode: "",
+    },
+  });
 
-    if (editingIndex !== null) {
-      const updatedRoutes = [...routes];
-      updatedRoutes[editingIndex] = newRoute;
-      setRoutes(updatedRoutes);
-      setEditingIndex(null);
-    } else {
+  const handleAddRoute = async (newRouteData: TruckRoute) => {
+    try {
+      const newRoute = await createTruckRoute(newRouteData);
       setRoutes([...routes, newRoute]);
+      reset();
+      notify.success("Route added successfully.");
+    } catch (error: unknown) {
+      logger.error(error);
+
+      if (error instanceof ApiException) {
+        if (error.statusCode == 409) {
+          notify.error("Route already exists.");
+        }
+        return;
+      }
+      notify.error("Failed to add route.");
     }
-
-    // Reset Fields
-    setRouteName("");
-    setRouteShortCode("");
   };
 
-  // Edit Route
-  const handleEditRoute = (index: number) => {
-    const route = routes.find((_, i) => i === index);
-    if (!route) return;
-    setRouteName(route.name);
-    setRouteShortCode(route.shortCode);
-    setEditingIndex(index);
+  const onRouteUpdate = async (routeId: string) => {
+    try {
+      const updatedRouteData = getValues();
+      const updatedRoute = await updateTruckRoute(routeId, updatedRouteData);
+      const updatedRoutes = routes.map((route) => {
+        if (route.id === routeId) {
+          return updatedRoute;
+        }
+        return route;
+      });
+
+      setRoutes(updatedRoutes);
+      setEditingId(null);
+      reset();
+      notify.success("Route updated successfully.");
+    } catch (error: unknown) {
+      notify.error("Failed to update route.");
+      logger.error(error);
+    }
   };
 
-  // Delete Route
-  const handleDeleteRoute = (index: number) => {
-    notify.confirmDelete(() => {
-      setRoutes((prev) => prev.filter((_, i) => i !== index));
-      notify.success("Route deleted successfully!");
+  const handleEdit = (routeId: string) => {
+    const targetRoute = routes.find((route) => route.id === routeId);
+    if (!targetRoute) return;
+
+    setValue("name", targetRoute.name);
+    setValue("shortCode", targetRoute.shortCode);
+    setFocus("name");
+    setEditingId(routeId);
+  };
+
+  const handleDelete = (routeId: string) => {
+    notify.confirmDelete(async () => {
+      try {
+        await deleteTruckRoute(routeId);
+        setRoutes(routes.filter((route) => route.id !== routeId));
+        notify.success("Route deleted successfully.");
+      } catch (error: unknown) {
+        notify.error("Failed to delete route.");
+        logger.error(error);
+      }
     });
   };
 
-  // Filtered routes based on search query
+  useEffect(() => {
+    if (data) {
+      setRoutes(data);
+    }
+  }, [data]);
+
   const filteredRoutes = routes.filter(
     (route) =>
       route.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       route.shortCode.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+
+  if (error) {
+    return (
+      <ErrorModal
+        message={
+          error instanceof Error ? error.message : "Failed to fetch routes data"
+        }
+      />
+    );
+  }
 
   return (
     <div className="p-6">
@@ -80,39 +146,39 @@ const TruckRoute = () => {
       {/* Form */}
       <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Route Name & Short Code */}
-          <label className="block mb-1 font-medium">
-            Route Name
-            <input
-              type="text"
-              placeholder="Route Name"
-              value={routeName}
-              onChange={(e) => {
-                setRouteName(e.target.value);
-              }}
-              className="input input-bordered w-full"
-            />
-          </label>
-          <label className="block mb-1 font-medium">
-            Short Code
-            <input
-              type="text"
-              placeholder="Route Short Code"
-              value={routeShortCode}
-              onChange={(e) => {
-                setRouteShortCode(e.target.value);
-              }}
-              className="input input-bordered w-full"
-            />
-          </label>
+          <FormField
+            placeholder="Enter Route Name"
+            name={"name"}
+            label={"Route Name"}
+            register={register}
+            errorMessage={errors.name?.message}
+          />
+          <FormField
+            placeholder="Enter Short Code"
+            name={"shortCode"}
+            label={"Short Code"}
+            register={register}
+            errorMessage={errors.shortCode?.message}
+          />
         </div>
 
-        <button onClick={handleSaveRoute} className="btn btn-info mt-4">
-          {editingIndex !== null ? "Update Route" : "Save Route"}
-        </button>
+        <Button
+          onClick={
+            editingId !== null
+              ? handleSubmit(() => {
+                  void onRouteUpdate(editingId);
+                })
+              : handleSubmit(handleAddRoute)
+          }
+          shape="info"
+          pending={isSubmitting}
+          className="mt-4"
+        >
+          {editingId !== null ? "Update Route" : "Add Route"}
+        </Button>
       </div>
 
-      {/* Routes Table */}
+      {isLoading && <div className="skeleton h-28 w-full"></div>}
       {filteredRoutes.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="table w-full bg-base-200 rounded-lg shadow-md">
@@ -127,7 +193,7 @@ const TruckRoute = () => {
             <tbody>
               {filteredRoutes.map((route, index) => (
                 <tr
-                  key={index}
+                  key={route.id}
                   className="border-b border-base-300 text-center"
                 >
                   <td>{index + 1}</td>
@@ -136,7 +202,7 @@ const TruckRoute = () => {
                   <td className="space-x-2">
                     <button
                       onClick={() => {
-                        handleEditRoute(index);
+                        route.id && handleEdit(route.id);
                       }}
                       className="flex items-center justify-center"
                     >
@@ -145,7 +211,7 @@ const TruckRoute = () => {
 
                     <button
                       onClick={() => {
-                        handleDeleteRoute(index);
+                        handleDelete(route.id ?? "");
                       }}
                       className="flex items-center justify-center"
                     >

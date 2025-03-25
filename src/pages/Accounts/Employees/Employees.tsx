@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/require-await */
-
 import { useEffect, useState, useRef } from "react";
 import { notify } from "@/lib/notify";
 import { formatNumberWithCommas } from "@/utils/CommaSeparator";
@@ -8,11 +6,17 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { employeeSchema, type Employee } from "./employee.schema";
-import { createEmployee, fetchAllEmployees } from "./employee.service";
+import {
+  createEmployee,
+  fetchAllEmployees,
+  updateEmployee,
+  deleteEmployee,
+} from "./employee.service";
 import { logger } from "@/lib/logger";
 import { useService } from "@/common/hooks/custom/useService";
 import { ErrorModal } from "@/common/components/Error";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
+import { ApiException } from "@/utils/exceptions";
 
 export type Employees = {
   id?: string;
@@ -100,10 +104,8 @@ const EmployeeManagement = () => {
         role: null,
       };
 
-      await createEmployee(newEmployee);
-
-      // Fix: Cast the newEmployee to Employees type to ensure type compatibility
-      setEmployees([...employees, newEmployee as Employees]);
+      const createdEmployee = await createEmployee(newEmployee);
+      setEmployees([...employees, createdEmployee as Employees]);
 
       reset();
       if (fileInputRef.current) {
@@ -112,8 +114,15 @@ const EmployeeManagement = () => {
       setDocuments(null);
       notify.success("Employee added successfully!");
     } catch (error: unknown) {
-      notify.error("Failed to add employee.");
       logger.error(error);
+
+      if (error instanceof ApiException) {
+        if (error.statusCode == 409) {
+          notify.error("Employee already exists.");
+        }
+        return;
+      }
+      notify.error("Failed to add employee.");
     }
   };
 
@@ -140,9 +149,14 @@ const EmployeeManagement = () => {
         role: targetEmployee?.role ?? null,
       };
 
+      const updatedEmployeeResponse = await updateEmployee(
+        employeeId,
+        updatedEmployee,
+      );
+
       const updatedEmployees = employees.map((employee) => {
         if (employee.id === employeeId) {
-          return { ...employee, ...updatedEmployee };
+          return { ...employee, ...updatedEmployeeResponse };
         }
         return employee;
       });
@@ -179,9 +193,15 @@ const EmployeeManagement = () => {
   };
 
   const handleDelete = (id: string) => {
-    notify.confirmDelete(() => {
-      setEmployees(employees.filter((employee) => employee.id !== id));
-      notify.success("Employee deleted successfully!");
+    notify.confirmDelete(async () => {
+      try {
+        await deleteEmployee(id);
+        setEmployees(employees.filter((employee) => employee.id !== id));
+        notify.success("Employee deleted successfully!");
+      } catch (error: unknown) {
+        notify.error("Failed to delete employee.");
+        logger.error(error);
+      }
     });
   };
 
@@ -225,7 +245,7 @@ const EmployeeManagement = () => {
       updatedEmployees[roleEmployeeIndex] = {
         ...currentEmployee,
         role: selectedRole || null,
-      } as Employees; // Use type assertion to ensure TypeScript recognizes this as a complete Employees object
+      } as Employees;
     }
 
     setEmployees(updatedEmployees);
@@ -250,7 +270,7 @@ const EmployeeManagement = () => {
       updatedEmployees[roleEmployeeIndex] = {
         ...currentEmployee,
         role: null,
-      } as Employees; // Use type assertion
+      } as Employees;
     }
 
     setEmployees(updatedEmployees);

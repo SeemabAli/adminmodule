@@ -1,165 +1,143 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-confusing-void-expression */
+import { useEffect, useState } from "react";
 import { notify } from "@/lib/notify";
 import { formatNumberWithCommas } from "@/utils/CommaSeparator";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@/common/components/ui/Button";
+import { FormField } from "@/common/components/ui/form/FormField";
+import { ErrorModal } from "@/common/components/Error";
+import { useService } from "@/common/hooks/custom/useService";
+import { logger } from "@/lib/logger";
+import { ApiException } from "@/utils/exceptions";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
-import { useState } from "react";
+import {
+  factoryExpensesSchema,
+  type FactoryExpenses,
+  type ExpenseType,
+  type ExpenseCategory,
+} from "./factoryExpenses.schema";
+import {
+  createFactoryExpenses,
+  fetchAllFactoryExpenses,
+  updateFactoryExpenses,
+  deleteFactoryExpenses,
+} from "./factoryExpenses.service";
 
-export type FactoryExpenseType = {
-  name: string;
-  date: string;
-  type: string;
-  fixedAmount?: number;
-  fixedPerTon?: number;
-  percentPerTon?: number;
-  rangeTonFrom?: string;
-  rangeTonValues?: Record<string, number>;
-  extraCharge: number;
-};
+const expenseTypes: ExpenseType[] = [
+  "Fixed Amount",
+  "Fixed/Ton",
+  "Percent/Ton",
+  "Range Ton From",
+];
+const expenseCategories: ExpenseCategory[] = ["General", "Specific Product"];
+const rangeOptions = ["0-50 Tons", "51-100 Tons", "101+ Tons"];
 
-const FactoryExpenseTypes = () => {
-  const [expenses, setExpenses] = useState<FactoryExpenseType[]>([]);
-
-  const today = new Date().toISOString().split("T")[0] ?? "";
-  const [expenseName, setExpenseName] = useState("");
-  const [expenseDate, setExpenseDate] = useState(today);
-  const [expenseOn, setExpenseOn] = useState("General");
-  const [expenseType, setExpenseType] = useState("Fixed Amount");
-  const [fixedAmount, setFixedAmount] = useState<number | "">("");
-  const [fixedPerTon, setFixedPerTon] = useState<number | "">("");
-  const [percentPerTon, setPercentPerTon] = useState<number | "">("");
-  const [rangeTonFrom, setRangeTonFrom] = useState("0-50 Tons");
-  const [rangeTonValues, setRangeTonValues] = useState<
-    Record<string, number | "">
-  >({
-    "0-50 Tons": "",
-    "51-100 Tons": "",
-    "101+ Tons": "",
-  });
-  const [extraCharge, setExtraCharge] = useState<number | "">("");
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
+const FactoryExpenses = () => {
+  const { error, data, isLoading } = useService(fetchAllFactoryExpenses);
+  const [expenses, setExpenses] = useState<FactoryExpenses[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [isRangeTableOpen, setIsRangeTableOpen] = useState(false);
 
-  const rangeOptions = ["0-50 Tons", "51-100 Tons", "101+ Tons"];
-  const expenseCategories = ["General", "Specific Product"];
+  const {
+    register,
+    formState: { errors, isSubmitting },
+    handleSubmit,
+    setValue,
+    reset,
+    getValues,
+    watch,
+  } = useForm<FactoryExpenses>({
+    resolver: zodResolver(factoryExpensesSchema),
+    defaultValues: {
+      name: "",
+      date: new Date().toISOString().split("T")[0] ?? "",
+      type: "General",
+      expenseType: "Fixed Amount",
+      extraCharge: 0,
+    },
+  });
 
-  const handleSaveExpense = () => {
-    if (expenseName.trim() === "") {
-      setError("Expense name is required.");
-      return;
+  const expenseType = watch("expenseType");
+
+  // Load expenses
+  useEffect(() => {
+    if (data) {
+      setExpenses(data);
     }
-    if (expenseDate === "") {
-      setError("Expense date is required.");
-      return;
-    }
+  }, [data]);
 
-    // Convert rangeTonValues from { [key: string]: number | "" } to { [key: string]: number }
-    // by removing any empty values
-    const processedRangeTonValues: Record<string, number> = {};
-    if (expenseType === "Range Ton From") {
-      Object.keys(rangeTonValues).forEach((key) => {
-        if (rangeTonValues[key] !== "") {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          processedRangeTonValues[key] = rangeTonValues[key]!;
-        }
-      });
-    }
-
-    const newExpense = {
-      name: expenseName,
-      date: expenseDate,
-      type: expenseOn,
-      fixedAmount: fixedAmount as number,
-      fixedPerTon: fixedPerTon as number,
-      percentPerTon: percentPerTon as number,
-      rangeTonFrom: expenseType === "Range Ton From" ? rangeTonFrom : undefined,
-      rangeTonValues:
-        expenseType === "Range Ton From" ? processedRangeTonValues : undefined,
-      extraCharge: extraCharge as number,
-    };
-
-    if (editingIndex !== null) {
-      const updatedExpenses = [...expenses];
-      updatedExpenses[editingIndex] = newExpense;
-      setExpenses(updatedExpenses);
-      setEditingIndex(null);
-    } else {
+  // Handle form submission
+  const handleAddExpense = async (data: FactoryExpenses) => {
+    try {
+      const newExpense = await createFactoryExpenses(data);
       setExpenses([...expenses, newExpense]);
+      reset();
+      notify.success("Expense added successfully");
+    } catch (error: unknown) {
+      logger.error(error);
+      if (error instanceof ApiException && error.statusCode === 409) {
+        notify.error("Expense already exists");
+        return;
+      }
+      notify.error("Failed to add expense");
     }
-
-    resetForm();
   };
 
-  const handleEdit = (index: number) => {
-    const expense = expenses.find((_, i) => i === index);
+  const onExpenseUpdate = async (expenseId: string) => {
+    try {
+      const updatedData = getValues();
+      const updatedExpense = await updateFactoryExpenses(
+        expenseId,
+        updatedData,
+      );
+      setExpenses(
+        expenses.map((expense) =>
+          expense.id === expenseId ? updatedExpense : expense,
+        ),
+      );
+      setEditingId(null);
+      reset();
+      notify.success("Expense updated successfully");
+    } catch (error) {
+      notify.error("Failed to update expense");
+      logger.error(error);
+    }
+  };
+
+  const handleEdit = (expenseId: string) => {
+    const expense = expenses.find((exp) => exp.id === expenseId);
     if (!expense) return;
-    setExpenseName(expense.name);
-    setExpenseDate(expense.date);
-    setExpenseOn(expense.type);
-    setExpenseType(
-      expense.rangeTonFrom
-        ? "Range Ton From"
-        : expense.fixedAmount
-          ? "Fixed Amount"
-          : expense.fixedPerTon
-            ? "Fixed/Ton"
-            : "Percent/Ton",
-    );
-    setFixedAmount(expense.fixedAmount ?? "");
-    setFixedPerTon(expense.fixedPerTon ?? "");
-    setPercentPerTon(expense.percentPerTon ?? "");
-    setRangeTonFrom(expense.rangeTonFrom ?? "0-50 Tons");
 
-    // Reset range values
-    const initialRangeTonValues: Record<string, number | ""> = {
-      "0-50 Tons": "",
-      "51-100 Tons": "",
-      "101+ Tons": "",
-    };
+    setValue("name", expense.name);
+    setValue("date", expense.date);
+    setValue("type", expense.type);
+    setValue("expenseType", expense.expenseType);
+    setValue("fixedAmount", expense.fixedAmount);
+    setValue("fixedPerTon", expense.fixedPerTon);
+    setValue("percentPerTon", expense.percentPerTon);
+    setValue("rangeTonFrom", expense.rangeTonFrom);
+    setValue("rangeTonValues", expense.rangeTonValues);
+    setValue("extraCharge", expense.extraCharge);
+    setEditingId(expenseId);
 
-    // Populate with existing values if available
-    if (expense.rangeTonValues) {
-      Object.keys(expense.rangeTonValues).forEach((key) => {
-        initialRangeTonValues[key] = expense.rangeTonValues?.[key] ?? "";
-      });
+    if (expense.expenseType === "Range Ton From") {
+      setIsRangeTableOpen(true);
     }
-
-    setRangeTonValues(initialRangeTonValues);
-    setExtraCharge(expense.extraCharge);
-    setEditingIndex(index);
   };
 
-  const handleDelete = (index: number) => {
-    notify.confirmDelete(() => {
-      setExpenses((prev) => prev.filter((_, i) => i !== index));
-      notify.success("Expense deleted successfully!");
+  const handleDelete = (expenseId: string) => {
+    notify.confirmDelete(async () => {
+      try {
+        await deleteFactoryExpenses(expenseId);
+        setExpenses(expenses.filter((exp) => exp.id !== expenseId));
+        notify.success("Expense deleted successfully");
+      } catch (error) {
+        notify.error("Failed to delete expense");
+        logger.error(error);
+      }
     });
-  };
-
-  const resetForm = () => {
-    setExpenseName("");
-    setExpenseDate("");
-    setExpenseOn("General");
-    setExpenseType("Fixed Amount");
-    setFixedAmount("");
-    setFixedPerTon("");
-    setPercentPerTon("");
-    setRangeTonFrom("0-50 Tons");
-    setRangeTonValues({
-      "0-50 Tons": "",
-      "51-100 Tons": "",
-      "101+ Tons": "",
-    });
-    setExtraCharge("");
-    setError(null);
-    setIsRangeTableOpen(false);
-  };
-
-  const handleRangeTonValueChange = (range: string, value: string) => {
-    const numValue = value === "" ? "" : parseFloat(value.replace(/,/g, ""));
-    setRangeTonValues((prev) => ({
-      ...prev,
-      [range]: numValue,
-    }));
   };
 
   const getRangeValuesDisplay = (rangeTonValues?: Record<string, number>) => {
@@ -171,141 +149,155 @@ const FactoryExpenseTypes = () => {
       .join(", ");
   };
 
+  if (error) {
+    return (
+      <ErrorModal
+        message={
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch factory expenses"
+        }
+      />
+    );
+  }
+
   return (
     <div className="p-4 md:p-6">
       <h2 className="text-2xl font-bold mb-4">Factory Expense Types</h2>
 
-      {error && <div className="text-red-500 mb-4 text-center">{error}</div>}
-
       <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="block">
-            Expense Name
-            <input
+          <FormField
+            type="text"
+            name="name"
+            label="Expense Name"
+            placeholder="Expense Name"
+            register={register}
+            errorMessage={errors.name?.message}
+          />
+          <FormField
+            type="date"
+            name="date"
+            label="Date"
+            register={register}
+            errorMessage={errors.date?.message}
+          />
+          <FormField
+            name="type"
+            label="Expense On"
+            register={register}
+            errorMessage={errors.type?.message}
+          >
+            {expenseCategories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </FormField>
+          <FormField
+            type="text"
+            name="extraCharge"
+            label="Extra Charge if Brand Changes"
+            placeholder="Extra Charge"
+            register={register}
+            onChange={(e) => {
+              const value = e.target.value.replace(/,/g, "");
+              setValue("extraCharge", value === "" ? 0 : parseFloat(value));
+            }}
+            value={formatNumberWithCommas(getValues("extraCharge"))}
+            errorMessage={errors.extraCharge?.message}
+          />
+
+          <div className="col-span-2 flex gap-2 flex-wrap">
+            {expenseTypes.map((type) => (
+              <label key={type} className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  {...register("expenseType")}
+                  value={type}
+                  checked={expenseType === type}
+                  onChange={() => {
+                    setValue("expenseType", type);
+                    setIsRangeTableOpen(type === "Range Ton From");
+                  }}
+                  className="radio"
+                />
+                <span>{type}</span>
+              </label>
+            ))}
+          </div>
+
+          {expenseType === "Fixed Amount" && (
+            <FormField
               type="text"
-              placeholder="Expense Name"
-              value={expenseName}
-              onChange={(e) => {
-                setExpenseName(e.target.value);
-              }}
-              className="input input-bordered w-full"
-            />
-          </label>
-          <label className="block">
-            Date
-            <input
-              type="date"
-              value={expenseDate}
-              onChange={(e) => {
-                setExpenseDate(e.target.value);
-              }}
-              className="input input-bordered w-full"
-            />
-          </label>
-          <label className="block">
-            Expense On
-            <select
-              value={expenseOn}
-              onChange={(e) => {
-                setExpenseOn(e.target.value);
-              }}
-              className="select select-bordered w-full"
-            >
-              {expenseCategories.map((category, index) => (
-                <option key={index} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block">
-            Extra Charge if Brand Changes
-            <input
-              type="text"
-              placeholder="Extra Charge"
-              value={
-                extraCharge === "" ? "" : formatNumberWithCommas(extraCharge)
-              }
+              name="fixedAmount"
+              label="Fixed Amount"
+              placeholder="Fixed Amount"
+              register={register}
               onChange={(e) => {
                 const value = e.target.value.replace(/,/g, "");
-                setExtraCharge(value === "" ? "" : parseFloat(value));
+                setValue(
+                  "fixedAmount",
+                  value === "" ? undefined : parseFloat(value),
+                );
               }}
-              className="input input-bordered w-full"
-            />
-          </label>
-          <div className="col-span-2 flex gap-2 flex-wrap">
-            {["Fixed Amount", "Fixed/Ton", "Percent/Ton", "Range Ton From"].map(
-              (type) => (
-                <label key={type} className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="expenseType"
-                    value={type}
-                    checked={expenseType === type}
-                    onChange={() => {
-                      setExpenseType(type);
-                      if (type === "Range Ton From") {
-                        setIsRangeTableOpen(true);
-                      } else {
-                        setIsRangeTableOpen(false);
-                      }
-                    }}
-                    className="radio"
-                  />
-                  <span>{type}</span>
-                </label>
-              ),
-            )}
-          </div>
-          {expenseType === "Fixed Amount" && (
-            <input
-              type="text"
-              placeholder="Fixed Amount"
               value={
-                fixedAmount === "" ? "" : formatNumberWithCommas(fixedAmount)
+                getValues("fixedAmount") === undefined
+                  ? ""
+                  : formatNumberWithCommas(getValues("fixedAmount") ?? 0)
               }
-              onChange={(e) => {
-                const value = e.target.value.replace(/,/g, ""); // Remove commas for parsing
-                setFixedAmount(value === "" ? "" : parseFloat(value));
-              }}
-              className="input input-bordered w-full"
+              errorMessage={errors.fixedAmount?.message}
             />
           )}
 
           {expenseType === "Fixed/Ton" && (
-            <input
+            <FormField
               type="text"
+              name="fixedPerTon"
+              label="Fixed/Ton"
               placeholder="Fixed/Ton"
-              value={
-                fixedPerTon === "" ? "" : formatNumberWithCommas(fixedPerTon)
-              }
+              register={register}
               onChange={(e) => {
                 const value = e.target.value.replace(/,/g, "");
-                setFixedPerTon(value === "" ? "" : parseFloat(value));
+                setValue(
+                  "fixedPerTon",
+                  value === "" ? undefined : parseFloat(value),
+                );
               }}
-              className="input input-bordered w-full"
+              value={
+                getValues("fixedPerTon") === undefined
+                  ? ""
+                  : formatNumberWithCommas(getValues("fixedPerTon") ?? 0)
+              }
+              errorMessage={errors.fixedPerTon?.message}
             />
           )}
 
           {expenseType === "Percent/Ton" && (
-            <input
+            <FormField
               type="text"
+              name="percentPerTon"
+              label="Percent/Ton"
               placeholder="Percent/Ton"
-              value={
-                percentPerTon === ""
-                  ? ""
-                  : formatNumberWithCommas(percentPerTon)
-              }
+              register={register}
               onChange={(e) => {
                 const value = e.target.value.replace(/,/g, "");
-                setPercentPerTon(value === "" ? "" : parseFloat(value));
+                setValue(
+                  "percentPerTon",
+                  value === "" ? undefined : parseFloat(value),
+                );
               }}
-              className="input input-bordered w-full"
+              value={
+                getValues("percentPerTon") === undefined
+                  ? ""
+                  : formatNumberWithCommas(getValues("percentPerTon") ?? 0)
+              }
+              errorMessage={errors.percentPerTon?.message}
             />
           )}
 
           {expenseType === "Range Ton From" && isRangeTableOpen && (
-            <div className="overflow-x-auto mb-4">
+            <div className="col-span-2 overflow-x-auto mb-4">
               <table className="table w-full bg-base-300">
                 <thead>
                   <tr className="bg-base-300">
@@ -322,14 +314,26 @@ const FactoryExpenseTypes = () => {
                           type="text"
                           placeholder="Enter Value"
                           value={
-                            rangeTonValues[range] === ""
+                            getValues("rangeTonValues")?.[range] === undefined
                               ? ""
                               : formatNumberWithCommas(
-                                  rangeTonValues[range] ?? 0,
+                                  getValues("rangeTonValues")?.[range] ?? 0,
                                 )
                           }
                           onChange={(e) => {
-                            handleRangeTonValueChange(range, e.target.value);
+                            const value = e.target.value.replace(/,/g, "");
+                            const currentValues =
+                              getValues("rangeTonValues") ?? {};
+
+                            const updatedValues = Object.fromEntries(
+                              Object.entries({
+                                ...currentValues,
+                                [range]:
+                                  value === "" ? undefined : parseFloat(value),
+                              }).filter(([_, v]) => v !== undefined), // Filter out undefined values
+                            ) as Record<string, number>; // Type assertion to satisfy TypeScript
+
+                            setValue("rangeTonValues", updatedValues);
                           }}
                           className="input input-bordered input-sm w-full"
                         />
@@ -341,12 +345,23 @@ const FactoryExpenseTypes = () => {
             </div>
           )}
         </div>
-        <button onClick={handleSaveExpense} className="btn btn-info mt-4">
-          {editingIndex !== null ? "Update Expense" : "Save Expense"}
-        </button>
+        <Button
+          onClick={
+            editingId
+              ? handleSubmit(() => onExpenseUpdate(editingId))
+              : handleSubmit(handleAddExpense)
+          }
+          shape="info"
+          pending={isSubmitting}
+          className="mt-4"
+        >
+          {editingId ? "Update Expense" : "Save Expense"}
+        </Button>
       </div>
 
-      {expenses.length > 0 && (
+      {isLoading ? (
+        <div className="skeleton h-28 w-full"></div>
+      ) : expenses.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="table w-full bg-base-200 rounded-lg shadow-md">
             <thead>
@@ -365,7 +380,7 @@ const FactoryExpenseTypes = () => {
             </thead>
             <tbody>
               {expenses.map((expense, index) => (
-                <tr key={index} className="text-center">
+                <tr key={expense.id} className="text-center">
                   <td>{index + 1}</td>
                   <td>{expense.name}</td>
                   <td>{expense.date}</td>
@@ -387,23 +402,18 @@ const FactoryExpenseTypes = () => {
                   </td>
                   <td>{getRangeValuesDisplay(expense.rangeTonValues)}</td>
                   <td>{formatNumberWithCommas(expense.extraCharge)}</td>
-                  <td className="flex justify-center">
+                  <td className="flex justify-center gap-2">
                     <button
-                      onClick={() => {
-                        handleEdit(index);
-                      }}
-                      className=" flex items-center justify-center"
+                      onClick={() => expense.id && handleEdit(expense.id)}
+                      className="flex items-center justify-center"
                     >
                       <PencilSquareIcon className="w-4 h-4 text-info" />
                     </button>
-
                     <button
-                      onClick={() => {
-                        handleDelete(index);
-                      }}
-                      className=" flex items-center justify-center"
+                      onClick={() => expense.id && handleDelete(expense.id)}
+                      className="flex items-center justify-center"
                     >
-                      <TrashIcon className="w-5 h-5 text-red-500" />
+                      <TrashIcon className="w-4 h-4 text-red-500" />
                     </button>
                   </td>
                 </tr>
@@ -411,9 +421,13 @@ const FactoryExpenseTypes = () => {
             </tbody>
           </table>
         </div>
+      ) : (
+        <div className="bg-base-200 p-6 rounded-lg shadow-md text-center">
+          No expenses added yet.
+        </div>
       )}
     </div>
   );
 };
 
-export default FactoryExpenseTypes;
+export default FactoryExpenses;

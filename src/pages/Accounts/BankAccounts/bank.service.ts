@@ -2,7 +2,7 @@ import { sendApiRequest } from "@/common/services/api.service";
 import { type BankAccount } from "./bank.schema";
 
 export const createBankAccount = async (data: BankAccount) => {
-  const response = await sendApiRequest("/bank-accounts", {
+  const response = await sendApiRequest<BankAccount>("/bank-accounts", {
     method: "POST",
     withAuthorization: true,
     data,
@@ -11,7 +11,7 @@ export const createBankAccount = async (data: BankAccount) => {
 };
 
 export const fetchAllBankAccounts = async () => {
-  const response = await sendApiRequest("/bank-accounts", {
+  const response = await sendApiRequest<BankAccount[]>("/bank-accounts", {
     method: "GET",
     withAuthorization: true,
   });
@@ -19,7 +19,7 @@ export const fetchAllBankAccounts = async () => {
 };
 
 export const updateBankAccount = async (id: string, data: BankAccount) => {
-  const response = await sendApiRequest(`/bank-accounts/${id}`, {
+  const response = await sendApiRequest<BankAccount>(`/bank-accounts/${id}`, {
     method: "PATCH",
     withAuthorization: true,
     data,

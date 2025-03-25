@@ -1,226 +1,227 @@
-import { notify } from "@/lib/notify";
-import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
+import { notify } from "@/lib/notify";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ErrorModal } from "@/common/components/Error";
+import { useService } from "@/common/hooks/custom/useService";
+import {
+  purchaseSchema,
+  type PurchaseFormData,
+  type PurchaseItem,
+  type Company,
+  type Truck,
+  type Driver,
+  type Route,
+  type Brand,
+} from "./purchase.schema";
+import {
+  createPurchase,
+  fetchAllPurchases,
+  updatePurchase,
+  deletePurchase,
+  fetchAllCompanies,
+  fetchAllTrucks,
+  fetchAllDrivers,
+  fetchAllRoutes,
+  fetchAllBrands,
+} from "./purchase.service";
+import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
 
-interface Company {
-  id: string;
-  name: string;
-}
-
-interface Truck {
-  id: string;
-  name: string;
-  status: "Company Own" | "Outsource";
-}
-
-interface Driver {
-  id: string;
-  name: string;
-}
-
-interface Route {
-  id: string;
-  name: string;
-  companyFreight: number;
-  truckFreight: number;
-}
-
-interface Brand {
-  id: string;
-  name: string;
-  companyId: string;
-}
-
-interface PurchaseItem {
-  id: string;
-  brandId: string;
-  brandName: string;
-  routeId: string;
-  routeName: string;
-  qtyInTon: number;
-  bags: number;
-  freightPerBag: number;
-  totalFreight: number;
-  ratePerTon: number;
-  ratePerBag: number;
-  unitPrice: number;
-  totalPrice: number;
-  commissionPerBag: number;
-  whtTax: number;
-}
-
-export const Purchase = () => {
+const Purchase = () => {
   // Current date formatted as YYYY-MM-DD for input[type="date"]
   const today = new Date().toISOString().split("T")[0];
 
-  // States for form fields
+  // Form setup with React Hook Form
+  const {
+    register,
+    formState: { errors, isSubmitting },
+    handleSubmit,
+    reset,
+    setValue,
+    getValues,
+    watch,
+    trigger,
+  } = useForm<PurchaseFormData>({
+    resolver: zodResolver(purchaseSchema),
+    defaultValues: {
+      transactionDate: today,
+      items: [],
+    },
+  });
+
+  // State management
   const [transactionDate, setTransactionDate] = useState(today);
-  const [selectedCompany, setSelectedCompany] = useState<string>("");
-  const [purchaseOrderId, setPurchaseOrderId] = useState<string>("");
-  const [selectedTruck, setSelectedTruck] = useState<string>("");
-  const [truckStatus, setTruckStatus] = useState<string>("");
-  const [selectedDriver, setSelectedDriver] = useState<string>("");
-  const [customDriver, setCustomDriver] = useState<string>("");
-  const [selectedSaleRoute, setSelectedSaleRoute] = useState<string>("");
-  const [selectedBrand, setSelectedBrand] = useState<string>("");
-  const [selectedRoute, setSelectedRoute] = useState<string>("");
-  const [routeFreight, setRouteFreight] = useState({ company: 0, truck: 0 });
-
-  // States for calculations
-  const [qtyInTon, setQtyInTon] = useState<number | null>(null);
-  const [bags, setBags] = useState<number | null>(null);
-  const [freightPerBag, setFreightPerBag] = useState<number | null>(null);
-  const [totalFreight, setTotalFreight] = useState<number | null>(null);
-  const [ratePerTon, setRatePerTon] = useState<number | null>(null);
-  const [ratePerBag, setRatePerBag] = useState<number | null>(null);
-  const [unitPrice, setUnitPrice] = useState<number | null>(null);
-  const [totalPrice, setTotalPrice] = useState<number | null>(null);
-  const [commissionPerBag, setCommissionPerBag] = useState<number | null>(null);
-  const [whtTax, setWhtTax] = useState<number | null>(null);
-
-  // Grid state
   const [purchaseItems, setPurchaseItems] = useState<PurchaseItem[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [routeFreight, setRouteFreight] = useState({ company: 0, truck: 0 });
 
-  // Mock data (would be fetched from API in real application)
-  const companies: Company[] = [
-    { id: "1", name: "PAK CEMENT" },
-    { id: "2", name: "DG CEMENT" },
-  ];
+  // Form values being watched
+  const selectedCompany = watch("companyId");
+  const selectedTruck = watch("truckId");
+  const selectedDriver = watch("driverId");
+  const selectedBrand = watch("items.0.brandId"); // For the current item being added
+  const selectedRoute = watch("items.0.routeId"); // For the current item being added
+  const qtyInTon = watch("items.0.qtyInTon");
+  const ratePerTon = watch("items.0.ratePerTon");
+  const commissionPerBag = watch("items.0.commissionPerBag");
+  const whtTax = watch("items.0.whtTax");
 
-  const trucks: Truck[] = [
-    { id: "1", name: "ABC124", status: "Outsource" },
-    { id: "2", name: "XYZ789", status: "Company Own" },
-  ];
+  // Data fetching using useService hook
+  const {
+    error: fetchError,
+    isLoading: isFetching,
+    data: purchasesData,
+  } = useService(fetchAllPurchases);
 
-  const drivers: Driver[] = [
-    { id: "1", name: "AAA" },
-    { id: "2", name: "BBB" },
-  ];
+  const {
+    data: companiesData,
+    isLoading: isCompaniesLoading,
+    error: companiesError,
+  } = useService(fetchAllCompanies);
 
-  const routes: Route[] = [
-    {
-      id: "1",
-      name: "CHAK BELLI KHAN",
-      companyFreight: 200.0,
-      truckFreight: 10.0,
-    },
-    { id: "2", name: "CHOA ROAD", companyFreight: 150.0, truckFreight: 8.0 },
-  ];
+  const {
+    data: trucksData,
+    isLoading: isTrucksLoading,
+    error: trucksError,
+  } = useService(fetchAllTrucks);
 
-  const brands: Brand[] = [
-    { id: "1", name: "Cement", companyId: "1" },
-    { id: "1", name: "White Cement", companyId: "1" },
-    { id: "1", name: "Hard Cement", companyId: "1" },
-    { id: "2", name: "Bond", companyId: "2" },
-  ];
+  const {
+    data: driversData,
+    isLoading: isDriversLoading,
+    error: driversError,
+  } = useService(fetchAllDrivers);
 
-  // Auto-generate purchase order ID (simple incrementing function for demo)
+  const {
+    data: routesData,
+    isLoading: isRoutesLoading,
+    error: routesError,
+  } = useService(fetchAllRoutes);
+
+  const {
+    data: brandsData,
+    isLoading: isBrandsLoading,
+    error: brandsError,
+  } = useService(fetchAllBrands);
+
+  // Process fetched data
+  const companies = companiesData ?? [];
+  const trucks = trucksData ?? [];
+  const drivers = driversData ?? [];
+  const routes = routesData ?? [];
+  const brands = brandsData ?? [];
+
+  // Auto-generate purchase order ID when company is selected
   useEffect(() => {
     if (selectedCompany) {
-      // In a real app, this would come from your backend
       const randomId = Math.floor(100 + Math.random() * 900);
-      setPurchaseOrderId(randomId.toString());
+      setValue("purchaseOrderId", randomId.toString());
     }
-  }, [selectedCompany]);
+  }, [selectedCompany, setValue]);
 
   // Handle truck selection
-  const handleTruckChange = (truckId: string) => {
-    setSelectedTruck(truckId);
-    const truck = trucks.find((t) => t.id === truckId);
-    if (truck) {
-      setTruckStatus(truck.status);
-    }
-  };
-
-  // Handle route selection
-  const handleRouteChange = (routeId: string) => {
-    setSelectedRoute(routeId);
-    const route = routes.find((r) => r.id === routeId);
-    if (route) {
-      setRouteFreight({
-        company: route.companyFreight,
-        truck: route.truckFreight,
-      });
-      // Pre-calculate freight per bag if bags are available
-      if (bags) {
-        const freightPerBag = route.truckFreight / bags;
-        setFreightPerBag(freightPerBag);
-        setTotalFreight(route.truckFreight);
+  useEffect(() => {
+    if (selectedTruck) {
+      const truck = trucks.find((t) => t.id === selectedTruck);
+      if (truck) {
+        setValue("truckStatus", truck.status);
       }
     }
-  };
+  }, [selectedTruck, trucks, setValue]);
 
-  // Calculate bags from qty in ton (assuming 1 ton = 20 bags)
-  const calculateBags = (tons: number) => {
-    const calculatedBags = tons * 20;
-    setBags(calculatedBags);
-
-    // Recalculate dependent values
-    if (routeFreight.truck) {
-      const freightPerBag = routeFreight.truck / calculatedBags;
-      setFreightPerBag(freightPerBag);
-      setTotalFreight(routeFreight.truck);
+  // Handle route selection
+  useEffect(() => {
+    if (selectedRoute) {
+      const route = routes.find((r) => r.id === selectedRoute);
+      if (route) {
+        setRouteFreight({
+          company: route.companyFreight,
+          truck: route.truckFreight,
+        });
+      }
     }
+  }, [selectedRoute, routes]);
 
-    if (ratePerTon !== null) {
-      const calculatedRatePerBag = ratePerTon / 20;
-      setRatePerBag(calculatedRatePerBag);
-      setUnitPrice(calculatedRatePerBag + (freightPerBag ?? 0));
-      setTotalPrice(
-        calculatedBags * (calculatedRatePerBag + (freightPerBag ?? 0)),
-      );
+  // Calculate derived values whenever inputs change
+  useEffect(() => {
+    if (qtyInTon) {
+      const calculatedBags = qtyInTon * 20;
+      setValue("items.0.bags", calculatedBags);
+
+      if (routeFreight.truck) {
+        const freightPerBag = routeFreight.truck / calculatedBags;
+        setValue("items.0.freightPerBag", freightPerBag);
+        setValue("items.0.totalFreight", routeFreight.truck);
+      }
+
+      if (ratePerTon) {
+        const calculatedRatePerBag = ratePerTon / 20;
+        setValue("items.0.ratePerBag", calculatedRatePerBag);
+        setValue(
+          "items.0.unitPrice",
+          calculatedRatePerBag + (getValues("items.0.freightPerBag") || 0),
+        );
+        setValue(
+          "items.0.totalPrice",
+          calculatedBags *
+            (calculatedRatePerBag + (getValues("items.0.freightPerBag") || 0)),
+        );
+      }
     }
-  };
+  }, [qtyInTon, ratePerTon, routeFreight, setValue, getValues]);
 
-  // Calculate rate per bag from rate per ton
-  const calculateRatePerBag = (ratePerTon: number) => {
-    const calculatedRatePerBag = ratePerTon / 20;
-    setRatePerBag(calculatedRatePerBag);
-
-    // Recalculate dependent values
-    setUnitPrice(calculatedRatePerBag + (freightPerBag ?? 0));
-    if (bags) {
-      setTotalPrice(bags * (calculatedRatePerBag + (freightPerBag ?? 0)));
-    }
-  };
+  // Handle API errors
+  if (
+    fetchError ||
+    companiesError ||
+    trucksError ||
+    driversError ||
+    routesError ||
+    brandsError
+  ) {
+    const errorMessage =
+      (fetchError as { message?: string })?.message ??
+      (companiesError as { message?: string })?.message ??
+      (trucksError as { message?: string })?.message ??
+      (driversError as { message?: string })?.message ??
+      (routesError as { message?: string })?.message ??
+      (brandsError as { message?: string })?.message ??
+      "Failed to fetch data";
+    return <ErrorModal message={errorMessage} />;
+  }
 
   // Add or update purchase item in the grid
-  const handleAddToGrid = () => {
-    if (
-      !selectedBrand ||
-      !selectedRoute ||
-      qtyInTon === null ||
-      ratePerTon === null
-    ) {
-      notify.error("Please fill all required fields.");
-      return;
-    }
+  const handleAddToGrid = async () => {
+    const isValid = await trigger("items.0");
+    if (!isValid) return;
 
-    const brandItem = brands.find((b) => b.id === selectedBrand);
-    const routeItem = routes.find((r) => r.id === selectedRoute);
+    const currentItem = getValues("items.0");
+    const brandItem = brands.find((b) => b.id === currentItem.brandId);
+    const routeItem = routes.find((r) => r.id === currentItem.routeId);
 
     if (!brandItem || !routeItem) return;
 
     const purchaseItem: PurchaseItem = {
       id:
         editingIndex !== null
-          ? (purchaseItems.find((_, i) => i === editingIndex)?.id ?? "")
+          ? (purchaseItems[editingIndex]?.id ?? "")
           : Date.now().toString(),
-      brandId: selectedBrand,
+      brandId: currentItem.brandId,
       brandName: brandItem.name,
-      routeId: selectedRoute,
+      routeId: currentItem.routeId,
       routeName: routeItem.name,
-      qtyInTon: qtyInTon || 0,
-      bags: bags ?? 0,
-      freightPerBag: freightPerBag ?? 0,
-      totalFreight: totalFreight ?? 0,
-      ratePerTon: ratePerTon,
-      ratePerBag: ratePerBag ?? 0,
-      unitPrice: unitPrice ?? 0,
-      totalPrice: totalPrice ?? 0,
-      commissionPerBag: commissionPerBag ?? 0,
-      whtTax: whtTax ?? 0,
+      qtyInTon: currentItem.qtyInTon,
+      bags: currentItem.bags,
+      freightPerBag: currentItem.freightPerBag,
+      totalFreight: currentItem.totalFreight,
+      ratePerTon: currentItem.ratePerTon,
+      ratePerBag: currentItem.ratePerBag,
+      unitPrice: currentItem.unitPrice,
+      totalPrice: currentItem.totalPrice,
+      commissionPerBag: currentItem.commissionPerBag,
+      whtTax: currentItem.whtTax,
     };
 
     if (editingIndex !== null) {
@@ -234,85 +235,77 @@ export const Purchase = () => {
       setPurchaseItems([...purchaseItems, purchaseItem]);
     }
 
-    // Reset brand and route specific fields
-    setSelectedBrand("");
-    setSelectedRoute("");
-    setQtyInTon(null);
-    setBags(null);
-    setFreightPerBag(null);
-    setTotalFreight(null);
-    setRatePerTon(null);
-    setRatePerBag(null);
-    setUnitPrice(null);
-    setTotalPrice(null);
-    setCommissionPerBag(null);
-    setWhtTax(null);
+    // Reset item fields
+    setValue("items.0", {
+      brandId: "",
+      routeId: "",
+      qtyInTon: 0,
+      bags: 0,
+      freightPerBag: 0,
+      totalFreight: 0,
+      ratePerTon: 0,
+      ratePerBag: 0,
+      unitPrice: 0,
+      totalPrice: 0,
+      commissionPerBag: 0,
+      whtTax: 0,
+    });
   };
 
   // Edit a purchase item from the grid
   const handleEditItem = (index: number) => {
-    const item = purchaseItems.find((_, i) => i === index);
+    const item = purchaseItems[index];
     if (!item) return;
-    setSelectedBrand(item.brandId);
-    setSelectedRoute(item.routeId);
-    setQtyInTon(item.qtyInTon);
-    setBags(item.bags);
-    setFreightPerBag(item.freightPerBag);
-    setTotalFreight(item.totalFreight);
-    setRatePerTon(item.ratePerTon);
-    setRatePerBag(item.ratePerBag);
-    setUnitPrice(item.unitPrice);
-    setTotalPrice(item.totalPrice);
-    setCommissionPerBag(item.commissionPerBag);
-    setWhtTax(item.whtTax);
+
+    setValue("items.0", {
+      brandId: item.brandId,
+      routeId: item.routeId,
+      qtyInTon: item.qtyInTon,
+      bags: item.bags,
+      freightPerBag: item.freightPerBag,
+      totalFreight: item.totalFreight,
+      ratePerTon: item.ratePerTon,
+      ratePerBag: item.ratePerBag,
+      unitPrice: item.unitPrice,
+      totalPrice: item.totalPrice,
+      commissionPerBag: item.commissionPerBag,
+      whtTax: item.whtTax,
+    });
+
     setEditingIndex(index);
   };
 
-  // Handle save purchase order
-  const handleSavePurchaseOrder = () => {
-    if (
-      !selectedCompany ||
-      !selectedTruck ||
-      !selectedDriver ||
-      purchaseItems.length === 0
-    ) {
-      notify.error("Please fill all required fields.");
-      return;
-    }
-
-    // Here you would typically send the data to your backend
-    console.log("Saving purchase order:", {
-      transactionDate,
-      companyId: selectedCompany,
-      purchaseOrderId,
-      truckId: selectedTruck,
-      truckStatus,
-      driverId: selectedDriver,
-      driverName:
-        customDriver || drivers.find((d) => d.id === selectedDriver)?.name,
-      saleRouteId: selectedSaleRoute,
-      items: purchaseItems,
+  // Delete a purchase item from the grid
+  const handleDeleteItem = (index: number) => {
+    notify.confirmDelete(() => {
+      setPurchaseItems((prev) => prev.filter((_, i) => i !== index));
+      notify.success("Item removed successfully!");
     });
-
-    notify.success("Purchase order saved successfully!");
-
-    // Reset form
-    setSelectedCompany("");
-    setPurchaseOrderId("");
-    setSelectedTruck("");
-    setTruckStatus("");
-    setSelectedDriver("");
-    setCustomDriver("");
-    setSelectedSaleRoute("");
-    setPurchaseItems([]);
   };
 
-  const handleDeletePurchaseItems = (index: number) => {
-    notify.confirmDelete(() => {
-      setPurchaseOrderId(purchaseItems.find((_, i) => i === index)?.id ?? "");
-      setPurchaseItems((prev) => prev.filter((_, i) => i !== index));
-      notify.success("Order deleted successfully!");
-    });
+  // Handle save purchase order
+  const handleSavePurchaseOrder = async (data: PurchaseFormData) => {
+    try {
+      const payload = {
+        ...data,
+        items: purchaseItems,
+      };
+
+      if (editingIndex !== null) {
+        if (editingIndex !== null && purchaseItems[editingIndex]) {
+          await updatePurchase(purchaseItems[editingIndex].id, payload);
+        }
+      } else {
+        await createPurchase(payload);
+      }
+
+      notify.success("Purchase order saved successfully!");
+      reset();
+      setPurchaseItems([]);
+    } catch (error) {
+      logger.error("Failed to save purchase order", error);
+      notify.error("Failed to save purchase order");
+    }
   };
 
   return (
@@ -330,6 +323,7 @@ export const Purchase = () => {
               value={transactionDate}
               onChange={(e) => {
                 setTransactionDate(e.target.value);
+                setValue("transactionDate", e.target.value);
               }}
               className="input input-bordered w-full"
             />
@@ -339,10 +333,7 @@ export const Purchase = () => {
           <label className="block mb-1 font-medium">
             Company
             <select
-              value={selectedCompany}
-              onChange={(e) => {
-                setSelectedCompany(e.target.value);
-              }}
+              {...register("companyId")}
               className="select select-bordered w-full"
             >
               <option value="">Select Company</option>
@@ -352,14 +343,16 @@ export const Purchase = () => {
                 </option>
               ))}
             </select>
+            {errors.companyId && (
+              <p className="text-red-500 text-sm">{errors.companyId.message}</p>
+            )}
           </label>
 
           {/* Purchase Order ID */}
           <label className="block mb-1 font-medium">
             Purchase Order ID
             <input
-              type="text"
-              value={purchaseOrderId}
+              {...register("purchaseOrderId")}
               readOnly
               className="input input-bordered w-full"
             />
@@ -372,10 +365,7 @@ export const Purchase = () => {
             <label className="block mb-1 font-medium">
               Truck
               <select
-                value={selectedTruck}
-                onChange={(e) => {
-                  handleTruckChange(e.target.value);
-                }}
+                {...register("truckId")}
                 className="select select-bordered w-full"
               >
                 <option value="">Select Truck</option>
@@ -385,10 +375,15 @@ export const Purchase = () => {
                   </option>
                 ))}
               </select>
+              {errors.truckId && (
+                <p className="text-red-500 text-sm">{errors.truckId.message}</p>
+              )}
+              {watch("truckStatus") && (
+                <div className="text-sm text-gray-600 mt-1">
+                  {watch("truckStatus")}
+                </div>
+              )}
             </label>
-            {truckStatus && (
-              <div className="text-sm text-gray-600 mt-1">{truckStatus}</div>
-            )}
           </div>
 
           {/* Driver Name */}
@@ -396,10 +391,7 @@ export const Purchase = () => {
             <label className="block mb-1 font-medium">
               Driver Name
               <select
-                value={selectedDriver}
-                onChange={(e) => {
-                  setSelectedDriver(e.target.value);
-                }}
+                {...register("driverId")}
                 className="select select-bordered w-full"
               >
                 <option value="">Select Driver</option>
@@ -409,15 +401,16 @@ export const Purchase = () => {
                   </option>
                 ))}
               </select>
+              {errors.driverId && (
+                <p className="text-red-500 text-sm">
+                  {errors.driverId.message}
+                </p>
+              )}
             </label>
             {/* Custom driver input for substitutes */}
             <input
-              type="text"
+              {...register("driverName")}
               placeholder="Or enter substitute driver"
-              value={customDriver}
-              onChange={(e) => {
-                setCustomDriver(e.target.value);
-              }}
               className="input input-bordered w-full mt-2 text-sm"
             />
           </div>
@@ -427,10 +420,7 @@ export const Purchase = () => {
             <label className="block mb-1 font-medium">
               Sale Route Name
               <select
-                value={selectedSaleRoute}
-                onChange={(e) => {
-                  setSelectedSaleRoute(e.target.value);
-                }}
+                {...register("saleRouteId")}
                 className="select select-bordered w-full"
               >
                 <option value="">Select Sale Route</option>
@@ -441,11 +431,6 @@ export const Purchase = () => {
                 ))}
               </select>
             </label>
-            {selectedSaleRoute && (
-              <div className="text-sm text-gray-600 mt-1">
-                {routes.find((r) => r.id === selectedSaleRoute)?.companyFreight}
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -458,10 +443,7 @@ export const Purchase = () => {
             <label className="block mb-1 font-medium">
               Brand
               <select
-                value={selectedBrand}
-                onChange={(e) => {
-                  setSelectedBrand(e.target.value);
-                }}
+                {...register("items.0.brandId")}
                 className="select select-bordered w-full"
               >
                 <option value="">Select Brand</option>
@@ -476,6 +458,11 @@ export const Purchase = () => {
                     </option>
                   ))}
               </select>
+              {errors.items?.[0]?.brandId && (
+                <p className="text-red-500 text-sm">
+                  {errors.items[0].brandId.message}
+                </p>
+              )}
             </label>
           </div>
 
@@ -484,10 +471,7 @@ export const Purchase = () => {
             <label className="block mb-1 font-medium">
               Route
               <select
-                value={selectedRoute}
-                onChange={(e) => {
-                  handleRouteChange(e.target.value);
-                }}
+                {...register("items.0.routeId")}
                 className="select select-bordered w-full"
               >
                 <option value="">Select Route</option>
@@ -497,13 +481,18 @@ export const Purchase = () => {
                   </option>
                 ))}
               </select>
+              {errors.items?.[0]?.routeId && (
+                <p className="text-red-500 text-sm">
+                  {errors.items[0].routeId.message}
+                </p>
+              )}
+              {selectedRoute && (
+                <div className="text-sm text-gray-600 mt-1">
+                  Company: {routeFreight.company.toFixed(2)}/ Truck:{" "}
+                  {routeFreight.truck.toFixed(2)}
+                </div>
+              )}
             </label>
-            {selectedRoute && (
-              <div className="text-sm text-gray-600 mt-1">
-                Company: {routeFreight.company.toFixed(2)}/ Truck:{" "}
-                {routeFreight.truck.toFixed(2)}
-              </div>
-            )}
           </div>
         </div>
 
@@ -514,18 +503,14 @@ export const Purchase = () => {
               Qty in Ton
               <input
                 type="number"
-                value={qtyInTon ?? ""}
-                onChange={(e) => {
-                  const value = e.target.value
-                    ? parseFloat(e.target.value)
-                    : null;
-                  setQtyInTon(value);
-                  if (value !== null) {
-                    calculateBags(value);
-                  }
-                }}
+                {...register("items.0.qtyInTon", { valueAsNumber: true })}
                 className="input input-bordered w-full"
               />
+              {errors.items?.[0]?.qtyInTon && (
+                <p className="text-red-500 text-sm">
+                  {errors.items[0].qtyInTon.message}
+                </p>
+              )}
             </label>
           </div>
 
@@ -535,7 +520,7 @@ export const Purchase = () => {
               Bags
               <input
                 type="number"
-                value={bags ?? ""}
+                {...register("items.0.bags", { valueAsNumber: true })}
                 readOnly
                 className="input input-bordered w-full "
               />
@@ -548,7 +533,7 @@ export const Purchase = () => {
               Freight/Bag
               <input
                 type="number"
-                value={freightPerBag !== null ? freightPerBag.toFixed(2) : ""}
+                {...register("items.0.freightPerBag", { valueAsNumber: true })}
                 readOnly
                 className="input input-bordered w-full"
               />
@@ -563,7 +548,7 @@ export const Purchase = () => {
               Total Freight
               <input
                 type="number"
-                value={totalFreight !== null ? totalFreight.toFixed(2) : ""}
+                {...register("items.0.totalFreight", { valueAsNumber: true })}
                 readOnly
                 className="input input-bordered w-full"
               />
@@ -576,18 +561,14 @@ export const Purchase = () => {
               Rate / Ton
               <input
                 type="number"
-                value={ratePerTon ?? ""}
-                onChange={(e) => {
-                  const value = e.target.value
-                    ? parseFloat(e.target.value)
-                    : null;
-                  setRatePerTon(value);
-                  if (value !== null) {
-                    calculateRatePerBag(value);
-                  }
-                }}
+                {...register("items.0.ratePerTon", { valueAsNumber: true })}
                 className="input input-bordered w-full"
               />
+              {errors.items?.[0]?.ratePerTon && (
+                <p className="text-red-500 text-sm">
+                  {errors.items[0].ratePerTon.message}
+                </p>
+              )}
             </label>
           </div>
 
@@ -597,7 +578,7 @@ export const Purchase = () => {
               Rate/Bag
               <input
                 type="number"
-                value={ratePerBag !== null ? ratePerBag.toFixed(2) : ""}
+                {...register("items.0.ratePerBag", { valueAsNumber: true })}
                 readOnly
                 className="input input-bordered w-full"
               />
@@ -612,7 +593,7 @@ export const Purchase = () => {
               Unit Price
               <input
                 type="number"
-                value={unitPrice !== null ? unitPrice.toFixed(2) : ""}
+                {...register("items.0.unitPrice", { valueAsNumber: true })}
                 readOnly
                 className="input input-bordered w-full"
               />
@@ -625,7 +606,7 @@ export const Purchase = () => {
               Total Price
               <input
                 type="number"
-                value={totalPrice !== null ? totalPrice.toFixed(2) : ""}
+                {...register("items.0.totalPrice", { valueAsNumber: true })}
                 readOnly
                 className="input input-bordered w-full "
               />
@@ -638,12 +619,9 @@ export const Purchase = () => {
               Comm./Bag
               <input
                 type="number"
-                value={commissionPerBag ?? ""}
-                onChange={(e) => {
-                  setCommissionPerBag(
-                    e.target.value ? parseFloat(e.target.value) : null,
-                  );
-                }}
+                {...register("items.0.commissionPerBag", {
+                  valueAsNumber: true,
+                })}
                 className="input input-bordered w-full"
               />
             </label>
@@ -657,17 +635,18 @@ export const Purchase = () => {
               WHT Tax
               <input
                 type="number"
-                value={whtTax ?? ""}
-                onChange={(e) => {
-                  setWhtTax(e.target.value ? parseFloat(e.target.value) : null);
-                }}
+                {...register("items.0.whtTax", { valueAsNumber: true })}
                 className="input input-bordered w-full"
               />
             </label>
           </div>
         </div>
 
-        <button onClick={handleAddToGrid} className="btn btn-primary mt-4">
+        <button
+          onClick={handleAddToGrid}
+          className="btn btn-primary mt-4"
+          disabled={isSubmitting}
+        >
           {editingIndex !== null ? "Update Item" : "Add to Purchase"}
         </button>
       </div>
@@ -714,7 +693,7 @@ export const Purchase = () => {
 
                     <button
                       onClick={() => {
-                        handleDeletePurchaseItems(index);
+                        handleDeleteItem(index);
                       }}
                       className="flex items-center justify-center"
                     >
@@ -735,13 +714,15 @@ export const Purchase = () => {
       {/* Save Button */}
       <div className="text-right">
         <button
-          onClick={handleSavePurchaseOrder}
+          onClick={handleSubmit(handleSavePurchaseOrder)}
           className="btn btn-success btn-md"
-          disabled={purchaseItems.length === 0}
+          disabled={purchaseItems.length === 0 || isSubmitting}
         >
-          Save Purchase Order
+          {isSubmitting ? "Saving..." : "Save Purchase Order"}
         </button>
       </div>
     </div>
   );
 };
+
+export default Purchase;
