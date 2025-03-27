@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /* eslint-disable @typescript-eslint/no-confusing-void-expression */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
@@ -26,8 +27,8 @@ import TrashIcon from "@heroicons/react/24/solid/TrashIcon";
 import PencilSquareIcon from "@heroicons/react/24/solid/PencilSquareIcon";
 import { ApiException } from "@/utils/exceptions";
 
-// Additional properties not in the schema but used in the component
 type BrandExtended = BrandFormData & {
+  id: string;
   lessCommission: boolean;
   taxes: Tax[];
   freights: FreightItem[];
@@ -38,13 +39,11 @@ type BrandExtended = BrandFormData & {
   };
 };
 
-// Type for the Tax entity
 type Tax = {
   id: string;
   name: string;
 };
 
-// Type for freight items
 type FreightItem = {
   routeId: string;
   amountPerBag: number;
@@ -56,7 +55,6 @@ type FreightItem = {
   };
 };
 
-// Type for route input in the form
 type RouteInput = {
   routeId: string;
   amountPerBag: number | null;
@@ -64,7 +62,6 @@ type RouteInput = {
 };
 
 const Brands = () => {
-  // State management
   const [brands, setBrands] = useState<BrandExtended[]>([]);
   const [lessCommission, setLessCommission] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -73,15 +70,12 @@ const Brands = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [routes, setRoutes] = useState<DeliveryRoute[]>([]);
   const [routeInputs, setRouteInputs] = useState<RouteInput[]>([]);
-
-  // UI state
   const [step, setStep] = useState(1);
   const [editingBrandId, setEditingBrandId] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [expandedRoutes, setExpandedRoutes] = useState<string | null>(null);
 
-  // Form setup with React Hook Form
   const {
     register,
     formState: { errors, isSubmitting },
@@ -100,38 +94,23 @@ const Brands = () => {
     },
   });
 
-  // Service hooks for API calls
   const {
     error: fetchBrandsError,
     data: brandsData,
     isLoading: isBrandsLoading,
   } = useService(fetchAllBrands);
 
-  // Data fetching for companies, routes, and taxes
   useEffect(() => {
-    const fetchCompaniesData = async () => {
+    const fetchInitialData = async () => {
       try {
-        const companiesData = await fetchAllCompanies();
+        const [companiesData, routesData, taxesData] = await Promise.all([
+          fetchAllCompanies(),
+          fetchAllRoutes(),
+          fetchAllTaxes(),
+        ]);
+
         setCompanies(companiesData);
-      } catch (error) {
-        logger.error("Failed to fetch companies", error);
-        notify.error("Could not load companies data");
-      }
-    };
-
-    const fetchRoutesData = async () => {
-      try {
-        const routesData = await fetchAllRoutes();
         setRoutes(routesData);
-      } catch (error) {
-        logger.error("Failed to fetch routes", error);
-        notify.error("Could not load routes data");
-      }
-    };
-
-    const fetchTaxesData = async () => {
-      try {
-        const taxesData = await fetchAllTaxes();
         setAvailableTaxes(
           taxesData.map((tax: any) => ({
             id: tax.id,
@@ -139,17 +118,14 @@ const Brands = () => {
           })),
         );
       } catch (error) {
-        logger.error("Failed to fetch taxes", error);
-        notify.error("Could not load taxes data");
+        logger.error("Failed to fetch initial data", error);
+        notify.error("Could not load required data");
       }
     };
 
-    void fetchCompaniesData();
-    void fetchRoutesData();
-    void fetchTaxesData();
+    void fetchInitialData();
   }, []);
 
-  // Process brands data when it's loaded
   useEffect(() => {
     if (brandsData) {
       const processedBrands = brandsData.map((brand: any) => ({
@@ -171,30 +147,14 @@ const Brands = () => {
     }
   }, [brandsData]);
 
-  // Initialize route inputs when switching to step 2
   useEffect(() => {
     if (step === 2 && routeInputs.length === 0) {
       initializeRouteInputs();
     }
   }, [step, routeInputs.length]);
 
-  // Handle API errors
-  if (fetchBrandsError) {
-    return (
-      <ErrorModal
-        message={
-          fetchBrandsError instanceof Error
-            ? fetchBrandsError.message
-            : "Failed to fetch brands data"
-        }
-      />
-    );
-  }
-
-  // Initialize route inputs with existing data or empty values
   const initializeRouteInputs = () => {
     if (!isEditMode) {
-      // Create empty inputs for all routes when adding a new brand
       setRouteInputs(
         routes.map((route) => ({
           routeId: route.id ?? "",
@@ -203,7 +163,6 @@ const Brands = () => {
         })),
       );
     } else if (editingBrandId) {
-      // Populate with existing values when editing
       const brand = brands.find((b) => b.id === editingBrandId);
       if (!brand) return;
 
@@ -223,7 +182,6 @@ const Brands = () => {
     }
   };
 
-  // Validate and move to next step
   const handleNextStep = async () => {
     const isValid = await trigger(["name", "code"]);
     if (!isValid) return;
@@ -236,12 +194,10 @@ const Brands = () => {
     setStep(2);
   };
 
-  // Move back to previous step
   const handlePreviousStep = () => {
     setStep(1);
   };
 
-  // Handle route input changes
   const handleRouteInputChange = (
     index: number,
     field: "amountPerBag" | "truckSharePerBag",
@@ -254,7 +210,6 @@ const Brands = () => {
     }
   };
 
-  // Count valid routes (with both values set)
   const countValidRoutes = (freights: FreightItem[]) => {
     return freights.filter(
       (freight) =>
@@ -262,7 +217,6 @@ const Brands = () => {
     ).length;
   };
 
-  // Handle tax selection toggle
   const handleTaxToggle = (taxId: string) => {
     setTaxIds((prev) =>
       prev.includes(taxId)
@@ -271,14 +225,11 @@ const Brands = () => {
     );
   };
 
-  // Remove a tax from selection
   const handleRemoveTax = (taxId: string) => {
     setTaxIds((prev) => prev.filter((id) => id !== taxId));
   };
 
-  // Save or update brand
   const handleSaveBrand = async () => {
-    // Validate second step fields
     const isValid = await trigger(["weightPerBagKg", "commissionPerBag"]);
     if (!isValid) return;
 
@@ -287,7 +238,6 @@ const Brands = () => {
       return;
     }
 
-    // Filter valid freights (with both values)
     const validFreights = routeInputs.filter(
       (route) => route.amountPerBag !== null && route.truckSharePerBag !== null,
     );
@@ -301,7 +251,6 @@ const Brands = () => {
 
     const formValues = getValues();
 
-    // Prepare data for API
     const brandData: BrandFormData = {
       name: formValues.name,
       code: formValues.code,
@@ -309,12 +258,10 @@ const Brands = () => {
       commissionPerBag: Number(formValues.commissionPerBag),
     };
 
-    // Include ID if editing
     if (isEditMode && editingBrandId) {
       brandData.id = editingBrandId;
     }
 
-    // Prepare API payload
     const payload = {
       ...brandData,
       companyId: selectedCompanyId,
@@ -337,44 +284,39 @@ const Brands = () => {
     };
 
     try {
+      let updatedBrand: BrandExtended;
+
       if (isEditMode && editingBrandId) {
-        // Update existing brand
-        await updateBrand(editingBrandId, payload);
-      } else {
-        // Create new brand
-        await createBrand(payload);
-      }
-
-      // Find company details for display
-      const company = companies.find((c) => c.id === selectedCompanyId);
-
-      // Prepare for local state update
-      const brandForState: BrandExtended = {
-        ...payload,
-        company: {
-          id: selectedCompanyId,
-          name: company?.name ?? "",
-          address: company?.address ?? "",
-        },
-        taxes: taxIds
-          .map((id) => availableTaxes.find((tax) => tax.id === id))
-          .filter(Boolean) as Tax[],
-      };
-
-      // Update local state
-      if (isEditMode && editingBrandId) {
-        setBrands((prev) =>
-          prev.map((brand) =>
-            brand.id === editingBrandId
-              ? { ...brandForState, id: editingBrandId }
-              : brand,
-          ),
+        const response = await updateBrand(editingBrandId, payload);
+        updatedBrand = {
+          ...response,
+          lessCommission: response.hasPurchaseCommission ?? false,
+          taxes: (response.taxes ?? [])
+            .filter((tax: any) => tax.id)
+            .map((tax: any) => ({
+              id: tax.id as string,
+              name: tax.name,
+            })),
+          freights: (response.freights ?? []).map((freight: any) => ({
+            routeId: freight.routeId ?? "",
+            amountPerBag: freight.amountPerBag,
+            truckSharePerBag: freight.truckSharePerBag,
+            route: freight.route,
+          })),
+          company: {
+            id: response.company?.id,
+            name: response.company?.name ?? "",
+            address: response.company?.address ?? "",
+          },
+        };
+        setBrands(
+          brands.map((b) => (b.id === editingBrandId ? updatedBrand : b)),
         );
       } else {
-        setBrands((prev) => [...prev, brandForState]);
+        updatedBrand = (await createBrand(payload)) as BrandExtended;
+        setBrands([...brands, updatedBrand]);
       }
 
-      // Reset form state
       resetFormState();
       notify.success(
         isEditMode
@@ -393,7 +335,6 @@ const Brands = () => {
     }
   };
 
-  // Reset all form state
   const resetFormState = () => {
     reset();
     setSelectedCompanyId("");
@@ -405,32 +346,30 @@ const Brands = () => {
     setEditingBrandId(null);
   };
 
-  // Edit brand
   const handleEditBrand = (brandId: string) => {
-    setIsEditMode(true);
     const brand = brands.find((b) => b.id === brandId);
     if (!brand) return;
 
-    // Populate form with existing data
+    setIsEditMode(true);
+    setEditingBrandId(brandId);
+    setSelectedCompanyId(brand.company?.id ?? "");
+    setLessCommission(brand.lessCommission);
+    setTaxIds(brand.taxes.map((tax) => tax.id));
+
     setValue("name", brand.name);
     setValue("code", brand.code);
     setValue("weightPerBagKg", brand.weightPerBagKg);
     setValue("commissionPerBag", brand.commissionPerBag);
 
-    setSelectedCompanyId(brand.company?.id ?? "");
-    setLessCommission(brand.lessCommission);
-    setTaxIds(brand.taxes.map((tax) => tax.id));
     setRouteInputs([]);
-    setEditingBrandId(brandId);
     setStep(1);
   };
 
-  // Delete brand
-  const handleDeleteBrand = (brandId: string) => {
+  const handleDeleteBrand = async (brandId: string) => {
     notify.confirmDelete(async () => {
       try {
         await deleteBrand(brandId);
-        setBrands((prev) => prev.filter((brand) => brand.id !== brandId));
+        setBrands(brands.filter((brand) => brand.id !== brandId));
         notify.success("Brand deleted successfully!");
       } catch (error) {
         notify.error("Failed to delete brand");
@@ -439,45 +378,49 @@ const Brands = () => {
     });
   };
 
-  // Filter brands based on search term
   const filteredBrands = brands.filter(
     (brand) =>
       brand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       brand.code.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  if (fetchBrandsError) {
+    return (
+      <ErrorModal
+        message={
+          fetchBrandsError instanceof Error
+            ? fetchBrandsError.message
+            : "Failed to fetch brands data"
+        }
+      />
+    );
+  }
+
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-4">Brand Management</h2>
 
-      {/* Search Bar */}
       <div className="mb-4">
         <label className="block mb-1 font-medium">Search</label>
         <input
           type="text"
           placeholder="Search by Brand Name or Short Code"
           value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-          }}
+          onChange={(e) => setSearchTerm(e.target.value)}
           className="input input-bordered w-full"
         />
       </div>
 
-      {/* Brand Form */}
       <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
         {step === 1 ? (
           <>
-            {/* Step 1: Basic Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               <div className="col-span-2">
                 <label className="block mb-1 font-medium">Company Name</label>
                 <select
                   className="select select-bordered w-full mb-2"
                   value={selectedCompanyId}
-                  onChange={(e) => {
-                    setSelectedCompanyId(e.target.value);
-                  }}
+                  onChange={(e) => setSelectedCompanyId(e.target.value)}
                 >
                   <option value="">Select Company</option>
                   {companies.map((company) => (
@@ -513,7 +456,6 @@ const Brands = () => {
           </>
         ) : (
           <>
-            {/* Step 2: Additional Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               <FormField
                 type="number"
@@ -539,24 +481,21 @@ const Brands = () => {
                 <input
                   type="checkbox"
                   checked={lessCommission}
-                  onChange={(e) => {
-                    setLessCommission(e.target.checked);
-                  }}
+                  onChange={(e) => setLessCommission(e.target.checked)}
                   className="checkbox-info"
                 />
                 <span>Less Commission at Purchase Time</span>
               </label>
             </div>
 
-            {/* Tax Selection */}
             <div className="mt-2">
               <label className="block mb-1 font-medium">Taxes</label>
               <select
                 className="select select-bordered w-full mb-2"
                 value=""
-                onChange={(e) => {
-                  if (e.target.value) handleTaxToggle(e.target.value);
-                }}
+                onChange={(e) =>
+                  e.target.value && handleTaxToggle(e.target.value)
+                }
               >
                 <option value="">Select Taxes</option>
                 {availableTaxes.map((tax) => (
@@ -570,7 +509,6 @@ const Brands = () => {
                 ))}
               </select>
 
-              {/* Selected Taxes Display */}
               {taxIds.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-4">
                   {taxIds.map((taxId) => {
@@ -580,9 +518,7 @@ const Brands = () => {
                         {tax?.name}
                         <button
                           className="ml-1"
-                          onClick={() => {
-                            handleRemoveTax(taxId);
-                          }}
+                          onClick={() => handleRemoveTax(taxId)}
                         >
                           ✕
                         </button>
@@ -593,7 +529,6 @@ const Brands = () => {
               )}
             </div>
 
-            {/* Route Freight Configuration */}
             <div className="mt-4">
               <label className="block mb-2 font-medium">
                 Freight & Truck Share Configuration
@@ -631,17 +566,15 @@ const Brands = () => {
                               placeholder="Freight Amount"
                               className="input input-bordered input-sm w-full"
                               value={routeInput.amountPerBag ?? ""}
-                              onChange={(e) => {
-                                const value =
-                                  e.target.value === ""
-                                    ? null
-                                    : parseFloat(e.target.value);
+                              onChange={(e) =>
                                 handleRouteInputChange(
                                   effectiveIndex,
                                   "amountPerBag",
-                                  value,
-                                );
-                              }}
+                                  e.target.value === ""
+                                    ? null
+                                    : parseFloat(e.target.value),
+                                )
+                              }
                             />
                           </td>
                           <td>
@@ -650,17 +583,15 @@ const Brands = () => {
                               placeholder="Truck Share"
                               className="input input-bordered input-sm w-full"
                               value={routeInput.truckSharePerBag ?? ""}
-                              onChange={(e) => {
-                                const value =
-                                  e.target.value === ""
-                                    ? null
-                                    : parseFloat(e.target.value);
+                              onChange={(e) =>
                                 handleRouteInputChange(
                                   effectiveIndex,
                                   "truckSharePerBag",
-                                  value,
-                                );
-                              }}
+                                  e.target.value === ""
+                                    ? null
+                                    : parseFloat(e.target.value),
+                                )
+                              }
                             />
                           </td>
                         </tr>
@@ -687,7 +618,6 @@ const Brands = () => {
         )}
       </div>
 
-      {/* Brands Table */}
       {isBrandsLoading ? (
         <div className="skeleton h-28 w-full"></div>
       ) : filteredBrands.length > 0 ? (
@@ -730,13 +660,11 @@ const Brands = () => {
                     </td>
                     <td
                       className="p-3 cursor-pointer hover:bg-base-300"
-                      onClick={() => {
+                      onClick={() =>
                         setExpandedRoutes(
-                          expandedRoutes === brand.id
-                            ? null
-                            : (brand.id ?? null),
-                        );
-                      }}
+                          expandedRoutes === brand.id ? null : brand.id,
+                        )
+                      }
                     >
                       {countValidRoutes(brand.freights)} routes
                       {expandedRoutes === brand.id ? " ▲" : " ▼"}
@@ -757,7 +685,6 @@ const Brands = () => {
                     </td>
                   </tr>
 
-                  {/* Expanded Routes Details */}
                   {expandedRoutes === brand.id && (
                     <tr>
                       <td colSpan={10} className="p-0">

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { sendApiRequest } from "@/common/services/api.service";
 import { type BrandFormData } from "./brand.schema";
 import type { Tax } from "@/pages/Accounts/TaxAccounts/tax.schema";
@@ -10,6 +11,8 @@ type Freights = {
 };
 
 type GetBrandResponse = {
+  hasPurchaseCommission: boolean;
+  company: any;
   id: string;
   name: string;
   code: string;
