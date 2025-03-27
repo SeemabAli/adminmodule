@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-confusing-void-expression */
 import { useEffect, useState } from "react";
 import { notify } from "@/lib/notify";
-import { formatNumberWithCommas } from "@/utils/CommaSeparator";
+import { convertNumberIntoLocalString } from "@/utils/CommaSeparator";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/common/components/ui/Button";
@@ -145,7 +145,9 @@ export const FactoryExpenses = () => {
       return "N/A";
 
     return Object.entries(rangeTonValues)
-      .map(([range, value]) => `${range}: ${formatNumberWithCommas(value)}`)
+      .map(
+        ([range, value]) => `${range}: ${convertNumberIntoLocalString(value)}`,
+      )
       .join(", ");
   };
 
@@ -204,7 +206,7 @@ export const FactoryExpenses = () => {
               const value = e.target.value.replace(/,/g, "");
               setValue("extraCharge", value === "" ? 0 : parseFloat(value));
             }}
-            value={formatNumberWithCommas(getValues("extraCharge"))}
+            value={convertNumberIntoLocalString(getValues("extraCharge"))}
             errorMessage={errors.extraCharge?.message}
           />
 
@@ -244,7 +246,7 @@ export const FactoryExpenses = () => {
               value={
                 getValues("fixedAmount") === undefined
                   ? ""
-                  : formatNumberWithCommas(getValues("fixedAmount") ?? 0)
+                  : convertNumberIntoLocalString(getValues("fixedAmount") ?? 0)
               }
               errorMessage={errors.fixedAmount?.message}
             />
@@ -267,7 +269,7 @@ export const FactoryExpenses = () => {
               value={
                 getValues("fixedPerTon") === undefined
                   ? ""
-                  : formatNumberWithCommas(getValues("fixedPerTon") ?? 0)
+                  : convertNumberIntoLocalString(getValues("fixedPerTon") ?? 0)
               }
               errorMessage={errors.fixedPerTon?.message}
             />
@@ -290,7 +292,9 @@ export const FactoryExpenses = () => {
               value={
                 getValues("percentPerTon") === undefined
                   ? ""
-                  : formatNumberWithCommas(getValues("percentPerTon") ?? 0)
+                  : convertNumberIntoLocalString(
+                      getValues("percentPerTon") ?? 0,
+                    )
               }
               errorMessage={errors.percentPerTon?.message}
             />
@@ -316,7 +320,7 @@ export const FactoryExpenses = () => {
                           value={
                             getValues("rangeTonValues")?.[range] === undefined
                               ? ""
-                              : formatNumberWithCommas(
+                              : convertNumberIntoLocalString(
                                   getValues("rangeTonValues")?.[range] ?? 0,
                                 )
                           }
@@ -387,21 +391,21 @@ export const FactoryExpenses = () => {
                   <td>{expense.type}</td>
                   <td>
                     {expense.fixedAmount !== undefined
-                      ? formatNumberWithCommas(expense.fixedAmount)
+                      ? convertNumberIntoLocalString(expense.fixedAmount)
                       : "N/A"}
                   </td>
                   <td>
                     {expense.fixedPerTon !== undefined
-                      ? formatNumberWithCommas(expense.fixedPerTon)
+                      ? convertNumberIntoLocalString(expense.fixedPerTon)
                       : "N/A"}
                   </td>
                   <td>
                     {expense.percentPerTon !== undefined
-                      ? formatNumberWithCommas(expense.percentPerTon)
+                      ? convertNumberIntoLocalString(expense.percentPerTon)
                       : "N/A"}
                   </td>
                   <td>{getRangeValuesDisplay(expense.rangeTonValues)}</td>
-                  <td>{formatNumberWithCommas(expense.extraCharge)}</td>
+                  <td>{convertNumberIntoLocalString(expense.extraCharge)}</td>
                   <td className="flex justify-center gap-2">
                     <button
                       onClick={() => expense.id && handleEdit(expense.id)}

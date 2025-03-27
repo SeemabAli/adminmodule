@@ -2,7 +2,7 @@ import { sendApiRequest } from "@/common/services/api.service";
 import { type IFactoryExpenses } from "./factoryExpenses.schema";
 
 export const createFactoryExpenses = async (data: IFactoryExpenses) => {
-  const response = await sendApiRequest<IFactoryExpenses>("/factoryExpenses", {
+  const response = await sendApiRequest<IFactoryExpenses>("/factory-expenses", {
     method: "POST",
     withAuthorization: true,
     data,
@@ -12,7 +12,7 @@ export const createFactoryExpenses = async (data: IFactoryExpenses) => {
 
 export const fetchAllFactoryExpenses = async () => {
   const response = await sendApiRequest<IFactoryExpenses[]>(
-    "/factoryExpenses",
+    "/factory-expenses",
     {
       method: "GET",
       withAuthorization: true,
@@ -26,7 +26,7 @@ export const updateFactoryExpenses = async (
   data: IFactoryExpenses,
 ) => {
   const response = await sendApiRequest<IFactoryExpenses>(
-    `/factoryExpenses/${id}`,
+    `/factory-expenses/${id}`,
     {
       method: "PATCH",
       withAuthorization: true,
@@ -37,7 +37,7 @@ export const updateFactoryExpenses = async (
 };
 
 export const deleteFactoryExpenses = async (id: string) => {
-  const response = await sendApiRequest(`/factoryExpenses/${id}`, {
+  const response = await sendApiRequest(`/factory-expenses/${id}`, {
     method: "DELETE",
     withAuthorization: true,
   });
