@@ -184,18 +184,25 @@ export const FactoryExpenses = () => {
             register={register}
             errorMessage={errors.date?.message}
           />
-          <FormField
-            name="type"
-            label="Expense On"
-            register={register}
-            errorMessage={errors.type?.message}
-          >
-            {expenseCategories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </FormField>
+          <div className="block mb-1">
+            <label htmlFor="type" className="font-medium">
+              Expense On
+            </label>
+            <select
+              id="type"
+              {...register("type")}
+              className="select select-bordered w-full"
+            >
+              {expenseCategories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+            {errors.type && (
+              <p className="text-error text-sm mt-1">{errors.type.message}</p>
+            )}
+          </div>
           <FormField
             type="text"
             name="extraCharge"

@@ -480,32 +480,59 @@ const BankAccounts = () => {
               </FormField>
 
               {chequeStatus === "cancelled" ? (
-                <FormField
-                  type="text"
-                  name="chequeFrom"
-                  label="Cancelled Cheque Number"
-                  placeholder="Cheque Number"
-                  register={registerCheque}
-                  errorMessage={chequeErrors.chequeFrom?.message}
-                />
+                <div className="block mb-1">
+                  <label htmlFor="chequeFrom" className="font-medium">
+                    Cancelled Cheque Number
+                  </label>
+                  <input
+                    id="chequeFrom"
+                    type="text"
+                    {...registerCheque("chequeFrom")}
+                    className="input input-bordered w-full"
+                    placeholder="Cheque Number"
+                  />
+                  {chequeErrors.chequeFrom && (
+                    <p className="text-error text-sm mt-1">
+                      {chequeErrors.chequeFrom.message}
+                    </p>
+                  )}
+                </div>
               ) : (
                 <>
-                  <FormField
-                    type="text"
-                    name="chequeFrom"
-                    label="Cheque From"
-                    placeholder="From Number"
-                    register={registerCheque}
-                    errorMessage={chequeErrors.chequeFrom?.message}
-                  />
-                  <FormField
-                    type="text"
-                    name="chequeTo"
-                    label="Cheque To"
-                    placeholder="To Number"
-                    register={registerCheque}
-                    errorMessage={chequeErrors.chequeTo?.message}
-                  />
+                  <div className="block mb-1">
+                    <label htmlFor="chequeFrom" className="font-medium">
+                      Cheque From
+                    </label>
+                    <input
+                      id="chequeFrom"
+                      type="text"
+                      {...registerCheque("chequeFrom")}
+                      className="input input-bordered w-full"
+                      placeholder="From Number"
+                    />
+                    {chequeErrors.chequeFrom && (
+                      <p className="text-error text-sm mt-1">
+                        {chequeErrors.chequeFrom.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="block mb-1">
+                    <label htmlFor="chequeTo" className="font-medium">
+                      Cheque To
+                    </label>
+                    <input
+                      id="chequeTo"
+                      type="text"
+                      {...registerCheque("chequeTo")}
+                      className="input input-bordered w-full"
+                      placeholder="To Number"
+                    />
+                    {chequeErrors.chequeTo && (
+                      <p className="text-error text-sm mt-1">
+                        {chequeErrors.chequeTo.message}
+                      </p>
+                    )}
+                  </div>
                 </>
               )}
             </div>
@@ -553,18 +580,22 @@ const BankAccounts = () => {
                 </thead>
                 <tbody>
                   {(selectedAccount.cheques ?? []).map((cheque, index) => {
-                    const count =
-                      cheque.status === "cancelled"
-                        ? 1
-                        : parseInt(cheque.chequeTo) -
-                          parseInt(cheque.chequeFrom) +
-                          1;
+                    const isCancelled = cheque.status === "cancelled";
+                    const count = isCancelled
+                      ? 1
+                      : parseInt(cheque.chequeTo) -
+                        parseInt(cheque.chequeFrom) +
+                        1;
 
                     return (
                       <tr key={cheque.id} className="border-b border-base-300">
                         <td className="p-3">{index + 1}</td>
-                        <td className="p-3">{cheque.chequeFrom}</td>
-                        <td className="p-3">{cheque.chequeTo}</td>
+                        <td className="p-3">
+                          {isCancelled ? "-" : cheque.chequeFrom}
+                        </td>
+                        <td className="p-3">
+                          {isCancelled ? "-" : cheque.chequeTo}
+                        </td>
                         <td className="p-3">
                           {isNaN(count) ? "Invalid" : count}
                         </td>
