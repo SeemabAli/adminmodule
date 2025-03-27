@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { notify } from "@/lib/notify";
-import { formatNumberWithCommas } from "@/utils/CommaSeparator";
+import { convertNumberIntoLocalString } from "@/utils/CommaSeparator";
 import { FormField } from "@/common/components/ui/form/FormField";
 import { useForm } from "react-hook-form";
 import { Button } from "@/common/components/ui/Button";
@@ -283,7 +283,10 @@ const EmployeeManagement = () => {
       const formattedData = data.map((employee) => ({
         ...employee,
         salary: Number(
-          formatNumberWithCommas(employee.salary.toString()).replace(/,/g, ""),
+          convertNumberIntoLocalString(employee.salary.toString()).replace(
+            /,/g,
+            "",
+          ),
         ),
         department: employee.department ?? "",
         documents: employee.documents ?? null,
@@ -433,7 +436,7 @@ const EmployeeManagement = () => {
                   <td className="p-3">{employee.department}</td>
                   <td className="p-3">{employee.designation}</td>
                   <td className="p-3">
-                    {formatNumberWithCommas(employee.salary.toString())}
+                    {convertNumberIntoLocalString(employee.salary.toString())}
                   </td>
                   <td className="p-3">
                     {employee.role ? (
