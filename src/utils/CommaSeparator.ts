@@ -1,4 +1,4 @@
-export const formatNumberWithCommas = (num: number | string) => {
+export const convertNumberIntoLocalString = (num: number | string) => {
   if (!num) return "0"; // Handle empty input gracefully
 
   const number =
@@ -7,4 +7,8 @@ export const formatNumberWithCommas = (num: number | string) => {
   if (isNaN(number)) return "0"; // Prevent NaN errors
 
   return number.toLocaleString("en-IN"); // Indian numbering system (used in Pakistan)
+};
+
+export const convertLocalStringIntoNumber = (num: string) => {
+  return parseInt(num.replaceAll(",", ""), 10);
 };
