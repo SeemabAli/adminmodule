@@ -1,8 +1,8 @@
 import { sendApiRequest } from "@/common/services/api.service";
-import { type TruckRoute } from "./truckroute.schema";
+import { type ITruckRoute } from "./truckroute.schema";
 
-export const createTruckRoute = async (data: TruckRoute) => {
-  const response = await sendApiRequest<TruckRoute>("/truck-route", {
+export const createTruckRoute = async (data: ITruckRoute) => {
+  const response = await sendApiRequest<ITruckRoute>("/trucks/routes", {
     method: "POST",
     withAuthorization: true,
     data,
@@ -11,15 +11,15 @@ export const createTruckRoute = async (data: TruckRoute) => {
 };
 
 export const fetchAllTruckRoute = async () => {
-  const response = await sendApiRequest<TruckRoute[]>("/truck-route", {
+  const response = await sendApiRequest<ITruckRoute[]>("/trucks/routes", {
     method: "GET",
     withAuthorization: true,
   });
   return response;
 };
 
-export const updateTruckRoute = async (id: string, data: TruckRoute) => {
-  const response = await sendApiRequest<TruckRoute>(`/truck-route/${id}`, {
+export const updateTruckRoute = async (id: string, data: ITruckRoute) => {
+  const response = await sendApiRequest<ITruckRoute>(`/trucks/routes/${id}`, {
     method: "PATCH",
     withAuthorization: true,
     data,
@@ -28,7 +28,7 @@ export const updateTruckRoute = async (id: string, data: TruckRoute) => {
 };
 
 export const deleteTruckRoute = async (id: string) => {
-  const response = await sendApiRequest(`/truck-route/${id}`, {
+  const response = await sendApiRequest(`/trucks/routes/${id}`, {
     method: "DELETE",
     withAuthorization: true,
   });

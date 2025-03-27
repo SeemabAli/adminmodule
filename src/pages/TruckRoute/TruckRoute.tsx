@@ -5,7 +5,7 @@ import { FormField } from "@/common/components/ui/form/FormField";
 import { useForm } from "react-hook-form";
 import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { truckRouteSchema, type TruckRoute } from "./truckroute.schema";
+import { truckRouteSchema, type ITruckRoute } from "./truckroute.schema";
 import {
   createTruckRoute,
   fetchAllTruckRoute,
@@ -19,8 +19,8 @@ import { TrashIcon } from "@heroicons/react/24/solid";
 import { PencilSquareIcon } from "@heroicons/react/24/solid";
 import { ApiException } from "@/utils/exceptions";
 
-const TruckRoute = () => {
-  const [routes, setRoutes] = useState<TruckRoute[]>([]);
+export const TruckRoute = () => {
+  const [routes, setRoutes] = useState<ITruckRoute[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -34,16 +34,16 @@ const TruckRoute = () => {
     setFocus,
     getValues,
     reset,
-  } = useForm<TruckRoute>({
+  } = useForm<ITruckRoute>({
     resolver: zodResolver(truckRouteSchema),
     defaultValues: {
       id: "",
       name: "",
-      shortCode: "",
+      code: "",
     },
   });
 
-  const handleAddRoute = async (newRouteData: TruckRoute) => {
+  const handleAddRoute = async (newRouteData: ITruckRoute) => {
     try {
       const newRoute = await createTruckRoute(newRouteData);
       setRoutes([...routes, newRoute]);
@@ -88,7 +88,7 @@ const TruckRoute = () => {
     if (!targetRoute) return;
 
     setValue("name", targetRoute.name);
-    setValue("shortCode", targetRoute.shortCode);
+    setValue("code", targetRoute.code);
     setFocus("name");
     setEditingId(routeId);
   };
@@ -115,7 +115,7 @@ const TruckRoute = () => {
   const filteredRoutes = routes.filter(
     (route) =>
       route.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      route.shortCode.toLowerCase().includes(searchQuery.toLowerCase()),
+      route.code.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   if (error) {
@@ -155,10 +155,10 @@ const TruckRoute = () => {
           />
           <FormField
             placeholder="Enter Short Code"
-            name={"shortCode"}
+            name={"code"}
             label={"Short Code"}
             register={register}
-            errorMessage={errors.shortCode?.message}
+            errorMessage={errors.code?.message}
           />
         </div>
 
@@ -198,24 +198,24 @@ const TruckRoute = () => {
                 >
                   <td>{index + 1}</td>
                   <td>{route.name}</td>
-                  <td>{route.shortCode}</td>
-                  <td className="space-x-2">
+                  <td>{route.code}</td>
+                  <td className="p-1 flex gap-1 justify-center">
                     <button
                       onClick={() => {
                         route.id && handleEdit(route.id);
                       }}
-                      className="flex items-center justify-center"
+                      className="flex items-center mt-2 justify-center"
                     >
-                      <PencilSquareIcon className="w-4 h-4 text-info" />
+                      <PencilSquareIcon className="w-5 h-5 text-info" />
                     </button>
 
                     <button
                       onClick={() => {
                         handleDelete(route.id ?? "");
                       }}
-                      className="flex items-center justify-center"
+                      className="flex items-center mt-2 justify-center"
                     >
-                      <TrashIcon className="w-4 h-4 text-red-500" />
+                      <TrashIcon className="w-5 h-5 text-red-500" />
                     </button>
                   </td>
                 </tr>
@@ -231,5 +231,3 @@ const TruckRoute = () => {
     </div>
   );
 };
-
-export default TruckRoute;
