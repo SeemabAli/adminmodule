@@ -2,14 +2,10 @@ import { Toaster } from "react-hot-toast";
 import CompanyAccounts from "@/pages/Accounts/CompanyAccounts/CompanyAccounts";
 import Employees from "@/pages/Accounts/Employees/Employees";
 import BankAccounts from "@/pages/Accounts/BankAccounts/BankAccounts";
-import TruckInformation from "@/pages/Accounts/TruckInformation/TruckInformation";
 import DeliveryRoutes from "@/pages/Accounts/DeliveryRoutes/DeliveryRoutes";
 import TaxAccounts from "@/pages/Accounts/TaxAccounts/TaxAccounts";
-import FactoryExpenses from "@/pages/Accounts/FactoryExpenses/FactoryExpenses";
 import TruckOtherExpenses from "@/pages/Accounts/TruckOtherExpenses/TruckOtherExpenses";
 import Brands from "@/pages/Brands/Brands";
-import TruckRoute from "@/pages/TruckRoute/TruckRoute";
-import Customer from "@/pages/Accounts/Customer/Customer";
 import {
   Route,
   createBrowserRouter,
@@ -17,7 +13,6 @@ import {
   RouterProvider,
 } from "react-router";
 import { Home } from "@/pages/home/Home";
-import { Purchase } from "@/pages/Accounts/Purchase/Purchase";
 import { RootLayout } from "@/common/layouts/rootLayout/RootLayout";
 import { AuthLayout } from "@/common/layouts/authLayout/AuthLayout";
 import { SigninPage } from "@/core/auth/pages/SigninPage";
@@ -25,6 +20,12 @@ import { RequireAuth } from "@/core/auth/components/RequireAuth";
 import { PersistentLogin } from "@/core/auth/components/PersistentLogin";
 import { ROLES } from "@/common/constants/roles.constants";
 import { UnauthorizedPage } from "@/pages/unAuthorized/UnAuthorizedPage";
+import Purchase from "@/pages/Accounts/Purchase/Purchase";
+
+import { TruckInformation } from "@/pages/Accounts/TruckInformation/TruckInformation";
+import { FactoryExpenses } from "@/pages/Accounts/FactoryExpenses/FactoryExpenses";
+import { Customer } from "@/pages/Accounts/Customer/Customer";
+import { TruckRoute } from "@/pages/TruckRoute/TruckRoute";
 
 const router = createBrowserRouter(
   createRoutesFromElements([
