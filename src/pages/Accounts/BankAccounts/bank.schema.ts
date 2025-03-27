@@ -1,3 +1,4 @@
+import { convertLocalStringIntoNumber } from "@/utils/CommaSeparator";
 import { z } from "zod";
 
 // Define the ChequeStatus enum
@@ -35,7 +36,7 @@ export const bankAccountSchema = z.object({
     .nonempty("Account number is required")
     .min(5, "Account number must be at least 5 characters")
     .max(30, "Account number must not exceed 30 characters"),
-  openingBalance: z.string().nonempty("Opening balance is required"),
+  openingBalance: z.string().transform(convertLocalStringIntoNumber),
   cheques: z.array(chequeSchema).optional(),
 });
 

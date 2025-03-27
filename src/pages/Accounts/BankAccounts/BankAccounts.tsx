@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { notify } from "@/lib/notify";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { formatNumberWithCommas } from "@/utils/CommaSeparator";
+// import { convertNumberIntoLocalString } from "@/utils/CommaSeparator";
 import { Button } from "@/common/components/ui/Button";
 import { FormField } from "@/common/components/ui/form/FormField";
 import { ErrorModal } from "@/common/components/Error";
@@ -25,6 +25,13 @@ import {
   deleteBankAccount,
 } from "./bank.service";
 
+const BANK_OPTIONS = [
+  { value: "HBL", label: "HBL" },
+  { value: "UBL", label: "UBL" },
+  { value: "Meezan", label: "Meezan" },
+  { value: "Other", label: "Other" },
+];
+
 const BankAccounts = () => {
   const { error, data, isLoading } = useService(fetchAllBankAccounts);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
@@ -42,15 +49,18 @@ const BankAccounts = () => {
     setValue: setBankValue,
     reset: resetBankForm,
     getValues: getBankValues,
+    watch: watchBankName,
   } = useForm<BankAccount>({
     resolver: zodResolver(bankAccountSchema),
     defaultValues: {
       bankName: "HBL",
       accountTitle: "",
       accountNumber: "",
-      openingBalance: "",
+      openingBalance: 0,
     },
   });
+
+  const watchedBankName = watchBankName("bankName");
 
   // Cheque form
   const {
@@ -293,19 +303,31 @@ const BankAccounts = () => {
           {editingAccountId ? "Edit Bank Account" : "Add New Bank Account"}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            name="bankName"
-            label="Select Bank"
-            register={registerBank}
-            errorMessage={bankErrors.bankName?.message}
-          >
-            <select {...registerBank("bankName")} className="form-select">
-              <option value="HBL">HBL</option>
-              <option value="UBL">UBL</option>
-              <option value="Meezan">Meezan</option>
-              <option value="Other">Other</option>
+          <div className="block mb-1">
+            <label htmlFor="bankName" className="font-medium">
+              Select Bank
+            </label>
+            <select
+              id="bankName"
+              {...registerBank("bankName")}
+              value={watchedBankName}
+              onChange={(e) => {
+                setBankValue("bankName", e.target.value);
+              }}
+              className="select select-bordered w-full"
+            >
+              {BANK_OPTIONS.map((bank) => (
+                <option key={bank.value} value={bank.value}>
+                  {bank.label}
+                </option>
+              ))}
             </select>
-          </FormField>
+            {bankErrors.bankName && (
+              <p className="text-error text-sm mt-1">
+                {bankErrors.bankName.message}
+              </p>
+            )}
+          </div>
           <FormField
             type="text"
             name="accountTitle"
@@ -328,10 +350,6 @@ const BankAccounts = () => {
             label="Opening Balance"
             placeholder="Opening Balance"
             register={registerBank}
-            onChange={(e) => {
-              const value = e.target.value.replace(/,/g, "");
-              setBankValue("openingBalance", formatNumberWithCommas(value));
-            }}
             errorMessage={bankErrors.openingBalance?.message}
           />
         </div>
