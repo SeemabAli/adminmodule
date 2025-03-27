@@ -1,8 +1,8 @@
 import { sendApiRequest } from "@/common/services/api.service";
-import type { Customer } from "./customer.schema";
+import type { ICustomer } from "./customer.schema";
 
-export const createCustomer = async (data: Customer) => {
-  const response = await sendApiRequest<Customer>("/customers", {
+export const createCustomer = async (data: ICustomer) => {
+  const response = await sendApiRequest<ICustomer>("/customers", {
     method: "POST",
     withAuthorization: true,
     data,
@@ -11,15 +11,15 @@ export const createCustomer = async (data: Customer) => {
 };
 
 export const fetchAllCustomers = async () => {
-  const response = await sendApiRequest<Customer[]>("/customers", {
+  const response = await sendApiRequest<ICustomer[]>("/customers", {
     method: "GET",
     withAuthorization: true,
   });
   return response;
 };
 
-export const updateCustomer = async (id: string, data: Customer) => {
-  const response = await sendApiRequest<Customer>(`/customers/${id}`, {
+export const updateCustomer = async (id: string, data: ICustomer) => {
+  const response = await sendApiRequest<ICustomer>(`/customers/${id}`, {
     method: "PATCH",
     withAuthorization: true,
     data,

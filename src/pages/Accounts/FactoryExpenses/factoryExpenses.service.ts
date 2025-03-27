@@ -1,8 +1,8 @@
 import { sendApiRequest } from "@/common/services/api.service";
-import { type FactoryExpenses } from "./factoryExpenses.schema";
+import { type IFactoryExpenses } from "./factoryExpenses.schema";
 
-export const createFactoryExpenses = async (data: FactoryExpenses) => {
-  const response = await sendApiRequest<FactoryExpenses>("/factoryExpenses", {
+export const createFactoryExpenses = async (data: IFactoryExpenses) => {
+  const response = await sendApiRequest<IFactoryExpenses>("/factoryExpenses", {
     method: "POST",
     withAuthorization: true,
     data,
@@ -11,18 +11,21 @@ export const createFactoryExpenses = async (data: FactoryExpenses) => {
 };
 
 export const fetchAllFactoryExpenses = async () => {
-  const response = await sendApiRequest<FactoryExpenses[]>("/factoryExpenses", {
-    method: "GET",
-    withAuthorization: true,
-  });
+  const response = await sendApiRequest<IFactoryExpenses[]>(
+    "/factoryExpenses",
+    {
+      method: "GET",
+      withAuthorization: true,
+    },
+  );
   return response;
 };
 
 export const updateFactoryExpenses = async (
   id: string,
-  data: FactoryExpenses,
+  data: IFactoryExpenses,
 ) => {
-  const response = await sendApiRequest<FactoryExpenses>(
+  const response = await sendApiRequest<IFactoryExpenses>(
     `/factoryExpenses/${id}`,
     {
       method: "PATCH",

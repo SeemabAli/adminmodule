@@ -14,7 +14,7 @@ import { ApiException } from "@/utils/exceptions";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
 import {
   factoryExpensesSchema,
-  type FactoryExpenses,
+  type IFactoryExpenses,
   type ExpenseType,
   type ExpenseCategory,
 } from "./factoryExpenses.schema";
@@ -34,9 +34,9 @@ const expenseTypes: ExpenseType[] = [
 const expenseCategories: ExpenseCategory[] = ["General", "Specific Product"];
 const rangeOptions = ["0-50 Tons", "51-100 Tons", "101+ Tons"];
 
-const FactoryExpenses = () => {
+export const FactoryExpenses = () => {
   const { error, data, isLoading } = useService(fetchAllFactoryExpenses);
-  const [expenses, setExpenses] = useState<FactoryExpenses[]>([]);
+  const [expenses, setExpenses] = useState<IFactoryExpenses[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isRangeTableOpen, setIsRangeTableOpen] = useState(false);
 
@@ -48,7 +48,7 @@ const FactoryExpenses = () => {
     reset,
     getValues,
     watch,
-  } = useForm<FactoryExpenses>({
+  } = useForm<IFactoryExpenses>({
     resolver: zodResolver(factoryExpensesSchema),
     defaultValues: {
       name: "",
@@ -69,7 +69,7 @@ const FactoryExpenses = () => {
   }, [data]);
 
   // Handle form submission
-  const handleAddExpense = async (data: FactoryExpenses) => {
+  const handleAddExpense = async (data: IFactoryExpenses) => {
     try {
       const newExpense = await createFactoryExpenses(data);
       setExpenses([...expenses, newExpense]);
@@ -429,5 +429,3 @@ const FactoryExpenses = () => {
     </div>
   );
 };
-
-export default FactoryExpenses;

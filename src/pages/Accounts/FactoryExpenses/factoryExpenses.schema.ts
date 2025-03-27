@@ -38,4 +38,4 @@ export const factoryExpensesSchema = z.object({
 export type ExpenseType = z.infer<typeof expenseTypeEnum>;
 export type ExpenseCategory = z.infer<typeof expenseCategoryEnum>;
 export type RangeTonValues = z.infer<typeof rangeTonValuesSchema>;
-export type FactoryExpenses = z.infer<typeof factoryExpensesSchema>;
+export type IFactoryExpenses = z.infer<typeof factoryExpensesSchema>;

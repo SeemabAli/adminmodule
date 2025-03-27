@@ -80,4 +80,4 @@ export const customerSchema = z.object({
 });
 
 // Type definition
-export type Customer = z.infer<typeof customerSchema>;
+export type ICustomer = z.infer<typeof customerSchema>;

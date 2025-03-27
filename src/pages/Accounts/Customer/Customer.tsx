@@ -14,7 +14,7 @@ import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ErrorModal } from "@/common/components/Error";
 import { useService } from "@/common/hooks/custom/useService";
-import { customerSchema, type Customer } from "./customer.schema";
+import { customerSchema, type ICustomer } from "./customer.schema";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
 import { type Phone } from "./customer.schema";
 
@@ -63,9 +63,9 @@ import { type Phone } from "./customer.schema";
 const smsViaOptions = ["SMS", "WhatsApp", "Email", "Push Notification"];
 const smsFrequencyOptions = ["Daily", "Weekly", "Monthly", "Yearly"];
 
-const Customer: React.FC = () => {
+export const Customer: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<ICustomer[]>([]);
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [phoneStatus, setPhoneStatus] = useState<
     "Ptcl" | "Mobile" | "Whatsapp"
@@ -94,7 +94,7 @@ const Customer: React.FC = () => {
 
   // Initialize React Hook Form
   const { register, setValue, setFocus, getValues, reset, watch } =
-    useForm<Customer>({
+    useForm<ICustomer>({
       resolver: zodResolver(customerSchema),
       defaultValues: {
         customerName: "",
@@ -222,7 +222,7 @@ const Customer: React.FC = () => {
     setValue("postDatedCheques", currentCheques);
   };
 
-  const handleSave = async (formData: Customer) => {
+  const handleSave = async (formData: ICustomer) => {
     try {
       // Add SMS pattern if enabled
       const customerData = {
@@ -1309,5 +1309,3 @@ const Customer: React.FC = () => {
     </div>
   );
 };
-
-export default Customer;
