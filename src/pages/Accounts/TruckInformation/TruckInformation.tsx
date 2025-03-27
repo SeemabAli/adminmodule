@@ -8,7 +8,7 @@ import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   truckInformationSchema,
-  type TruckInformation,
+  type ITruckInformation,
 } from "./truckinformation.schema";
 import {
   createTruckInformation,
@@ -22,20 +22,13 @@ import { ErrorModal } from "@/common/components/Error";
 import { TrashIcon } from "@heroicons/react/24/solid";
 import { PencilSquareIcon } from "@heroicons/react/24/solid";
 import { ApiException } from "@/utils/exceptions";
+import type { DeliveryRoute } from "../DeliveryRoutes/deliveryRoute.schema";
+import { fetchAllRoutes } from "../DeliveryRoutes/route.service";
 
-const routes = [
-  "Karachi - Lahore",
-  "Lahore - Islamabad",
-  "Islamabad - Peshawar",
-  "Quetta - Karachi",
-  "Faisalabad - Multan",
-  "Multan - Hyderabad",
-  "Sialkot - Rawalpindi",
-];
-
-const TruckInformation = () => {
-  const [trucks, setTrucks] = useState<TruckInformation[]>([]);
+export const TruckInformation = () => {
+  const [trucks, setTrucks] = useState<ITruckInformation[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [routes, setRoutes] = useState<DeliveryRoute[]>([]);
 
   const { error, data, isLoading } = useService(fetchAllTruckInformation);
 
@@ -48,20 +41,19 @@ const TruckInformation = () => {
     getValues,
     reset,
     watch,
-  } = useForm<TruckInformation>({
+  } = useForm<ITruckInformation>({
     resolver: zodResolver(truckInformationSchema),
     defaultValues: {
-      id: "",
-      truckNumber: "",
+      number: "",
       driverName: "",
-      defaultRoute: "Karachi - Lahore",
-      truckType: "MBnCO",
+      routeId: "",
+      sourcingType: "insource", // Set default to Insource
     },
   });
 
-  const truckType = watch("truckType");
+  const truckType = watch("sourcingType");
 
-  const handleAddTruck = async (newTruckData: TruckInformation) => {
+  const handleAddTruck = async (newTruckData: ITruckInformation) => {
     try {
       const newTruck = await createTruckInformation(newTruckData);
       setTrucks([...trucks, newTruck]);
@@ -110,11 +102,11 @@ const TruckInformation = () => {
     if (!targetTruck) return;
 
     setValue("id", targetTruck.id ?? "");
-    setValue("truckNumber", targetTruck.truckNumber);
+    setValue("number", targetTruck.number);
     setValue("driverName", targetTruck.driverName);
-    setValue("defaultRoute", targetTruck.defaultRoute);
-    setValue("truckType", targetTruck.truckType);
-    setFocus("truckNumber");
+    setValue("routeId", targetTruck.routeId);
+    setValue("sourcingType", targetTruck.sourcingType);
+    setFocus("number");
     setEditingId(truckId);
   };
 
@@ -132,9 +124,20 @@ const TruckInformation = () => {
   };
 
   useEffect(() => {
+    const fetchRoutesData = async () => {
+      try {
+        const routesData = await fetchAllRoutes();
+        setRoutes(routesData);
+      } catch (error) {
+        logger.error("Failed to fetch routes", error);
+        notify.error("Could not load routes data");
+      }
+    };
+
     if (data) {
       setTrucks(data);
     }
+    void fetchRoutesData();
   }, [data]);
 
   if (error) {
@@ -154,10 +157,10 @@ const TruckInformation = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           <FormField
             placeholder="Enter Truck Number"
-            name={"truckNumber"}
+            name={"number"}
             label={"Truck Number"}
             register={register}
-            errorMessage={errors.truckNumber?.message}
+            errorMessage={errors.number?.message}
           />
           <FormField
             placeholder="Enter Driver Name"
@@ -166,43 +169,50 @@ const TruckInformation = () => {
             register={register}
             errorMessage={errors.driverName?.message}
           />
-          <FormField
-            name={"defaultRoute"}
-            label={"Default Route"}
-            register={register}
-            errorMessage={errors.defaultRoute?.message}
-          >
-            {routes.map((route, index) => (
-              <option key={index} value={route}>
-                {route}
-              </option>
-            ))}
-          </FormField>
+          <label className="block mb-1 font-medium">
+            Route
+            <select
+              {...register("routeId")}
+              className="select select-bordered w-full"
+            >
+              <option value="">Select Route</option>
+              {routes.map((route) => (
+                <option key={route.id} value={route.id}>
+                  {route.name}
+                </option>
+              ))}
+            </select>
+            {errors.routeId && (
+              <span className="text-red-500 text-sm">
+                {errors.routeId.message}
+              </span>
+            )}
+          </label>
           <div className="flex flex-col gap-2">
             <label className="font-medium">Truck Type</label>
             <div className="flex gap-4">
               <label className="flex items-center gap-2">
                 <input
                   type="radio"
-                  value="MBnCO"
-                  {...register("truckType")}
+                  value="insource"
+                  {...register("sourcingType")}
                   className="radio"
                 />
-                MBnCO
+                Insource
               </label>
               <label className="flex items-center gap-2">
                 <input
                   type="radio"
-                  value="Outsource"
-                  {...register("truckType")}
+                  value="outsource"
+                  {...register("sourcingType")}
                   className="radio"
                 />
                 Outsource
               </label>
             </div>
-            {errors.truckType?.message && (
+            {errors.sourcingType?.message && (
               <span className="text-red-500 text-sm">
-                {errors.truckType.message}
+                {errors.sourcingType.message}
               </span>
             )}
           </div>
@@ -243,10 +253,13 @@ const TruckInformation = () => {
                   className="border-b border-base-300 text-center"
                 >
                   <td className="p-3">{index + 1}</td>
-                  <td className="p-3">{truck.truckNumber}</td>
+                  <td className="p-3">{truck.number}</td>
                   <td className="p-3">{truck.driverName}</td>
-                  <td className="p-3">{truck.defaultRoute}</td>
-                  <td className="p-3">{truck.truckType}</td>
+                  <td className="p-3">
+                    {routes.find((route) => route.id === truck.routeId)?.name ??
+                      "Unknown"}
+                  </td>
+                  <td className="p-3">{truck.sourcingType}</td>
                   <td className="p-1 flex gap-1 justify-center">
                     <button
                       onClick={() => {
@@ -279,5 +292,3 @@ const TruckInformation = () => {
     </div>
   );
 };
-
-export default TruckInformation;

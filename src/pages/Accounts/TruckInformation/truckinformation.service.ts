@@ -1,46 +1,37 @@
 import { sendApiRequest } from "@/common/services/api.service";
-import { type TruckInformation } from "./truckinformation.schema";
+import { type ITruckInformation } from "./truckinformation.schema";
 
-export const createTruckInformation = async (data: TruckInformation) => {
-  const response = await sendApiRequest<TruckInformation>(
-    "/truck-information",
-    {
-      method: "POST",
-      withAuthorization: true,
-      data,
-    },
-  );
+export const createTruckInformation = async (data: ITruckInformation) => {
+  const response = await sendApiRequest<ITruckInformation>("/trucks", {
+    method: "POST",
+    withAuthorization: true,
+    data,
+  });
   return response;
 };
 
 export const fetchAllTruckInformation = async () => {
-  const response = await sendApiRequest<TruckInformation[]>(
-    "/truck-information",
-    {
-      method: "GET",
-      withAuthorization: true,
-    },
-  );
+  const response = await sendApiRequest<ITruckInformation[]>("/trucks", {
+    method: "GET",
+    withAuthorization: true,
+  });
   return response;
 };
 
 export const updateTruckInformation = async (
   id: string,
-  data: TruckInformation,
+  data: ITruckInformation,
 ) => {
-  const response = await sendApiRequest<TruckInformation>(
-    `/truck-information/${id}`,
-    {
-      method: "PATCH",
-      withAuthorization: true,
-      data,
-    },
-  );
+  const response = await sendApiRequest<ITruckInformation>(`/trucks/${id}`, {
+    method: "PATCH",
+    withAuthorization: true,
+    data,
+  });
   return response;
 };
 
 export const deleteTruckInformation = async (id: string) => {
-  const response = await sendApiRequest(`/truck-information/${id}`, {
+  const response = await sendApiRequest(`/trucks/${id}`, {
     method: "DELETE",
     withAuthorization: true,
   });

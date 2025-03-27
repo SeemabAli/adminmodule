@@ -2,8 +2,7 @@ import { z } from "zod";
 
 export const truckInformationSchema = z.object({
   id: z.string().optional(),
-
-  truckNumber: z
+  number: z
     .string()
     .nonempty("Truck number is required")
     .min(2, "Truck number must be at least 2 characters")
@@ -15,12 +14,12 @@ export const truckInformationSchema = z.object({
     .min(3, "Driver name must be at least 3 characters")
     .max(50, "Driver name must not exceed 50 characters"),
 
-  defaultRoute: z.string().nonempty("Default route is required"),
+  routeId: z.string().nonempty("Default route is required"),
 
-  truckType: z.enum(["MBnCO", "Outsource"], {
+  sourcingType: z.enum(["insource", "outsource"], {
     required_error: "Truck type is required",
-    invalid_type_error: "Truck type must be either 'MBnCO' or 'Outsource'",
+    invalid_type_error: "Truck type must be either 'Insource' or 'Outsource'",
   }),
 });
 
-export type TruckInformation = z.infer<typeof truckInformationSchema>;
+export type ITruckInformation = z.infer<typeof truckInformationSchema>;
