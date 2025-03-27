@@ -2,25 +2,22 @@ import { sendApiRequest } from "@/common/services/api.service";
 import { type TruckOtherExpenses } from "./truckotherexpenses.schema";
 
 export const createTruckOtherExpenses = async (data: TruckOtherExpenses) => {
-  const response = await sendApiRequest<TruckOtherExpenses>(
-    "/truck-other-expenses",
-    {
-      method: "POST",
-      withAuthorization: true,
-      data: {
-        ...data,
-        firstTrip: data.firstTrip ?? null,
-        secondTrip: data.secondTrip ?? null,
-        thirdTrip: data.thirdTrip ?? null,
-      },
+  const response = await sendApiRequest<TruckOtherExpenses>("/truck-expenses", {
+    method: "POST",
+    withAuthorization: true,
+    data: {
+      ...data,
+      firstTrip: data.firstTrip ?? null,
+      secondTrip: data.secondTrip ?? null,
+      thirdTrip: data.thirdTrip ?? null,
     },
-  );
+  });
   return response;
 };
 
 export const fetchAllTruckOtherExpenses = async () => {
   const response = await sendApiRequest<TruckOtherExpenses[]>(
-    "/truck-other-expenses",
+    "/truck-expenses",
     {
       method: "GET",
       withAuthorization: true,
@@ -34,7 +31,7 @@ export const updateTruckOtherExpenses = async (
   data: TruckOtherExpenses,
 ) => {
   const response = await sendApiRequest<TruckOtherExpenses>(
-    `/truck-other-expenses/${id}`,
+    `/truck-expenses/${id}`,
     {
       method: "PATCH",
       withAuthorization: true,
@@ -50,7 +47,7 @@ export const updateTruckOtherExpenses = async (
 };
 
 export const deleteTruckOtherExpenses = async (id: string) => {
-  const response = await sendApiRequest(`/truck-other-expenses/${id}`, {
+  const response = await sendApiRequest(`/truck-expenses/${id}`, {
     method: "DELETE",
     withAuthorization: true,
   });

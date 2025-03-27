@@ -1,3 +1,4 @@
+import { convertLocalStringIntoNumber } from "@/utils/CommaSeparator";
 import { z } from "zod";
 
 export const truckOtherExpensesSchema = z.object({
@@ -9,28 +10,11 @@ export const truckOtherExpensesSchema = z.object({
     .min(3, "Expense name must be at least 3 characters")
     .max(50, "Expense name must not exceed 50 characters"),
 
-  firstTrip: z
-    .number()
-    .min(0, "Amount must be positive")
-    .optional()
-    .transform((val) => val ?? null),
+  firstTrip: z.string().transform(convertLocalStringIntoNumber).optional(),
 
-  secondTrip: z
-    .number()
-    .min(0, "Amount must be positive")
-    .optional()
-    .transform((val) => val ?? null),
+  secondTrip: z.string().transform(convertLocalStringIntoNumber).optional(),
 
-  thirdTrip: z
-    .number()
-    .min(0, "Amount must be positive")
-    .optional()
-    .transform((val) => val ?? null),
-
-  date: z
-    .string()
-    .nonempty("Date is required")
-    .refine((val) => !isNaN(Date.parse(val)), "Invalid date format"),
+  thirdTrip: z.string().transform(convertLocalStringIntoNumber).optional(),
 });
 
 // Type definitions

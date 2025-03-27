@@ -21,7 +21,7 @@ import { ErrorModal } from "@/common/components/Error";
 import { TrashIcon } from "@heroicons/react/24/solid";
 import { PencilSquareIcon } from "@heroicons/react/24/solid";
 import { ApiException } from "@/utils/exceptions";
-import { formatNumberWithCommas } from "@/utils/CommaSeparator";
+import { convertNumberIntoLocalString } from "@/utils/CommaSeparator";
 
 const TruckOtherExpense = () => {
   const [expenses, setExpenses] = useState<TruckOtherExpenses[]>([]);
@@ -35,18 +35,15 @@ const TruckOtherExpense = () => {
     handleSubmit,
     setValue,
     setFocus,
-    getValues,
     reset,
-    watch,
   } = useForm({
     resolver: zodResolver(truckOtherExpensesSchema),
     defaultValues: {
       id: "",
       name: "",
-      firstTrip: undefined,
-      secondTrip: undefined,
-      thirdTrip: undefined,
-      date: new Date().toISOString().split("T")[0] ?? "",
+      firstTrip: 0,
+      secondTrip: 0,
+      thirdTrip: 0,
     },
   });
 
@@ -69,13 +66,12 @@ const TruckOtherExpense = () => {
     }
   };
 
-  const onExpenseUpdate = async (expenseId: string) => {
+  const onExpenseUpdate = async (
+    expenseId: string,
+    data: TruckOtherExpenses,
+  ) => {
     try {
-      const updatedExpenseData = getValues();
-      const updatedExpense = await updateTruckOtherExpenses(
-        expenseId,
-        updatedExpenseData,
-      );
+      const updatedExpense = await updateTruckOtherExpenses(expenseId, data);
 
       const updatedExpenses = expenses.map((expense) => {
         if (expense.id === expenseId) {
@@ -103,10 +99,6 @@ const TruckOtherExpense = () => {
     setValue("firstTrip", targetExpense.firstTrip);
     setValue("secondTrip", targetExpense.secondTrip);
     setValue("thirdTrip", targetExpense.thirdTrip);
-    setValue(
-      "date",
-      targetExpense.date ?? new Date().toISOString().split("T")[0],
-    );
     setFocus("name");
     setEditingId(expenseId);
   };
@@ -142,11 +134,6 @@ const TruckOtherExpense = () => {
     );
   }
 
-  // Watch form values for number inputs to format them
-  const firstTripValue = watch("firstTrip");
-  const secondTripValue = watch("secondTrip");
-  const thirdTripValue = watch("thirdTrip");
-
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-4">Truck Other Expenses</h2>
@@ -160,72 +147,35 @@ const TruckOtherExpense = () => {
             errorMessage={errors.name?.message}
           />
           <FormField
-            type="date"
-            name={"date"}
-            label={"Date"}
-            register={register}
-            errorMessage={errors.date?.message}
-          />
-          <FormField
+            type="number"
             placeholder="1st Trip Amount"
             name={"firstTrip"}
-            label={"1st Trip"}
+            label={"First Trip Amount"}
             register={register}
-            value={
-              firstTripValue !== null
-                ? formatNumberWithCommas(firstTripValue)
-                : ""
-            }
-            onChange={(e) => {
-              const value = e.target.value.replace(/,/g, "");
-              setValue("firstTrip", value === "" ? null : parseFloat(value), {
-                shouldValidate: true,
-              });
-            }}
             errorMessage={errors.firstTrip?.message}
           />
           <FormField
+            type="number"
             placeholder="2nd Trip Amount"
             name={"secondTrip"}
-            label={"2nd Trip"}
+            label={"Second Trip Amount"}
             register={register}
-            value={
-              secondTripValue !== null
-                ? formatNumberWithCommas(secondTripValue)
-                : ""
-            }
-            onChange={(e) => {
-              const value = e.target.value.replace(/,/g, "");
-              setValue("secondTrip", value === "" ? null : parseFloat(value), {
-                shouldValidate: true,
-              });
-            }}
             errorMessage={errors.secondTrip?.message}
           />
           <FormField
+            type="number"
             placeholder="3rd Trip Amount"
             name={"thirdTrip"}
-            label={"3rd Trip"}
+            label={"Third Trip Amount"}
             register={register}
-            value={
-              thirdTripValue != null
-                ? formatNumberWithCommas(thirdTripValue)
-                : ""
-            }
-            onChange={(e) => {
-              const value = e.target.value.replace(/,/g, "");
-              setValue("thirdTrip", value === "" ? null : parseFloat(value), {
-                shouldValidate: true,
-              });
-            }}
             errorMessage={errors.thirdTrip?.message}
           />
         </div>
         <Button
           onClick={
             editingId !== null
-              ? handleSubmit(() => {
-                  void onExpenseUpdate(editingId);
+              ? handleSubmit((updatedExpenseData) => {
+                  void onExpenseUpdate(editingId, updatedExpenseData);
                 })
               : handleSubmit(handleAddExpense)
           }
@@ -244,7 +194,6 @@ const TruckOtherExpense = () => {
               <tr className="bg-base-300 text-base-content text-center">
                 <th className="p-3">#</th>
                 <th className="p-3">Expense Name</th>
-                <th className="p-3">Date</th>
                 <th className="p-3">1st Trip Amount</th>
                 <th className="p-3">2nd Trip Amount</th>
                 <th className="p-3">3rd Trip Amount</th>
@@ -259,20 +208,19 @@ const TruckOtherExpense = () => {
                 >
                   <td className="p-3">{index + 1}</td>
                   <td className="p-3">{expense.name}</td>
-                  <td className="p-3">{expense.date}</td>
                   <td className="p-3">
                     {expense.firstTrip != null
-                      ? formatNumberWithCommas(expense.firstTrip)
+                      ? convertNumberIntoLocalString(expense.firstTrip)
                       : "-"}
                   </td>
                   <td className="p-3">
-                    {expense.secondTrip !== null
-                      ? formatNumberWithCommas(expense.secondTrip)
+                    {expense.secondTrip != null
+                      ? convertNumberIntoLocalString(expense.secondTrip)
                       : "-"}
                   </td>
                   <td className="p-3">
-                    {expense.thirdTrip !== null
-                      ? formatNumberWithCommas(expense.thirdTrip)
+                    {expense.thirdTrip != null
+                      ? convertNumberIntoLocalString(expense.thirdTrip)
                       : "-"}
                   </td>
                   <td className="p-3 flex gap-1 justify-center">
