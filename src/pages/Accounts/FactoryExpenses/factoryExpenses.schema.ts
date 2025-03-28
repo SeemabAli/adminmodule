@@ -1,17 +1,23 @@
 import { z } from "zod";
 
-const expenseTypeEnum = z.enum([
-  "Fixed Amount",
-  "Fixed/Ton",
-  "Percent/Ton",
-  "Range Ton From",
+// Enum for applies to
+const appliestoEnum = z.enum(["GENERAL", "SPECIFIC_PRODUCT"]);
+
+// Enum for rate type
+const rateTypeEnum = z.enum([
+  "FIXED_AMOUNT",
+  "FIXED_PER_TON",
+  "PERCENTAGE_PER_TON",
+  "TIERED",
 ]);
-const expenseCategoryEnum = z.enum(["General", "Specific Product"]);
 
-export const rangeTonValuesSchema = z
-  .record(z.string(), z.number().min(0, "Value must be positive"))
-  .optional();
+// Tiered prices schema
+const tieredPriceSchema = z.object({
+  rangeId: z.string(),
+  price: z.number().min(0, "Price must be positive"),
+});
 
+// Main factory expenses schema
 export const factoryExpensesSchema = z.object({
   id: z.string().optional(),
   name: z
@@ -19,23 +25,29 @@ export const factoryExpensesSchema = z.object({
     .nonempty("Expense name is required")
     .min(3, "Expense name must be at least 3 characters")
     .max(50, "Expense name must not exceed 50 characters"),
-  date: z.string().nonempty("Date is required"),
-  type: expenseCategoryEnum,
-  expenseType: expenseTypeEnum,
-  fixedAmount: z.number().min(0, "Amount must be positive").optional(),
-  fixedPerTon: z.number().min(0, "Amount must be positive").optional(),
-  percentPerTon: z
+  appliesTo: appliestoEnum,
+  rateType: rateTypeEnum,
+  fixedPerTonRate: z
+    .number()
+    .min(0, "Fixed per ton rate must be positive")
+    .optional(),
+  fixedAmountRate: z
+    .number()
+    .min(0, "Fixed amount rate must be positive")
+    .optional(),
+  expenseType: z.string().nonempty("Expense type is required").optional(),
+  type: z.string().nonempty("Type is required").optional(),
+  percentagePerTonRate: z
     .number()
     .min(0, "Percentage must be positive")
     .max(100, "Percentage cannot exceed 100")
     .optional(),
-  rangeTonFrom: z.string().optional(),
-  rangeTonValues: rangeTonValuesSchema,
-  extraCharge: z.number().min(0, "Extra charge must be positive"),
+  tieredPrices: z.array(tieredPriceSchema).optional(),
+  extraCharge: z.number().min(0, "Extra charge must be positive").optional(),
 });
 
-// Type definitions
-export type ExpenseType = z.infer<typeof expenseTypeEnum>;
-export type ExpenseCategory = z.infer<typeof expenseCategoryEnum>;
-export type RangeTonValues = z.infer<typeof rangeTonValuesSchema>;
+// Convenience types
+export type AppliesTo = z.infer<typeof appliestoEnum>;
+export type RateType = z.infer<typeof rateTypeEnum>;
+export type TieredPrice = z.infer<typeof tieredPriceSchema>;
 export type IFactoryExpenses = z.infer<typeof factoryExpensesSchema>;

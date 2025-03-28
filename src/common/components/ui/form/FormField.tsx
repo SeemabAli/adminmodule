@@ -9,6 +9,7 @@ import type {
 type Props<T extends FieldValues> = {
   name: FieldPath<T>;
   label: string;
+  valueAsNumber?: boolean;
   errorMessage?: FieldError["message"];
   register: UseFormRegister<T>;
   children?: React.ReactNode;
@@ -21,6 +22,7 @@ export function FormField<T extends FieldValues>({
   errorMessage,
   register,
   children,
+  valueAsNumber,
   className = "relative left-0.5",
   ...rest
 }: Props<T>) {
@@ -32,7 +34,7 @@ export function FormField<T extends FieldValues>({
       </label>
       <div className="relative">
         <input
-          {...register(name)}
+          {...register(name, { valueAsNumber: valueAsNumber })}
           className="input input-bordered w-full bg-base-100 text-base-content focus:outline-none focus:ring-2 focus:ring-info"
           {...rest}
         />

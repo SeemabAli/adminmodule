@@ -12,6 +12,7 @@ import { logger } from "@/lib/logger";
 import { ApiException } from "@/utils/exceptions";
 import PencilSquareIcon from "@heroicons/react/24/solid/PencilSquareIcon";
 import TrashIcon from "@heroicons/react/24/solid/TrashIcon";
+import { BanknotesIcon } from "@heroicons/react/24/solid";
 import {
   bankAccountSchema,
   chequeSchema,
@@ -30,6 +31,12 @@ const BANK_OPTIONS = [
   { value: "UBL", label: "UBL" },
   { value: "Meezan", label: "Meezan" },
   { value: "Other", label: "Other" },
+];
+
+const CHEQUE_STATUS_OPTIONS = [
+  { value: "active", label: "Active" },
+  { value: "completed", label: "Completed" },
+  { value: "cancelled", label: "Cancelled" },
 ];
 
 const BankAccounts = () => {
@@ -386,52 +393,57 @@ const BankAccounts = () => {
       ) : bankAccounts.length > 0 ? (
         <div className="overflow-x-auto bg-base-200 p-4 rounded-lg shadow-md mb-6">
           <h3 className="text-lg font-semibold mb-3">Bank Accounts</h3>
-          <table className="table w-full">
+          <table className="table w-full text-center">
             <thead>
               <tr className="bg-base-300 text-base-content">
-                <th className="p-3">#</th>
-                <th className="p-3">Bank Name</th>
-                <th className="p-3">Account Title</th>
-                <th className="p-3">Account Number</th>
-                <th className="p-3">Opening Balance</th>
-                <th className="p-3">Total Cheques</th>
-                <th className="p-3">Actions</th>
+                <th className="p-3 text-center">#</th>
+                <th className="p-3 text-center">Bank Name</th>
+                <th className="p-3 text-center">Account Title</th>
+                <th className="p-3 text-center">Account Number</th>
+                <th className="p-3 text-center">Opening Balance</th>
+                <th className="p-3 text-center">Total Cheques</th>
+                <th className="p-3 text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
               {bankAccounts.map((account, index) => (
                 <tr key={account.id} className="border-b border-base-300">
-                  <td className="p-3">{index + 1}</td>
-                  <td className="p-3">{account.bankName}</td>
-                  <td className="p-3">{account.accountTitle}</td>
-                  <td className="p-3">{account.accountNumber}</td>
-                  <td className="p-3">{account.openingBalance}</td>
-                  <td className="p-3">{getChequesCount(account.id ?? "")}</td>
+                  <td className="p-3 text-center">{index + 1}</td>
+                  <td className="p-3 text-center">{account.bankName}</td>
+                  <td className="p-3 text-center">{account.accountTitle}</td>
+                  <td className="p-3 text-center">{account.accountNumber}</td>
+                  <td className="p-3 text-center">{account.openingBalance}</td>
+                  <td className="p-3 text-center">
+                    {getChequesCount(account.id ?? "")}
+                  </td>
                   <td className="p-3">
-                    <button
-                      onClick={() => {
-                        if (account.id) handleEditBankAccount(account.id);
-                      }}
-                      className="btn btn-xs btn-secondary mr-1"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (account.id) setSelectedAccountId(account.id);
-                      }}
-                      className="btn btn-xs btn-info mr-1"
-                    >
-                      Manage Cheques
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (account.id) handleDeleteBankAccount(account.id);
-                      }}
-                      className="btn btn-xs btn-error"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex items-center justify-center space-x-1 overflow-x-auto">
+                      <button
+                        onClick={() => {
+                          if (account.id) handleEditBankAccount(account.id);
+                        }}
+                        className="flex items-center justify-center mr-2"
+                      >
+                        <PencilSquareIcon className="w-6 h-6 text-info" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (account.id) setSelectedAccountId(account.id);
+                        }}
+                        className="flex items-center justify-center tooltip"
+                        data-tip="Manage Cheques"
+                      >
+                        <BanknotesIcon className="w-6 h-6 text-success" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (account.id) handleDeleteBankAccount(account.id);
+                        }}
+                        className="flex items-center justify-center"
+                      >
+                        <TrashIcon className="w-6 h-6 text-red-500" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -468,16 +480,37 @@ const BankAccounts = () => {
               {editingChequeId ? "Edit Cheque Book" : "Add New Cheque Book"}
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                name="status"
-                label="Status"
-                register={registerCheque}
-                errorMessage={chequeErrors.status?.message}
-              >
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </FormField>
+              <div className="block mb-1">
+                <label htmlFor="status" className="font-medium">
+                  Status
+                </label>
+                <select
+                  id="status"
+                  {...registerCheque("status")}
+                  value={chequeStatus}
+                  onChange={(e) => {
+                    setChequeValue(
+                      "status",
+                      e.target.value as Cheque["status"],
+                    );
+                    // Reset chequeFrom and chequeTo when status changes
+                    setChequeValue("chequeFrom", "");
+                    setChequeValue("chequeTo", "");
+                  }}
+                  className="select select-bordered w-full"
+                >
+                  {CHEQUE_STATUS_OPTIONS.map((status) => (
+                    <option key={status.value} value={status.value}>
+                      {status.label}
+                    </option>
+                  ))}
+                </select>
+                {chequeErrors.status && (
+                  <p className="text-error text-sm mt-1">
+                    {chequeErrors.status.message}
+                  </p>
+                )}
+              </div>
 
               {chequeStatus === "cancelled" ? (
                 <div className="block mb-1">
