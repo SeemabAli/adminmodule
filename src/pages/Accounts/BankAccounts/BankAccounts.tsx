@@ -754,7 +754,6 @@ const BankAccounts = () => {
                                 if (cheque.id) handleEditCheque(cheque.id);
                               }}
                               className="flex items-center justify-center mr-2 btn btn-xs btn-circle btn-ghost"
-                              disabled={cheque.status === "CANCELLED"}
                             >
                               <PencilSquareIcon className="w-4 h-4 text-info" />
                             </button>
