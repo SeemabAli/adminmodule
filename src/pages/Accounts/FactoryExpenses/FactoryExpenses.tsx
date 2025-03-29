@@ -377,12 +377,12 @@ export const FactoryExpenses: React.FC = () => {
   }
 
   return (
-    <div className="p-4 md:p-6 bg-white">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">
+    <div className="p-4 md:p-6">
+      <h2 className="text-2xl font-bold mb-4 text-base-content">
         Factory Expense Types
       </h2>
 
-      <div className="bg-gray-100 p-4 rounded-lg shadow-md mb-6">
+      <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
         <form
           onSubmit={
             editingId
@@ -402,13 +402,16 @@ export const FactoryExpenses: React.FC = () => {
               />
             </div>
             <div className="w-full">
-              <label htmlFor="type" className="font-medium block text-gray-700">
+              <label
+                htmlFor="type"
+                className="font-medium block text-base-content"
+              >
                 Expense On
               </label>
               <select
                 id="type"
                 {...register("type")}
-                className="select select-bordered w-full bg-white text-gray-800"
+                className="select select-bordered w-full text-base-content"
               >
                 {expenseCategories.map((category) => (
                   <option key={category} value={category}>
@@ -518,11 +521,11 @@ export const FactoryExpenses: React.FC = () => {
 
             {expenseType === "Range Ton From" && isRangeTableOpen && (
               <div className="col-span-1 md:col-span-2 overflow-x-auto mb-4">
-                <table className="table w-full bg-white border border-gray-200">
+                <table className="table w-full">
                   <thead>
-                    <tr className="bg-gray-100">
-                      <th className="text-gray-700">Range</th>
-                      <th className="text-gray-700">Price</th>
+                    <tr className="bg-base-100">
+                      <th className="text-base-content">Range</th>
+                      <th className="text-base-content">Price</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -581,23 +584,23 @@ export const FactoryExpenses: React.FC = () => {
         <div className="skeleton h-28 w-full"></div>
       ) : expenses.length > 0 ? (
         <div className="overflow-x-auto">
-          <table className="table w-full bg-white rounded-lg shadow-md">
+          <table className="table w-full bg-base-300 rounded-lg shadow-md">
             <thead>
-              <tr className="bg-gray-100 text-center">
-                <th className="text-gray-700">#</th>
-                <th className="text-gray-700">Name</th>
-                <th className="text-gray-700">Applies To</th>
-                <th className="text-gray-700">Rate Type</th>
-                <th className="text-gray-700">Fixed/Ton</th>
-                <th className="text-gray-700">Fixed Amount</th>
-                <th className="text-gray-700">Percent/Ton</th>
-                <th className="text-gray-700">Tiered Prices</th>
-                <th className="text-gray-700">Actions</th>
+              <tr className="bg-base-300 text-base-content text-center">
+                <th className="p-3">#</th>
+                <th className="p-3">Name</th>
+                <th className="p-3">Applies To</th>
+                <th className="p-3">Rate Type</th>
+                <th className="p-3">Fixed/Ton</th>
+                <th className="p-3">Fixed Amount</th>
+                <th className="p-3">Percent/Ton</th>
+                <th className="p-3">Tiered Prices</th>
+                <th className="p-3">Actions</th>
               </tr>
             </thead>
             <tbody>
               {expenses.map((expense, index) => (
-                <tr key={expense.id} className="text-center hover:bg-gray-50">
+                <tr key={expense.id} className="text-center bg-base-200">
                   <td>{index + 1}</td>
                   <td>{expense.name}</td>
                   <td>{expense.appliesTo}</td>
