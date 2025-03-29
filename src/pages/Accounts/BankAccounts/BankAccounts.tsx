@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { useEffect, useState } from "react";
 import { notify } from "@/lib/notify";
 import { useForm } from "react-hook-form";
@@ -24,7 +25,11 @@ import {
   fetchAllBankAccounts,
   updateBankAccount,
   deleteBankAccount,
+  createCheques,
+  fetchCheques,
+  updateChequeStatus,
 } from "./bank.service";
+import { z } from "zod";
 
 const BANK_OPTIONS = [
   { value: "HBL", label: "HBL" },
@@ -34,10 +39,24 @@ const BANK_OPTIONS = [
 ];
 
 const CHEQUE_STATUS_OPTIONS = [
-  { value: "active", label: "Active" },
-  { value: "completed", label: "Completed" },
-  { value: "cancelled", label: "Cancelled" },
+  { value: "AVAILABLE", label: "AVAILABLE" },
+  { value: "USED", label: "USED" },
+  { value: "CANCELLED", label: "CANCELLED" },
 ];
+
+// Updated schema for the new API format
+const chequeCreateSchema = z.object({
+  fromChequeNumber: z.number().min(1, "From number is required"),
+  toChequeNumber: z.number().min(1, "To number is required"),
+  status: z.enum(["AVAILABLE", "USED", "CANCELLED"]),
+});
+
+const chequeUpdateSchema = z.object({
+  status: z.enum(["AVAILABLE", "USED", "CANCELLED"]),
+});
+
+export type ChequeCreateInput = z.infer<typeof chequeCreateSchema>;
+export type ChequeUpdateInput = z.infer<typeof chequeUpdateSchema>;
 
 const BankAccounts = () => {
   const { error, data, isLoading } = useService(fetchAllBankAccounts);
@@ -47,6 +66,8 @@ const BankAccounts = () => {
     null,
   );
   const [editingChequeId, setEditingChequeId] = useState<string | null>(null);
+  const [cheques, setCheques] = useState<Cheque[]>([]);
+  const [isLoadingCheques, setIsLoadingCheques] = useState(false);
 
   // Bank account form
   const {
@@ -69,21 +90,38 @@ const BankAccounts = () => {
 
   const watchedBankName = watchBankName("bankName");
 
-  // Cheque form
+  // Cheque form - updated for the new API schema
   const {
     register: registerCheque,
     formState: { errors: chequeErrors, isSubmitting: isChequeSubmitting },
     handleSubmit: handleChequeSubmit,
     setValue: setChequeValue,
     reset: resetChequeForm,
-    getValues: getChequeValues,
     watch: watchChequeStatus,
-  } = useForm<Cheque>({
-    resolver: zodResolver(chequeSchema),
+  } = useForm<ChequeCreateInput>({
+    resolver: zodResolver(chequeCreateSchema),
     defaultValues: {
-      chequeFrom: "",
-      chequeTo: "",
-      status: "active",
+      fromChequeNumber: 0,
+      toChequeNumber: 0,
+      status: "AVAILABLE",
+    },
+  });
+
+  // Update form for cheque status
+  const {
+    register: registerChequeUpdate,
+    formState: {
+      errors: chequeUpdateErrors,
+      isSubmitting: isChequeUpdateSubmitting,
+    },
+    handleSubmit: handleChequeUpdateSubmit,
+    setValue: setChequeUpdateValue,
+    reset: resetChequeUpdateForm,
+    getValues: getChequeUpdateValues,
+  } = useForm<ChequeUpdateInput>({
+    resolver: zodResolver(chequeUpdateSchema),
+    defaultValues: {
+      status: "AVAILABLE",
     },
   });
 
@@ -95,6 +133,28 @@ const BankAccounts = () => {
       setBankAccounts(data);
     }
   }, [data]);
+
+  // Load cheques when a bank account is selected
+  useEffect(() => {
+    if (selectedAccountId) {
+      void loadCheques(selectedAccountId);
+    } else {
+      setCheques([]);
+    }
+  }, [selectedAccountId]);
+
+  const loadCheques = async (accountId: string) => {
+    setIsLoadingCheques(true);
+    try {
+      const chequesData = await fetchCheques(accountId);
+      setCheques(chequesData);
+    } catch (error) {
+      notify.error("Failed to load cheques");
+      logger.error(error);
+    } finally {
+      setIsLoadingCheques(false);
+    }
+  };
 
   // Handle bank account operations
   const handleAddBankAccount = async (data: BankAccount) => {
@@ -158,111 +218,43 @@ const BankAccounts = () => {
     });
   };
 
-  // Handle cheque operations
-  const handleAddCheque = async (data: Cheque) => {
+  // Handle cheque operations - updated for the new API
+  const handleAddCheque = async (data: ChequeCreateInput) => {
     if (!selectedAccountId) return;
 
     try {
-      const updatedCheques = [
-        ...(getBankAccount(selectedAccountId)?.cheques ?? []),
-      ];
-      const newCheque: Cheque = {
-        ...data,
-        id: Date.now().toString(),
-        dateAdded: new Date().toISOString().split("T")[0] ?? "",
-      };
-      updatedCheques.push(newCheque);
-
-      const updatedAccount = await updateBankAccount(selectedAccountId, {
-        ...getBankAccount(selectedAccountId)!,
-        cheques: updatedCheques,
-      });
-
-      setBankAccounts(
-        bankAccounts.map((acc) =>
-          acc.id === selectedAccountId ? updatedAccount : acc,
-        ),
-      );
+      await createCheques(selectedAccountId, data);
+      await loadCheques(selectedAccountId);
       resetChequeForm();
-      notify.success("Cheque added successfully");
+      notify.success("Cheque batch added successfully");
     } catch (error) {
-      notify.error("Failed to add cheque");
+      notify.error("Failed to add cheque batch");
       logger.error(error);
     }
+  };
+
+  const handleEditCheque = (chequeId: string) => {
+    const cheque = cheques.find((chq) => chq.id === chequeId);
+    if (!cheque) return;
+
+    setChequeUpdateValue("status", cheque.status);
+    setEditingChequeId(chequeId);
   };
 
   const onChequeUpdate = async (chequeId: string) => {
     if (!selectedAccountId) return;
 
     try {
-      const updatedData = getChequeValues();
-      const updatedCheques =
-        (getBankAccount(selectedAccountId)?.cheques ?? []).map((chq) =>
-          chq.id === chequeId ? { ...chq, ...updatedData } : chq,
-        ) || [];
-
-      const updatedAccount = await updateBankAccount(selectedAccountId, {
-        ...getBankAccount(selectedAccountId)!,
-        cheques: updatedCheques,
-      });
-
-      setBankAccounts(
-        bankAccounts.map((acc) =>
-          acc.id === selectedAccountId ? updatedAccount : acc,
-        ),
-      );
+      const status = getChequeUpdateValues("status");
+      resetChequeUpdateForm();
+      await updateChequeStatus(selectedAccountId, chequeId, { status });
+      await loadCheques(selectedAccountId);
       setEditingChequeId(null);
-      resetChequeForm();
-      notify.success("Cheque updated successfully");
+      notify.success("Cheque status updated successfully");
     } catch (error) {
-      notify.error("Failed to update cheque");
+      notify.error("Failed to update cheque status");
       logger.error(error);
     }
-  };
-
-  const handleEditCheque = (chequeId: string) => {
-    const cheque = (getBankAccount(selectedAccountId!)?.cheques ?? []).find(
-      (chq) => chq.id === chequeId,
-    );
-    if (!cheque) return;
-
-    setChequeValue("chequeFrom", cheque.chequeFrom);
-    setChequeValue("chequeTo", cheque.chequeTo);
-    setChequeValue("status", cheque.status);
-    setEditingChequeId(chequeId);
-  };
-
-  const handleDeleteCheque = (chequeId: string) => {
-    if (!selectedAccountId) return;
-
-    notify.confirmDelete(async () => {
-      try {
-        const updatedCheques =
-          (getBankAccount(selectedAccountId)?.cheques ?? []).filter(
-            (chq) => chq.id !== chequeId,
-          ) ?? [];
-
-        const updatedAccount = await updateBankAccount(selectedAccountId, {
-          ...getBankAccount(selectedAccountId)!,
-          cheques: updatedCheques,
-        });
-
-        setBankAccounts(
-          bankAccounts.map((acc) =>
-            acc.id === selectedAccountId ? updatedAccount : acc,
-          ),
-        );
-
-        if (editingChequeId === chequeId) {
-          setEditingChequeId(null);
-          resetChequeForm();
-        }
-        notify.success("Cheque deleted successfully");
-      } catch (error) {
-        notify.error("Failed to delete cheque");
-        logger.error(error);
-      }
-    });
   };
 
   // Helper functions
@@ -272,16 +264,8 @@ const BankAccounts = () => {
 
   const getChequesCount = (accountId: string) => {
     const account = getBankAccount(accountId);
-    if (!account) return 0;
-
-    return (account.cheques ?? []).reduce((total, cheque) => {
-      if (cheque.status === "cancelled") {
-        return total + 1;
-      }
-      const from = parseInt(cheque.chequeFrom);
-      const to = parseInt(cheque.chequeTo);
-      return total + (isNaN(from) || isNaN(to) ? 0 : to - from + 1);
-    }, 0);
+    if (!account?.chequeCount) return 0;
+    return account.chequeCount;
   };
 
   const selectedAccount = selectedAccountId
@@ -414,15 +398,17 @@ const BankAccounts = () => {
                   <td className="p-3 text-center">{account.accountNumber}</td>
                   <td className="p-3 text-center">{account.openingBalance}</td>
                   <td className="p-3 text-center">
-                    {getChequesCount(account.id ?? "")}
+                    {typeof getChequesCount(account.id ?? "") === "number"
+                      ? (getChequesCount(account.id ?? "") as number)
+                      : 0}
                   </td>
                   <td className="p-3">
-                    <div className="flex items-center justify-center space-x-1 overflow-x-auto">
+                    <div className="flex items-center justify-center gap-x-2 flex-nowrap overflow-hidden">
                       <button
                         onClick={() => {
                           if (account.id) handleEditBankAccount(account.id);
                         }}
-                        className="flex items-center justify-center mr-2"
+                        className="flex items-center justify-center shrink-0"
                       >
                         <PencilSquareIcon className="w-6 h-6 text-info" />
                       </button>
@@ -430,7 +416,7 @@ const BankAccounts = () => {
                         onClick={() => {
                           if (account.id) setSelectedAccountId(account.id);
                         }}
-                        className="flex items-center justify-center tooltip"
+                        className="flex items-center justify-center shrink-0 tooltip"
                         data-tip="Manage Cheques"
                       >
                         <BanknotesIcon className="w-6 h-6 text-success" />
@@ -439,7 +425,7 @@ const BankAccounts = () => {
                         onClick={() => {
                           if (account.id) handleDeleteBankAccount(account.id);
                         }}
-                        className="flex items-center justify-center"
+                        className="flex items-center justify-center shrink-0"
                       >
                         <TrashIcon className="w-6 h-6 text-red-500" />
                       </button>
@@ -456,7 +442,7 @@ const BankAccounts = () => {
         </div>
       )}
 
-      {/* Cheque Management Section */}
+      {/* Cheque Management Section - Refactored */}
       {selectedAccount && (
         <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
           <div className="flex justify-between items-center mb-4">
@@ -474,11 +460,9 @@ const BankAccounts = () => {
             </Button>
           </div>
 
-          {/* Cheque Form */}
+          {/* Cheque Form - Updated for the new API */}
           <div className="bg-base-300 p-4 rounded-lg mb-4">
-            <h4 className="font-medium mb-2">
-              {editingChequeId ? "Edit Cheque Book" : "Add New Cheque Book"}
-            </h4>
+            <h4 className="font-medium mb-2">Add New Cheque Book</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="block mb-1">
                 <label htmlFor="status" className="font-medium">
@@ -488,22 +472,9 @@ const BankAccounts = () => {
                   id="status"
                   {...registerCheque("status")}
                   value={chequeStatus}
-                  onChange={(e) => {
-                    setChequeValue(
-                      "status",
-                      e.target.value as Cheque["status"],
-                    );
-                    // Reset chequeFrom and chequeTo when status changes
-                    setChequeValue("chequeFrom", "");
-                    setChequeValue("chequeTo", "");
-                  }}
                   className="select select-bordered w-full"
                 >
-                  {CHEQUE_STATUS_OPTIONS.map((status) => (
-                    <option key={status.value} value={status.value}>
-                      {status.label}
-                    </option>
-                  ))}
+                  <option value="AVAILABLE">AVAILABLE</option>
                 </select>
                 {chequeErrors.status && (
                   <p className="text-error text-sm mt-1">
@@ -512,57 +483,73 @@ const BankAccounts = () => {
                 )}
               </div>
 
-              {chequeStatus === "cancelled" ? (
+              {chequeStatus === "CANCELLED" ? (
                 <div className="block mb-1">
-                  <label htmlFor="chequeFrom" className="font-medium">
+                  <label htmlFor="fromChequeNumber" className="font-medium">
                     Cancelled Cheque Number
                   </label>
                   <input
-                    id="chequeFrom"
-                    type="text"
-                    {...registerCheque("chequeFrom")}
+                    id="fromChequeNumber"
+                    type="number"
+                    {...registerCheque("fromChequeNumber")}
                     className="input input-bordered w-full"
                     placeholder="Cheque Number"
                   />
-                  {chequeErrors.chequeFrom && (
+                  {chequeErrors.fromChequeNumber && (
                     <p className="text-error text-sm mt-1">
-                      {chequeErrors.chequeFrom.message}
+                      {chequeErrors.fromChequeNumber.message}
                     </p>
                   )}
+                  <input
+                    type="hidden"
+                    {...registerCheque("toChequeNumber")}
+                    value={
+                      chequeStatus === "CANCELLED"
+                        ? watchChequeStatus("fromChequeNumber")
+                        : 0
+                    }
+                  />
                 </div>
               ) : (
                 <>
                   <div className="block mb-1">
-                    <label htmlFor="chequeFrom" className="font-medium">
+                    <label htmlFor="fromChequeNumber" className="font-medium">
                       Cheque From
                     </label>
                     <input
-                      id="chequeFrom"
-                      type="text"
-                      {...registerCheque("chequeFrom")}
+                      id="fromChequeNumber"
+                      type="number"
+                      {...registerCheque("fromChequeNumber", {
+                        setValueAs: (value) =>
+                          value === "" ? undefined : Number(value),
+                      })}
                       className="input input-bordered w-full"
                       placeholder="From Number"
                     />
-                    {chequeErrors.chequeFrom && (
+
+                    {chequeErrors.fromChequeNumber && (
                       <p className="text-error text-sm mt-1">
-                        {chequeErrors.chequeFrom.message}
+                        {chequeErrors.fromChequeNumber.message}
                       </p>
                     )}
                   </div>
                   <div className="block mb-1">
-                    <label htmlFor="chequeTo" className="font-medium">
+                    <label htmlFor="toChequeNumber" className="font-medium">
                       Cheque To
                     </label>
                     <input
-                      id="chequeTo"
-                      type="text"
-                      {...registerCheque("chequeTo")}
+                      id="toChequeNumber"
+                      type="number"
+                      {...registerCheque("toChequeNumber", {
+                        setValueAs: (value) =>
+                          value === "" ? undefined : Number(value),
+                      })}
                       className="input input-bordered w-full"
                       placeholder="To Number"
                     />
-                    {chequeErrors.chequeTo && (
+                    {chequeErrors.toChequeNumber && (
                       <p className="text-error text-sm mt-1">
-                        {chequeErrors.chequeTo.message}
+                        {chequeErrors.toChequeNumber.message}
                       </p>
                     )}
                   </div>
@@ -571,102 +558,122 @@ const BankAccounts = () => {
             </div>
             <div className="flex mt-4">
               <Button
-                onClick={
-                  editingChequeId
-                    ? handleChequeSubmit(() => onChequeUpdate(editingChequeId))
-                    : handleChequeSubmit(handleAddCheque)
-                }
+                onClick={handleChequeSubmit(handleAddCheque)}
                 shape="info"
                 pending={isChequeSubmitting}
               >
-                {editingChequeId ? "Update Cheque Book" : "Add Cheque Book"}
+                Add Cheque Book
               </Button>
-              {editingChequeId && (
+            </div>
+          </div>
+
+          {/* Cheque Edit Form */}
+          {editingChequeId && (
+            <div className="bg-base-300 p-4 rounded-lg mb-4">
+              <h4 className="font-medium mb-2">Update Cheque Status</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="block mb-1">
+                  <label htmlFor="updateStatus" className="font-medium">
+                    Status
+                  </label>
+                  <select
+                    id="updateStatus"
+                    {...registerChequeUpdate("status")}
+                    className="select select-bordered w-full"
+                  >
+                    {CHEQUE_STATUS_OPTIONS.map((status) => (
+                      <option key={status.value} value={status.value}>
+                        {status.label}
+                      </option>
+                    ))}
+                  </select>
+                  {chequeUpdateErrors.status && (
+                    <p className="text-error text-sm mt-1">
+                      {chequeUpdateErrors.status.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex mt-4">
+                <Button
+                  onClick={handleChequeUpdateSubmit(() =>
+                    onChequeUpdate(editingChequeId),
+                  )}
+                  shape="info"
+                  pending={isChequeUpdateSubmitting}
+                >
+                  Update Status
+                </Button>
                 <Button
                   onClick={() => {
                     setEditingChequeId(null);
-                    resetChequeForm();
+                    resetChequeUpdateForm();
                   }}
                   shape="info"
                   className="ml-2"
                 >
                   Cancel
                 </Button>
-              )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Cheque Table */}
-          {(selectedAccount.cheques ?? []).length > 0 ? (
+          {isLoadingCheques ? (
+            <div className="skeleton h-28 w-full"></div>
+          ) : cheques.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="table w-full">
                 <thead>
-                  <tr className="bg-base-300 text-base-content">
+                  <tr className="bg-base-300 text-base-content text-center">
                     <th className="p-3">#</th>
-                    <th className="p-3">From</th>
-                    <th className="p-3">To</th>
-                    <th className="p-3">Count</th>
+                    <th className="p-3">Cheque Number</th>
                     <th className="p-3">Date Added</th>
                     <th className="p-3">Status</th>
                     <th className="p-3">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(selectedAccount.cheques ?? []).map((cheque, index) => {
-                    const isCancelled = cheque.status === "cancelled";
-                    const count = isCancelled
-                      ? 1
-                      : parseInt(cheque.chequeTo) -
-                        parseInt(cheque.chequeFrom) +
-                        1;
-
-                    return (
-                      <tr key={cheque.id} className="border-b border-base-300">
-                        <td className="p-3">{index + 1}</td>
-                        <td className="p-3">
-                          {isCancelled ? "-" : cheque.chequeFrom}
-                        </td>
-                        <td className="p-3">
-                          {isCancelled ? "-" : cheque.chequeTo}
-                        </td>
-                        <td className="p-3">
-                          {isNaN(count) ? "Invalid" : count}
-                        </td>
-                        <td className="p-3">{cheque.dateAdded}</td>
-                        <td className="p-3">
-                          <span
-                            className={`badge ${
-                              cheque.status === "active"
-                                ? "badge-success"
-                                : cheque.status === "completed"
-                                  ? "badge-warning"
-                                  : "badge-error"
-                            }`}
-                          >
-                            {cheque.status}
-                          </span>
-                        </td>
-                        <td className="p-3">
+                  {cheques.map((cheque, index) => (
+                    <tr
+                      key={cheque.id}
+                      className="border-b border-base-300 text-center"
+                    >
+                      <td className="p-3">{index + 1}</td>
+                      <td className="p-3">{cheque.number}</td>
+                      <td className="p-3">
+                        {cheque.createdAt
+                          ? new Date(cheque.createdAt).toLocaleDateString()
+                          : "-"}
+                      </td>
+                      <td className="p-3">
+                        <span
+                          className={`badge ${
+                            cheque.status === "AVAILABLE"
+                              ? "badge-success"
+                              : cheque.status === "USED"
+                                ? "badge-warning"
+                                : "badge-error"
+                          }`}
+                        >
+                          {cheque.status}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex items-center justify-center">
                           <button
                             onClick={() => {
                               if (cheque.id) handleEditCheque(cheque.id);
                             }}
                             className="flex items-center justify-center mr-2"
+                            disabled={cheque.status === "CANCELLED"}
                           >
                             <PencilSquareIcon className="w-4 h-4 text-info" />
                           </button>
-                          <button
-                            onClick={() => {
-                              if (cheque.id) handleDeleteCheque(cheque.id);
-                            }}
-                            className="flex items-center justify-center"
-                          >
-                            <TrashIcon className="w-4 h-4 text-red-500" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

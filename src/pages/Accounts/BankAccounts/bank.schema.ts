@@ -2,24 +2,17 @@ import { convertLocalStringIntoNumber } from "@/utils/CommaSeparator";
 import { z } from "zod";
 
 // Define the ChequeStatus enum
-const ChequeStatusEnum = z.enum(["active", "completed", "cancelled"]);
+const ChequeStatusEnum = z.enum(["USED", "AVAILABLE", "CANCELLED"]);
 
 // Schema for Cheque
 export const chequeSchema = z.object({
   id: z.string().optional(),
-  chequeFrom: z
-    .string()
-    .nonempty("Cheque number is required")
-    .regex(/^\d+$/, "Cheque number must be a valid number"),
-  chequeTo: z
-    .string()
-    .regex(/^\d+$/, "Cheque number must be a valid number")
-    .refine((val) => val !== "", {
-      message: "Cheque To is required",
-      path: ["chequeTo"],
-    }),
-  dateAdded: z.string().optional(),
+  number: z
+    .number()
+    .min(1, "Cheque number must be at least 1")
+    .max(999999, "Cheque number must not exceed 999999"),
   status: ChequeStatusEnum,
+  createdAt: z.string().optional(),
 });
 
 // Schema for Bank Account
@@ -37,7 +30,7 @@ export const bankAccountSchema = z.object({
     .min(5, "Account number must be at least 5 characters")
     .max(30, "Account number must not exceed 30 characters"),
   openingBalance: z.string().transform(convertLocalStringIntoNumber),
-  cheques: z.array(chequeSchema).optional(),
+  chequeCount: z.array(chequeSchema).optional(),
 });
 
 // Type definitions
