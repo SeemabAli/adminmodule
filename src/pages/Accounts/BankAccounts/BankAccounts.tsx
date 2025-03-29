@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-
 import { useEffect, useState } from "react";
 import { notify } from "@/lib/notify";
 import { useForm } from "react-hook-form";
@@ -68,6 +67,13 @@ const BankAccounts = () => {
   const [editingChequeId, setEditingChequeId] = useState<string | null>(null);
   const [cheques, setCheques] = useState<Cheque[]>([]);
   const [isLoadingCheques, setIsLoadingCheques] = useState(false);
+  const [activeTab, setActiveTab] = useState<
+    "AVAILABLE" | "USED" | "CANCELLED"
+  >("AVAILABLE");
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Bank account form
   const {
@@ -142,6 +148,11 @@ const BankAccounts = () => {
       setCheques([]);
     }
   }, [selectedAccountId]);
+
+  // Reset to page 1 when changing tabs
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
 
   const loadCheques = async (accountId: string) => {
     setIsLoadingCheques(true);
@@ -226,6 +237,8 @@ const BankAccounts = () => {
       await createCheques(selectedAccountId, data);
       await loadCheques(selectedAccountId);
       resetChequeForm();
+      // Switch to the appropriate tab based on the status of the new cheque
+      setActiveTab(data.status);
       notify.success("Cheque batch added successfully");
     } catch (error) {
       notify.error("Failed to add cheque batch");
@@ -250,6 +263,8 @@ const BankAccounts = () => {
       await updateChequeStatus(selectedAccountId, chequeId, { status });
       await loadCheques(selectedAccountId);
       setEditingChequeId(null);
+      // Switch to the tab of the updated status
+      setActiveTab(status);
       notify.success("Cheque status updated successfully");
     } catch (error) {
       notify.error("Failed to update cheque status");
@@ -268,6 +283,36 @@ const BankAccounts = () => {
     return account.chequeCount;
   };
 
+  const getStatusCounts = () => {
+    const counts = { AVAILABLE: 0, USED: 0, CANCELLED: 0 };
+
+    cheques.forEach((cheque) => {
+      if (cheque.status in counts) {
+        counts[cheque.status]++;
+      }
+    });
+
+    return counts;
+  };
+
+  // Filtered cheques based on active tab
+  const filteredCheques = cheques.filter(
+    (cheque) => cheque.status === activeTab,
+  );
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredCheques.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentCheques = filteredCheques.slice(
+    indexOfFirstItem,
+    indexOfLastItem,
+  );
+
+  const paginate = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
+
   const selectedAccount = selectedAccountId
     ? getBankAccount(selectedAccountId)
     : null;
@@ -283,6 +328,8 @@ const BankAccounts = () => {
       />
     );
   }
+
+  const statusCounts = getStatusCounts();
 
   return (
     <div className="p-6">
@@ -562,7 +609,7 @@ const BankAccounts = () => {
                 shape="info"
                 pending={isChequeSubmitting}
               >
-                Add Cheque Book
+                Add Cheques
               </Button>
             </div>
           </div>
@@ -618,68 +665,149 @@ const BankAccounts = () => {
             </div>
           )}
 
-          {/* Cheque Table */}
+          {/* Cheque Tabs */}
+          <div className="tabs tabs-boxed bg-base-300 p-2 mb-4 flex justify-left font-medium gap-2">
+            <button
+              className={`tab px-4 py-2 rounded-lg transition-all ${
+                activeTab === "AVAILABLE"
+                  ? "tab-active bg-success text-white shadow-md"
+                  : "hover:bg-success/20"
+              }`}
+              onClick={() => {
+                setActiveTab("AVAILABLE");
+              }}
+            >
+              Available ({statusCounts.AVAILABLE})
+            </button>
+            <button
+              className={`tab px-4 py-2 rounded-lg transition-all ${
+                activeTab === "USED"
+                  ? "tab-active bg-warning text-white shadow-md"
+                  : "hover:bg-warning/20"
+              }`}
+              onClick={() => {
+                setActiveTab("USED");
+              }}
+            >
+              Used ({statusCounts.USED})
+            </button>
+            <button
+              className={`tab px-4 py-2 rounded-lg transition-all ${
+                activeTab === "CANCELLED"
+                  ? "tab-active bg-error text-white shadow-md"
+                  : "hover:bg-error/20"
+              }`}
+              onClick={() => {
+                setActiveTab("CANCELLED");
+              }}
+            >
+              Cancelled ({statusCounts.CANCELLED})
+            </button>
+          </div>
+
+          {/* Cheque Table with Pagination */}
           {isLoadingCheques ? (
             <div className="skeleton h-28 w-full"></div>
-          ) : cheques.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="table w-full">
-                <thead>
-                  <tr className="bg-base-300 text-base-content text-center">
-                    <th className="p-3">#</th>
-                    <th className="p-3">Cheque Number</th>
-                    <th className="p-3">Date Added</th>
-                    <th className="p-3">Status</th>
-                    <th className="p-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cheques.map((cheque, index) => (
-                    <tr
-                      key={cheque.id}
-                      className="border-b border-base-300 text-center"
-                    >
-                      <td className="p-3">{index + 1}</td>
-                      <td className="p-3">{cheque.number}</td>
-                      <td className="p-3">
-                        {cheque.createdAt
-                          ? new Date(cheque.createdAt).toLocaleDateString()
-                          : "-"}
-                      </td>
-                      <td className="p-3">
-                        <span
-                          className={`badge ${
-                            cheque.status === "AVAILABLE"
-                              ? "badge-success"
-                              : cheque.status === "USED"
-                                ? "badge-warning"
-                                : "badge-error"
-                          }`}
-                        >
-                          {cheque.status}
-                        </span>
-                      </td>
-                      <td className="p-3">
-                        <div className="flex items-center justify-center">
-                          <button
-                            onClick={() => {
-                              if (cheque.id) handleEditCheque(cheque.id);
-                            }}
-                            className="flex items-center justify-center mr-2"
-                            disabled={cheque.status === "CANCELLED"}
-                          >
-                            <PencilSquareIcon className="w-4 h-4 text-info" />
-                          </button>
-                        </div>
-                      </td>
+          ) : currentCheques.length > 0 ? (
+            <div className="bg-base-300 rounded-lg p-4">
+              <div className="overflow-x-auto">
+                <table className="table w-full">
+                  <thead>
+                    <tr className="bg-base-200 text-base-content text-center">
+                      <th className="p-3">#</th>
+                      <th className="p-3">Cheque Number</th>
+                      <th className="p-3">Date Added</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {currentCheques.map((cheque, index) => (
+                      <tr
+                        key={cheque.id}
+                        className="border-b border-base-300 text-center hover:bg-base-200"
+                      >
+                        <td className="p-3">{indexOfFirstItem + index + 1}</td>
+                        <td className="p-3 font-medium">{cheque.number}</td>
+                        <td className="p-3">
+                          {cheque.createdAt
+                            ? new Date(cheque.createdAt).toLocaleDateString()
+                            : "-"}
+                        </td>
+                        <td className="p-3">
+                          <span
+                            className={`badge ${
+                              cheque.status === "AVAILABLE"
+                                ? "badge-success"
+                                : cheque.status === "USED"
+                                  ? "badge-warning"
+                                  : "badge-error"
+                            } text-white`}
+                          >
+                            {cheque.status}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center justify-center">
+                            <button
+                              onClick={() => {
+                                if (cheque.id) handleEditCheque(cheque.id);
+                              }}
+                              className="flex items-center justify-center mr-2 btn btn-xs btn-circle btn-ghost"
+                              disabled={cheque.status === "CANCELLED"}
+                            >
+                              <PencilSquareIcon className="w-4 h-4 text-info" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-center mt-4">
+                  <div className="btn-group">
+                    <button
+                      className="btn btn-sm"
+                      onClick={() => {
+                        paginate(Math.max(1, currentPage - 1));
+                      }}
+                      disabled={currentPage === 1}
+                    >
+                      «
+                    </button>
+
+                    {Array.from({ length: totalPages }, (_, i) => (
+                      <button
+                        key={i + 1}
+                        className={`btn btn-sm ${currentPage === i + 1 ? "btn-active" : ""}`}
+                        onClick={() => {
+                          paginate(i + 1);
+                        }}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+
+                    <button
+                      className="btn btn-sm"
+                      onClick={() => {
+                        paginate(Math.min(totalPages, currentPage + 1));
+                      }}
+                      disabled={currentPage === totalPages}
+                    >
+                      »
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
-            <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6 text-center text-gray-500">
-              No Cheques added yet.
+            <div className="bg-base-300 p-6 rounded-lg shadow-md mb-6 text-center text-gray-500">
+              No {activeTab.toLowerCase()} cheques found.
             </div>
           )}
         </div>
