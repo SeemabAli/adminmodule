@@ -8,7 +8,7 @@ const rateTypeEnum = z.enum([
   "FIXED_AMOUNT",
   "FIXED_PER_TON",
   "PERCENTAGE_PER_TON",
-  "TIERED",
+  "RANGE",
 ]);
 
 // Tiered prices schema
@@ -25,8 +25,13 @@ export const factoryExpensesSchema = z.object({
     .nonempty("Expense name is required")
     .min(3, "Expense name must be at least 3 characters")
     .max(50, "Expense name must not exceed 50 characters"),
-  appliesTo: appliestoEnum,
-  rateType: rateTypeEnum,
+  // Make these optional since they're mapped later
+  appliesTo: appliestoEnum.optional(),
+  rateType: rateTypeEnum.optional(),
+  // These fields directly match your form
+  expenseType: z.string().nonempty("Expense type is required"),
+  type: z.string().nonempty("Type is required"),
+
   fixedPerTonRate: z
     .number()
     .min(0, "Fixed per ton rate must be positive")
@@ -35,8 +40,6 @@ export const factoryExpensesSchema = z.object({
     .number()
     .min(0, "Fixed amount rate must be positive")
     .optional(),
-  expenseType: z.string().nonempty("Expense type is required").optional(),
-  type: z.string().nonempty("Type is required").optional(),
   percentagePerTonRate: z
     .number()
     .min(0, "Percentage must be positive")

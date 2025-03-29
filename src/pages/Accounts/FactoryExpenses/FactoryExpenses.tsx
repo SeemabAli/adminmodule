@@ -1,10 +1,6 @@
 /* eslint-disable @typescript-eslint/no-confusing-void-expression */
 import React, { useEffect, useState } from "react";
 import { notify } from "@/lib/notify";
-import {
-  convertNumberIntoLocalString,
-  convertLocalStringIntoNumber,
-} from "@/utils/CommaSeparator";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/common/components/ui/Button";
@@ -19,7 +15,7 @@ import {
   type IFactoryExpenses,
 } from "./factoryExpenses.schema";
 
-// Updated service imports to match API structure
+// Import services
 import {
   createFactoryExpenses,
   fetchAllFactoryExpenses,
@@ -29,7 +25,7 @@ import {
 } from "./factoryExpenses.service";
 
 type RangeOption = {
-  id?: string;
+  id: string;
   rangeFrom: number;
   rangeTo: number;
 };
@@ -49,16 +45,18 @@ const expenseTypes = [
 const expenseCategories = ["General", "Specific Product"] as const;
 
 export const FactoryExpenses: React.FC = () => {
+  // Use the service hook to fetch factory expenses
   const { error, data, isLoading } = useService(fetchAllFactoryExpenses);
   const [expenses, setExpenses] = useState<IFactoryExpenses[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isRangeTableOpen, setIsRangeTableOpen] = useState(false);
   const [rangeOptions, setRangeOptions] = useState<RangeOption[]>([]);
   const [tieredPrices, setTieredPrices] = useState<TieredPrice[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
-    formState: { errors, isSubmitting },
+    formState: { errors },
     handleSubmit,
     setValue,
     reset,
@@ -70,6 +68,10 @@ export const FactoryExpenses: React.FC = () => {
       name: "",
       type: "General",
       expenseType: "Fixed Amount",
+      extraCharge: 0,
+      fixedAmountRate: 0,
+      fixedPerTonRate: 0,
+      percentagePerTonRate: 0,
     },
   });
 
@@ -77,31 +79,34 @@ export const FactoryExpenses: React.FC = () => {
 
   // Load expenses and range options
   useEffect(() => {
-    const fetchRangeOptions = async () => {
+    const loadData = async () => {
       try {
-        const response = await fetchAllRanges();
-        setRangeOptions(response);
+        // Fetch range options separately from the service hook
+        const rangeData = await fetchAllRanges();
+        setRangeOptions(rangeData);
       } catch (fetchError) {
         logger.error(fetchError);
         notify.error("Failed to fetch range options");
       }
     };
 
-    void fetchRangeOptions();
+    void loadData();
 
+    // Set expenses from the service hook data
     if (data) {
       setExpenses(data);
     }
   }, [data]);
 
-  // Handle number input
+  // Handle number input with proper formatting
   const handleNumberInput = (
     fieldName: keyof IFactoryExpenses,
     e: React.ChangeEvent<HTMLInputElement>,
     allowUndefined = false,
   ) => {
     const rawValue = e.target.value;
-    const numericValue = convertLocalStringIntoNumber(rawValue);
+    const numericValue =
+      rawValue.trim() === "" ? 0 : parseFloat(rawValue.replace(/,/g, ""));
 
     setValue(
       fieldName,
@@ -110,16 +115,18 @@ export const FactoryExpenses: React.FC = () => {
     );
   };
 
-  // Prepare data for API
-  const prepareExpenseData = (data: IFactoryExpenses) => {
-    const baseData = {
-      name: data.name,
+  // Prepare expense data for API submission
+  const prepareExpenseData = (formData: IFactoryExpenses) => {
+    return {
+      name: formData.name,
+      type: formData.type ?? "General",
       appliesTo:
-        data.type === "General"
-          ? ("GENERAL" as const)
-          : ("SPECIFIC_PRODUCT" as const),
+        formData.type === "General"
+          ? "GENERAL"
+          : ("SPECIFIC_PRODUCT" as "GENERAL" | "SPECIFIC_PRODUCT"),
+      expenseType: formData.expenseType ?? "Fixed Amount",
       rateType: (() => {
-        switch (data.expenseType) {
+        switch (formData.expenseType) {
           case "Fixed Amount":
             return "FIXED_AMOUNT" as const;
           case "Fixed/Ton":
@@ -127,66 +134,96 @@ export const FactoryExpenses: React.FC = () => {
           case "Percent/Ton":
             return "PERCENTAGE_PER_TON" as const;
           case "Range Ton From":
-            return "TIERED" as const;
+            return "RANGE" as const;
           default:
             return "FIXED_AMOUNT" as const;
         }
       })(),
       fixedPerTonRate:
-        data.expenseType === "Fixed/Ton" ? data.fixedPerTonRate : undefined,
-      fixedAmountRate:
-        data.expenseType === "Fixed Amount" ? data.fixedAmountRate : undefined,
-      percentagePerTonRate:
-        data.expenseType === "Percent/Ton"
-          ? data.percentagePerTonRate
+        formData.expenseType === "Fixed/Ton"
+          ? formData.fixedPerTonRate
           : undefined,
-      tieredPrices: data.expenseType === "Range Ton From" ? tieredPrices : [],
-      extraCharge: data.extraCharge,
+      fixedAmountRate:
+        formData.expenseType === "Fixed Amount"
+          ? formData.fixedAmountRate
+          : undefined,
+      percentagePerTonRate:
+        formData.expenseType === "Percent/Ton"
+          ? formData.percentagePerTonRate
+          : undefined,
+      tieredPrices:
+        formData.expenseType === "Range Ton From" ? tieredPrices : [],
+      extraCharge: formData.extraCharge,
     };
-
-    return baseData;
   };
 
-  // Handle form submission
-  const handleAddExpense: SubmitHandler<IFactoryExpenses> = async (data) => {
+  // Handle form submission for adding new expense
+  const handleAddExpense: SubmitHandler<IFactoryExpenses> = async (
+    formData,
+  ) => {
+    console.log("Form submission attempted", formData);
+    console.log("Current tiered prices:", tieredPrices);
+    setIsSubmitting(true);
     try {
-      // Validate and prepare tiered prices for Range Ton From
-      if (data.expenseType === "Range Ton From") {
-        if (tieredPrices.length === 0) {
-          notify.error("Please add Tiered Prices");
-          return;
-        }
+      // Validate tiered prices for Range Ton From
+      if (
+        formData.expenseType === "Range Ton From" &&
+        tieredPrices.length === 0
+      ) {
+        notify.error("Please add Tiered Prices");
+        setIsSubmitting(false);
+        return;
       }
 
-      const preparedData = prepareExpenseData(data);
+      const preparedData = prepareExpenseData(formData);
       const newExpense = await createFactoryExpenses(preparedData);
 
+      // Update local state with new expense
       setExpenses([...expenses, newExpense]);
-      reset();
+
+      // Reset form and state
+      reset({
+        name: "",
+        type: "General",
+        expenseType: "Fixed Amount",
+        extraCharge: 0,
+        fixedAmountRate: 0,
+        fixedPerTonRate: 0,
+        percentagePerTonRate: 0,
+      });
       setTieredPrices([]);
       setIsRangeTableOpen(false);
+
+      // Refresh data from API
+      // If refetch functionality is needed, consider implementing it in the service or manually re-triggering the hook.
+
       notify.success("Expense added successfully");
     } catch (fetchError: unknown) {
       logger.error(fetchError);
       if (fetchError instanceof ApiException && fetchError.statusCode === 409) {
         notify.error("Expense already exists");
-        return;
+      } else {
+        notify.error("Failed to add expense");
       }
-      notify.error("Failed to add expense");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Update expense
+  // Update existing expense
   const onExpenseUpdate = async (expenseId: string) => {
+    setIsSubmitting(true);
     try {
       const updatedData = getValues();
 
-      // Validate and prepare tiered prices for Range Ton From
-      if (updatedData.expenseType === "Range Ton From") {
-        if (tieredPrices.length === 0) {
-          notify.error("Please add Tiered Prices");
-          return;
-        }
+      // Validate tiered prices for Range Ton From
+      if (
+        updatedData.expenseType === "Range Ton From" &&
+        tieredPrices.length === 0
+      ) {
+        notify.error("Please add Tiered Prices");
+        setIsSubmitting(false);
+        return;
       }
 
       const preparedData = prepareExpenseData(updatedData);
@@ -195,28 +232,42 @@ export const FactoryExpenses: React.FC = () => {
         preparedData,
       );
 
+      // Update local state
       setExpenses(
         expenses.map((expense) =>
           expense.id === expenseId ? updatedExpense : expense,
         ),
       );
 
+      // Reset form and state
       setEditingId(null);
-      reset();
+      reset({
+        name: "",
+        type: "General",
+        expenseType: "Fixed Amount",
+        extraCharge: 0,
+        fixedAmountRate: 0,
+        fixedPerTonRate: 0,
+        percentagePerTonRate: 0,
+      });
       setTieredPrices([]);
       setIsRangeTableOpen(false);
+
       notify.success("Expense updated successfully");
     } catch (error) {
-      notify.error("Failed to update expense");
       logger.error(error);
+      notify.error("Failed to update expense");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Handle edit
+  // Handle edit button click
   const handleEdit = (expenseId: string) => {
     const expense = expenses.find((exp) => exp.id === expenseId);
     if (!expense) return;
 
+    // Set form values based on expense data
     setValue("name", expense.name);
     setValue(
       "type",
@@ -224,7 +275,7 @@ export const FactoryExpenses: React.FC = () => {
     );
     setValue("extraCharge", expense.extraCharge ?? 0);
 
-    // Map rate type back to expense type
+    // Map API rate type back to UI expense type
     let expenseType: IFactoryExpenses["expenseType"];
     switch (expense.rateType) {
       case "FIXED_AMOUNT":
@@ -236,7 +287,7 @@ export const FactoryExpenses: React.FC = () => {
       case "PERCENTAGE_PER_TON":
         expenseType = "Percent/Ton";
         break;
-      case "TIERED":
+      case "RANGE":
         expenseType = "Range Ton From";
         break;
       default:
@@ -265,31 +316,32 @@ export const FactoryExpenses: React.FC = () => {
     setEditingId(expenseId);
   };
 
-  // Handle delete
+  // Handle delete button click
   const handleDelete = (expenseId: string) => {
     notify.confirmDelete(async () => {
       try {
         await deleteFactoryExpenses(expenseId);
+
+        // Update local state
         setExpenses(expenses.filter((exp) => exp.id !== expenseId));
+
         notify.success("Expense deleted successfully");
       } catch (error) {
-        notify.error("Failed to delete expense");
         logger.error(error);
+        notify.error("Failed to delete expense");
       }
     });
   };
 
-  // Render tiered prices display
+  // Format tiered prices for display
   const getTieredPricesDisplay = (tieredPrices?: TieredPrice[]) => {
     if (!tieredPrices || tieredPrices.length === 0) return "N/A";
 
     return tieredPrices
       .map((tp) => {
-        const range = rangeOptions.find(
-          (r) => `${r.rangeFrom}-${r.rangeTo}` === tp.rangeId,
-        );
+        const range = rangeOptions.find((r) => r.id === tp.rangeId);
         return range
-          ? `${range.rangeFrom} - ${range.rangeTo}: ${convertNumberIntoLocalString(tp.price)}`
+          ? `${range.rangeFrom}-${range.rangeTo}: ${tp.price.toFixed(2)}`
           : "";
       })
       .filter(Boolean)
@@ -311,6 +363,7 @@ export const FactoryExpenses: React.FC = () => {
     });
   };
 
+  // Show error modal if API fetch failed
   if (error) {
     return (
       <ErrorModal
@@ -377,10 +430,10 @@ export const FactoryExpenses: React.FC = () => {
                 valueAsNumber
                 placeholder="Extra Charge"
                 register={register}
-                onChange={(e) => handleNumberInput("extraCharge", e)}
-                value={convertNumberIntoLocalString(
-                  getValues("extraCharge") ?? 0,
-                )}
+                onChange={(e) => {
+                  handleNumberInput("extraCharge", e);
+                }}
+                value={getValues("extraCharge") ?? 0}
                 errorMessage={errors.extraCharge?.message}
               />
             </div>
@@ -418,10 +471,10 @@ export const FactoryExpenses: React.FC = () => {
                   placeholder="Fixed Amount"
                   valueAsNumber
                   register={register}
-                  onChange={(e) => handleNumberInput("fixedAmountRate", e)}
-                  value={convertNumberIntoLocalString(
-                    getValues("fixedAmountRate") ?? 0,
-                  )}
+                  onChange={(e) => {
+                    handleNumberInput("fixedAmountRate", e);
+                  }}
+                  value={getValues("fixedAmountRate") ?? 0}
                   errorMessage={errors.fixedAmountRate?.message}
                 />
               </div>
@@ -436,10 +489,10 @@ export const FactoryExpenses: React.FC = () => {
                   valueAsNumber
                   placeholder="Fixed/Ton"
                   register={register}
-                  onChange={(e) => handleNumberInput("fixedPerTonRate", e)}
-                  value={convertNumberIntoLocalString(
-                    getValues("fixedPerTonRate") ?? 0,
-                  )}
+                  onChange={(e) => {
+                    handleNumberInput("fixedPerTonRate", e);
+                  }}
+                  value={getValues("fixedPerTonRate") ?? 0}
                   errorMessage={errors.fixedPerTonRate?.message}
                 />
               </div>
@@ -454,10 +507,10 @@ export const FactoryExpenses: React.FC = () => {
                   placeholder="Percent/Ton"
                   valueAsNumber
                   register={register}
-                  onChange={(e) => handleNumberInput("percentagePerTonRate", e)}
-                  value={convertNumberIntoLocalString(
-                    getValues("percentagePerTonRate") ?? 0,
-                  )}
+                  onChange={(e) => {
+                    handleNumberInput("percentagePerTonRate", e);
+                  }}
+                  value={getValues("percentagePerTonRate") ?? 0}
                   errorMessage={errors.percentagePerTonRate?.message}
                 />
               </div>
@@ -474,7 +527,7 @@ export const FactoryExpenses: React.FC = () => {
                   </thead>
                   <tbody>
                     {rangeOptions.map((range) => {
-                      const rangeId = `${range.rangeFrom}-${range.rangeTo}`;
+                      const rangeId = range.id;
                       const existingPrice =
                         tieredPrices.find((tp) => tp.rangeId === rangeId)
                           ?.price ?? 0;
@@ -486,14 +539,15 @@ export const FactoryExpenses: React.FC = () => {
                             <input
                               type="text"
                               placeholder="Enter Price"
-                              value={convertNumberIntoLocalString(
-                                existingPrice,
-                              )}
+                              value={existingPrice}
                               onChange={(e) => {
-                                const numValue = convertLocalStringIntoNumber(
-                                  e.target.value,
-                                );
-                                if (numValue !== undefined) {
+                                const numValue =
+                                  e.target.value.trim() === ""
+                                    ? 0
+                                    : parseFloat(
+                                        e.target.value.replace(/,/g, ""),
+                                      );
+                                if (!isNaN(numValue)) {
                                   handleTieredPriceInput(rangeId, numValue);
                                 }
                               }}
@@ -513,9 +567,10 @@ export const FactoryExpenses: React.FC = () => {
             shape="info"
             pending={isSubmitting}
             disabled={
-              expenseType === "Range Ton From" && tieredPrices.length === 0
+              isSubmitting ||
+              (expenseType === "Range Ton From" && tieredPrices.length === 0)
             }
-            className="mt-4 w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white"
+            className="mt-4 w-full md:w-auto btn-info text-white"
           >
             {editingId ? "Update Expense" : "Save Expense"}
           </Button>
@@ -547,24 +602,16 @@ export const FactoryExpenses: React.FC = () => {
                   <td>{expense.name}</td>
                   <td>{expense.appliesTo}</td>
                   <td>{expense.rateType}</td>
-                  <td>
-                    {convertNumberIntoLocalString(expense.fixedPerTonRate ?? 0)}
-                  </td>
-                  <td>
-                    {convertNumberIntoLocalString(expense.fixedAmountRate ?? 0)}
-                  </td>
-                  <td>
-                    {convertNumberIntoLocalString(
-                      expense.percentagePerTonRate ?? 0,
-                    )}
-                  </td>
+                  <td>{expense.fixedPerTonRate ?? 0}</td>
+                  <td>{expense.fixedAmountRate ?? 0}</td>
+                  <td>{expense.percentagePerTonRate ?? 0}</td>
                   <td>{getTieredPricesDisplay(expense.tieredPrices)}</td>
                   <td className="flex justify-center gap-2">
                     <button
                       onClick={() => expense.id && handleEdit(expense.id)}
                       className="flex items-center justify-center hover:bg-gray-200 p-1 rounded"
                     >
-                      <PencilSquareIcon className="w-5 h-5 text-blue-600" />
+                      <PencilSquareIcon className="w-5 h-5 text-info" />
                     </button>
                     <button
                       onClick={() => expense.id && handleDelete(expense.id)}
