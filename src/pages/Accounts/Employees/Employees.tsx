@@ -341,6 +341,7 @@ const EmployeeManagement = () => {
             placeholder="Employee CNIC"
             name="cnic"
             label="Employee CNIC"
+            valueAsNumber
             register={register}
             errorMessage={errors.cnic?.message}
           />
@@ -367,6 +368,7 @@ const EmployeeManagement = () => {
             placeholder="Salary"
             name="salary"
             label="Salary"
+            valueAsNumber
             register={register}
             errorMessage={errors.salary?.message}
           />

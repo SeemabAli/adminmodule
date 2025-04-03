@@ -2,7 +2,7 @@ import { sendApiRequest } from "@/common/services/api.service";
 import { type Employee } from "./employee.schema";
 
 export const createEmployee = async (data: Employee) => {
-  const response = await sendApiRequest<Employee>("/employee", {
+  const response = await sendApiRequest<Employee>("/employees", {
     method: "POST",
     withAuthorization: true,
     data,
@@ -11,7 +11,7 @@ export const createEmployee = async (data: Employee) => {
 };
 
 export const fetchAllEmployees = async () => {
-  const response = await sendApiRequest<Employee[]>("/employee", {
+  const response = await sendApiRequest<Employee[]>("/employees", {
     method: "GET",
     withAuthorization: true,
   });
@@ -19,7 +19,7 @@ export const fetchAllEmployees = async () => {
 };
 
 export const updateEmployee = async (id: string, data: Employee) => {
-  const response = await sendApiRequest<Employee>(`/employee/${id}`, {
+  const response = await sendApiRequest<Employee>(`/employees/${id}`, {
     method: "PATCH",
     withAuthorization: true,
     data,
@@ -28,7 +28,7 @@ export const updateEmployee = async (id: string, data: Employee) => {
 };
 
 export const deleteEmployee = async (id: string) => {
-  const response = await sendApiRequest(`/employee/${id}`, {
+  const response = await sendApiRequest(`/employees/${id}`, {
     method: "DELETE",
     withAuthorization: true,
   });
