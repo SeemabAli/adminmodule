@@ -71,3 +71,15 @@ export const uploadImage = async (file: File): Promise<ImageUploadResponse> => {
     throw error;
   }
 };
+
+// export const uploadPDF = async (file: File): Promise<ImageUploadResponse> => {
+//   try {
+//     const formData = new FormData();
+//     formData.append("file", file, file.name);
+//   }
+// } catch (error) {
+//   logger.error("Failed to upload PDF:", error);
+//   notify.error("PDF upload failed. Please try again.");
+//   throw error;
+// }
+// };

@@ -28,6 +28,7 @@ import { fetchAllRoutes } from "../DeliveryRoutes/route.service";
 import type { DeliveryRoute } from "../DeliveryRoutes/deliveryRoute.schema";
 import ImageUploader from "@/common/components/ImageUploader";
 import { uploadImage } from "@/common/services/image.service";
+import { X, Eye } from "lucide-react";
 
 // // Define proper types based on the schema
 // interface Phone {
@@ -111,6 +112,11 @@ export const Customer: React.FC = () => {
   const [notificationChannel, setNotificationChannel] = useState<
     "SMS" | "WHATSAPP" | "EMAIL" | "PUSH"
   >("WHATSAPP");
+
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<ICustomer | null>(
+    null,
+  );
 
   // Handle image file selections
   const handleCnicFrontSelected = (file: File) => {
@@ -685,6 +691,342 @@ export const Customer: React.FC = () => {
     };
     void loadRoutes();
   }, []);
+
+  const handleViewCustomer = (customer: ICustomer) => {
+    setSelectedCustomer(customer);
+    setShowDetailModal(true);
+  };
+
+  // Customer Detail Modal component
+  const CustomerDetailModal = () => {
+    if (!selectedCustomer) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div className="bg-base-100 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="sticky top-0 bg-base-100 p-4 border-b flex justify-between items-center z-10">
+            <h2 className="text-2xl font-bold text-primary">
+              {selectedCustomer.fullName}
+            </h2>
+            <button
+              onClick={() => {
+                setShowDetailModal(false);
+              }}
+              className="btn btn-sm btn-circle btn-ghost"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          <div className="p-6">
+            {/* Customer ID Card Style Layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left Column - Basic Info */}
+              <div className="space-y-4">
+                <div className="card bg-base-200 shadow-sm">
+                  <div className="card-body">
+                    <h3 className="card-title border-b pb-2 mb-3 text-secondary">
+                      Personal Information
+                    </h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="font-medium">Full Name:</span>
+                        <span>{selectedCustomer.fullName}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Account Title:</span>
+                        <span>{selectedCustomer.accountTitle}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Dealing Person:</span>
+                        <span>{selectedCustomer.dealingPerson || "-"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Reference:</span>
+                        <span>{selectedCustomer.reference || "-"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">NTN Number:</span>
+                        <span>{selectedCustomer.ntnNumber || "-"}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card bg-base-200 shadow-sm">
+                  <div className="card-body">
+                    <h3 className="card-title border-b pb-2 mb-3 text-secondary">
+                      Financial Details
+                    </h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="font-medium">Credit Limit:</span>
+                        <span>{selectedCustomer.creditLimit || "-"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Ledger Number:</span>
+                        <span>{selectedCustomer.ledgerNumber || "-"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Ledger Details:</span>
+                        <span className="text-right">
+                          {selectedCustomer.ledgerDetails || "-"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Phone Numbers */}
+                <div className="card bg-base-200 shadow-sm">
+                  <div className="card-body">
+                    <h3 className="card-title border-b pb-2 mb-3 text-secondary">
+                      Phone Numbers
+                    </h3>
+                    {selectedCustomer.phoneNumbers &&
+                    selectedCustomer.phoneNumbers.length > 0 ? (
+                      <div className="space-y-2">
+                        {selectedCustomer.phoneNumbers.map((phone, index) => (
+                          <div
+                            key={index}
+                            className="flex justify-between items-center p-2 bg-base-100 rounded"
+                          >
+                            <span>{phone.number}</span>
+                            <span className="badge badge-outline">
+                              {phone.type}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 italic">No phone numbers</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Addresses */}
+                <div className="card bg-base-200 shadow-sm">
+                  <div className="card-body">
+                    <h3 className="card-title border-b pb-2 mb-3 text-secondary">
+                      Addresses
+                    </h3>
+                    {selectedCustomer.addresses &&
+                    selectedCustomer.addresses.length > 0 ? (
+                      <div className="space-y-2">
+                        {selectedCustomer.addresses.map((address, index) => (
+                          <div key={index} className="p-2 bg-base-100 rounded">
+                            {address.currentAddress}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 italic">No addresses</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column - Images & Additional Info */}
+              <div className="space-y-4">
+                {/* CNIC Images */}
+                <div className="card bg-base-200 shadow-sm">
+                  <div className="card-body">
+                    <h3 className="card-title border-b pb-2 mb-3 text-secondary">
+                      CNIC Images
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm font-medium mb-2 text-accent">
+                          Front Side
+                        </p>
+                        {selectedCustomer.cnicFrontImage ? (
+                          <img
+                            src={selectedCustomer.cnicFrontImage}
+                            alt="CNIC Front"
+                            className="w-full h-40 object-contain border rounded-md bg-white"
+                          />
+                        ) : (
+                          <div className="w-full h-40 bg-base-300 rounded-md flex items-center justify-center">
+                            <p className="text-gray-500 italic">No image</p>
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium mb-2 text-accent">
+                          Back Side
+                        </p>
+                        {selectedCustomer.cnicBackImage ? (
+                          <img
+                            src={selectedCustomer.cnicBackImage}
+                            alt="CNIC Back"
+                            className="w-full h-40 object-contain border rounded-md bg-white"
+                          />
+                        ) : (
+                          <div className="w-full h-40 bg-base-300 rounded-md flex items-center justify-center">
+                            <p className="text-gray-500 italic">No image</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Signatures */}
+                <div className="card bg-base-200 shadow-sm">
+                  <div className="card-body">
+                    <h3 className="card-title border-b pb-2 mb-3 text-secondary">
+                      Signatures
+                    </h3>
+                    {selectedCustomer.signatures &&
+                    selectedCustomer.signatures.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-4">
+                        {selectedCustomer.signatures.map((signature, index) => (
+                          <div
+                            key={index}
+                            className="border rounded-md p-2 bg-white"
+                          >
+                            <img
+                              src={signature.image}
+                              alt={`Signature ${index + 1}`}
+                              className="w-full h-24 object-contain"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 italic">No signatures</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Other Images */}
+                <div className="card bg-base-200 shadow-sm">
+                  <div className="card-body">
+                    <h3 className="card-title border-b pb-2 mb-3 text-secondary">
+                      Other Images
+                    </h3>
+                    {selectedCustomer.otherImages &&
+                    selectedCustomer.otherImages.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-4">
+                        {selectedCustomer.otherImages.map((image, index) => (
+                          <div
+                            key={index}
+                            className="border rounded-md p-2 bg-white"
+                          >
+                            <img
+                              src={image}
+                              alt={`Other Image ${index + 1}`}
+                              className="w-full h-24 object-contain"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 italic">No other images</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Notification Preferences */}
+                {selectedCustomer.notificationPreference && (
+                  <div className="card bg-base-200 shadow-sm">
+                    <div className="card-body">
+                      <h3 className="card-title border-b pb-2 mb-3 text-secondary">
+                        Notification Preferences
+                      </h3>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="font-medium">Frequency:</span>
+                          <span>
+                            {selectedCustomer.notificationPreference.frequency}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="font-medium">Channel:</span>
+                          <span>
+                            {selectedCustomer.notificationPreference.channel}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Post-Dated Cheques */}
+                {selectedCustomer.postDatedCheques &&
+                  selectedCustomer.postDatedCheques.length > 0 && (
+                    <div className="card bg-base-200 shadow-sm">
+                      <div className="card-body">
+                        <h3 className="card-title border-b pb-2 mb-3 text-secondary">
+                          Post-Dated Cheques
+                        </h3>
+                        <div className="space-y-4">
+                          {selectedCustomer.postDatedCheques.map(
+                            (cheque, index) => (
+                              <div
+                                key={index}
+                                className="bg-base-100 p-3 rounded-md"
+                              >
+                                <div className="grid grid-cols-2 gap-2 mb-2">
+                                  <div>
+                                    <span className="font-medium block text-sm">
+                                      Date:
+                                    </span>
+                                    <span>{cheque.date}</span>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium block text-sm">
+                                      Amount:
+                                    </span>
+                                    <span>{cheque.amount}</span>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium block text-sm">
+                                      Status:
+                                    </span>
+                                    <span>{cheque.status}</span>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium block text-sm">
+                                      Details:
+                                    </span>
+                                    <span>{cheque.details}</span>
+                                  </div>
+                                </div>
+                                {cheque.image && (
+                                  <div className="mt-2 border rounded p-1 bg-white">
+                                    <img
+                                      src={cheque.image}
+                                      alt={`Cheque ${index + 1}`}
+                                      className="h-16 object-contain mx-auto"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            ),
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+              </div>
+            </div>
+          </div>
+
+          <div className="sticky bottom-0 bg-base-100 p-4 border-t flex justify-end">
+            <button
+              onClick={() => {
+                setShowDetailModal(false);
+              }}
+              className="btn btn-primary"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   if (error) {
     return (
@@ -1610,7 +1952,7 @@ export const Customer: React.FC = () => {
         </div>
       </div>
 
-      {/* Customers List */}
+      {/* Customers List - Simplified */}
       {isLoading && <div className="skeleton h-28 w-full"></div>}
       {customers.length > 0 && (
         <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
@@ -1621,35 +1963,35 @@ export const Customer: React.FC = () => {
             <table className="table w-full">
               <thead>
                 <tr>
-                  <th>Full Name</th>
-                  <th>Account Title</th>
-                  <th>Phone</th>
-                  <th>Address</th>
+                  <th>Customer Name</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {customers.map((customer, index) => (
-                  <tr key={index}>
-                    <td>{customer.fullName}</td>
-                    <td>{customer.accountTitle}</td>
-                    <td>
-                      {(customer.phoneNumbers ?? []).length > 0
-                        ? (customer.phoneNumbers ?? [])[0]?.number
-                        : "-"}
-                    </td>
-                    <td>
-                      {customer.addresses && customer.addresses.length > 0
-                        ? customer.addresses[0]?.currentAddress
-                        : "-"}
+                  <tr key={index} className="hover cursor-pointer">
+                    <td
+                      onClick={() => {
+                        handleViewCustomer(customer);
+                      }}
+                    >
+                      {customer.fullName}
                     </td>
                     <td>
                       <div className="flex gap-2">
                         <button
                           onClick={() => {
+                            handleViewCustomer(customer);
+                          }}
+                          className="btn-sm btn-ghost text-info"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button
+                          onClick={() => {
                             handleEdit(index);
                           }}
-                          className="w-5 h-5 text-info"
+                          className="btn-sm btn-ghost text-success"
                         >
                           <PencilSquareIcon className="h-4 w-4" />
                         </button>
@@ -1657,7 +1999,7 @@ export const Customer: React.FC = () => {
                           onClick={() => {
                             handleDelete(index);
                           }}
-                          className="w-5 h-5 text-red-500"
+                          className="btn-sm btn-ghost text-error"
                         >
                           <TrashIcon className="h-4 w-4" />
                         </button>
@@ -1670,6 +2012,9 @@ export const Customer: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Customer Detail Modal */}
+      {showDetailModal && <CustomerDetailModal />}
     </div>
   );
 };
