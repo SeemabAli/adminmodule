@@ -17,6 +17,8 @@ import { useService } from "@/common/hooks/custom/useService";
 import { customerSchema, type ICustomer } from "./customer.schema";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
 import { type Phone } from "./customer.schema";
+import { fetchAllRoutes } from "../DeliveryRoutes/route.service";
+import type { DeliveryRoute } from "../DeliveryRoutes/deliveryRoute.schema";
 
 // // Define proper types based on the schema
 // interface Phone {
@@ -78,6 +80,7 @@ export const Customer: React.FC = () => {
   const [chequeImage, setChequeImage] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [otherImage, setOtherImage] = useState("");
+  const [routes, setRoutes] = useState<DeliveryRoute[]>([]);
 
   // Map state
   const [showMap, setShowMap] = useState(false);
@@ -125,6 +128,21 @@ export const Customer: React.FC = () => {
     "Daily" | "Weekly" | "Monthly" | "Yearly"
   >("Monthly");
   const [smsVia, setSmsVia] = useState("SMS");
+
+  // Fetch routes on component mount
+  useEffect(() => {
+    const fetchRoutes = async () => {
+      try {
+        const routesData = await fetchAllRoutes();
+        setRoutes(routesData);
+      } catch (error) {
+        logger.error("Failed to fetch routes", error);
+        notify.error("Could not load routes");
+      }
+    };
+
+    void fetchRoutes();
+  }, []);
 
   const handleNextStep = () => {
     if (currentStep === 1) {
@@ -541,12 +559,17 @@ export const Customer: React.FC = () => {
               <label className="block font-medium mb-1">
                 Route <span className="text-error">*</span>
               </label>
-              <input
-                type="text"
-                placeholder="Enter Route"
+              <select
                 {...register("route")}
-                className="input input-bordered w-full"
-              />
+                className="select select-bordered w-full"
+              >
+                <option value="">Select Route</option>
+                {routes.map((route) => (
+                  <option key={route.id} value={route.id}>
+                    {route.code}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Optional Fields */}
