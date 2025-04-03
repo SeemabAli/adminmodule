@@ -383,9 +383,10 @@ const BankAccounts = () => {
             errorMessage={bankErrors.accountNumber?.message}
           />
           <FormField
-            type="text"
+            type="number"
             name="openingBalance"
             label="Opening Balance"
+            valueAsNumber
             placeholder="Opening Balance"
             register={registerBank}
             errorMessage={bankErrors.openingBalance?.message}
