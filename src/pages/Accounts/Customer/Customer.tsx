@@ -114,43 +114,123 @@ export const Customer: React.FC = () => {
 
   // Handle image file selections
   const handleCnicFrontSelected = (file: File) => {
+    if (!file || !(file instanceof File) || file.size === 0) {
+      notify.error("Invalid file selected");
+      return;
+    }
+
+    // Clear previous preview if it exists
     if (cnicFrontPreview?.startsWith("blob:")) {
       URL.revokeObjectURL(cnicFrontPreview);
     }
-    setCnicFrontFile(file);
-    setCnicFrontPreview(URL.createObjectURL(file));
+
+    try {
+      const objectUrl = URL.createObjectURL(file);
+      setCnicFrontFile(file);
+      setCnicFrontPreview(objectUrl);
+      logger.info(
+        `CNIC front image selected: ${file.name}, size: ${file.size}, type: ${file.type}`,
+      );
+    } catch (error) {
+      logger.error("Error creating URL for CNIC front image:", error);
+      notify.error("Failed to process image");
+    }
   };
 
   const handleCnicBackSelected = (file: File) => {
+    if (!file || !(file instanceof File) || file.size === 0) {
+      notify.error("Invalid file selected");
+      return;
+    }
+
+    // Clear previous preview if it exists
     if (cnicBackPreview?.startsWith("blob:")) {
       URL.revokeObjectURL(cnicBackPreview);
     }
-    setCnicBackFile(file);
-    setCnicBackPreview(URL.createObjectURL(file));
+
+    try {
+      const objectUrl = URL.createObjectURL(file);
+      setCnicBackFile(file);
+      setCnicBackPreview(objectUrl);
+      logger.info(
+        `CNIC back image selected: ${file.name}, size: ${file.size}, type: ${file.type}`,
+      );
+    } catch (error) {
+      logger.error("Error creating URL for CNIC back image:", error);
+      notify.error("Failed to process image");
+    }
   };
 
   const handleChequeSelected = (file: File) => {
+    if (!file || !(file instanceof File) || file.size === 0) {
+      notify.error("Invalid file selected");
+      return;
+    }
+
+    // Clear previous preview if it exists
     if (chequePreview?.startsWith("blob:")) {
       URL.revokeObjectURL(chequePreview);
     }
-    setChequeFile(file);
-    setChequePreview(URL.createObjectURL(file));
+
+    try {
+      const objectUrl = URL.createObjectURL(file);
+      setChequeFile(file);
+      setChequePreview(objectUrl);
+      logger.info(
+        `Cheque image selected: ${file.name}, size: ${file.size}, type: ${file.type}`,
+      );
+    } catch (error) {
+      logger.error("Error creating URL for cheque image:", error);
+      notify.error("Failed to process image");
+    }
   };
 
   const handleSignatureSelected = (file: File) => {
+    if (!file || !(file instanceof File) || file.size === 0) {
+      notify.error("Invalid file selected");
+      return;
+    }
+
+    // Clear previous preview if it exists
     if (signaturePreview?.startsWith("blob:")) {
       URL.revokeObjectURL(signaturePreview);
     }
-    setSignatureFile(file);
-    setSignaturePreview(URL.createObjectURL(file));
+
+    try {
+      const objectUrl = URL.createObjectURL(file);
+      setSignatureFile(file);
+      setSignaturePreview(objectUrl);
+      logger.info(
+        `Signature image selected: ${file.name}, size: ${file.size}, type: ${file.type}`,
+      );
+    } catch (error) {
+      logger.error("Error creating URL for signature image:", error);
+      notify.error("Failed to process image");
+    }
   };
 
   const handleOtherImageSelected = (file: File) => {
+    if (!file || !(file instanceof File) || file.size === 0) {
+      notify.error("Invalid file selected");
+      return;
+    }
+
+    // Clear previous preview if it exists
     if (otherImagePreview?.startsWith("blob:")) {
       URL.revokeObjectURL(otherImagePreview);
     }
-    setOtherImageFile(file);
-    setOtherImagePreview(URL.createObjectURL(file));
+
+    try {
+      const objectUrl = URL.createObjectURL(file);
+      setOtherImageFile(file);
+      setOtherImagePreview(objectUrl);
+      logger.info(
+        `Other image selected: ${file.name}, size: ${file.size}, type: ${file.type}`,
+      );
+    } catch (error) {
+      logger.error("Error creating URL for other image:", error);
+      notify.error("Failed to process image");
+    }
   };
 
   // Use the API service
@@ -167,7 +247,6 @@ export const Customer: React.FC = () => {
         reference: "",
         ntnNumber: "",
         creditLimit: 0,
-        creditDetail: "",
         ledgerDetails: "",
         ledgerNumber: 0,
         phoneNumbers: [],
@@ -238,13 +317,27 @@ export const Customer: React.FC = () => {
   };
 
   const handleAddCheque = async () => {
-    if (!chequeDate || !chequeDetails) return;
+    if (!chequeDate || !chequeDetails) {
+      notify.error("Please provide cheque date and details");
+      return;
+    }
 
     try {
       // Upload cheque image if exists
       let imagePath = "";
-      if (chequeFile) {
+      if (chequeFile && chequeFile instanceof File && chequeFile.size > 0) {
+        logger.info(
+          `Uploading cheque image: ${chequeFile.name}, size: ${chequeFile.size}, type: ${chequeFile.type}`,
+        );
+
         const uploadResponse = await uploadImage(chequeFile);
+
+        // Validate response
+        if (!uploadResponse?.path) {
+          notify.error("Failed to get image path from upload");
+          return;
+        }
+
         imagePath = uploadResponse.path;
       }
 
@@ -258,7 +351,7 @@ export const Customer: React.FC = () => {
           amount: chequeAmount,
           number: chequeNumber ? parseInt(chequeNumber, 10) : undefined,
           details: chequeDetails,
-          image: imagePath,
+          image: imagePath || undefined,
         },
       ]);
 
@@ -276,7 +369,7 @@ export const Customer: React.FC = () => {
       notify.success("Cheque added successfully");
     } catch (error) {
       notify.error("Failed to add cheque");
-      logger.error(error);
+      logger.error("Cheque upload error:", error);
     }
   };
 
@@ -287,11 +380,28 @@ export const Customer: React.FC = () => {
   };
 
   const handleAddSignature = async () => {
-    if (!signatureFile) return;
+    if (
+      !signatureFile ||
+      !(signatureFile instanceof File) ||
+      signatureFile.size === 0
+    ) {
+      notify.error("Please select a valid signature image first");
+      return;
+    }
 
     try {
+      logger.info(
+        `Uploading signature: ${signatureFile.name}, size: ${signatureFile.size}, type: ${signatureFile.type}`,
+      );
+
       // Upload the file first
       const uploadResponse = await uploadImage(signatureFile);
+
+      // Validate response
+      if (!uploadResponse?.path) {
+        notify.error("Failed to get image path from upload");
+        return;
+      }
 
       // Add signature to the form
       const currentSignatures = watchedValues.signatures ?? [];
@@ -310,7 +420,7 @@ export const Customer: React.FC = () => {
       notify.success("Signature added successfully");
     } catch (error) {
       notify.error("Failed to add signature");
-      logger.error(error);
+      logger.error("Signature upload error:", error);
     }
   };
 
@@ -337,14 +447,28 @@ export const Customer: React.FC = () => {
   };
 
   const handleAddOtherImage = async () => {
-    if (!otherImageFile) {
-      notify.error("Please select an image first.");
+    if (
+      !otherImageFile ||
+      !(otherImageFile instanceof File) ||
+      otherImageFile.size === 0
+    ) {
+      notify.error("Please select a valid image first");
       return;
     }
 
     try {
+      logger.info(
+        `Uploading other image: ${otherImageFile.name}, size: ${otherImageFile.size}, type: ${otherImageFile.type}`,
+      );
+
       // Upload the file first
       const uploadResponse = await uploadImage(otherImageFile);
+
+      // Validate response
+      if (!uploadResponse?.path) {
+        notify.error("Failed to get image path from upload");
+        return;
+      }
 
       // Add image to the form
       const currentImages = watchedValues.otherImages || [];
@@ -360,7 +484,7 @@ export const Customer: React.FC = () => {
       notify.success("Image added successfully!");
     } catch (error) {
       notify.error("Failed to add image");
-      logger.error(error);
+      logger.error("Image upload error:", error);
     }
   };
 
@@ -373,27 +497,21 @@ export const Customer: React.FC = () => {
 
   const handleSave = async (formData: ICustomer) => {
     try {
-      // Upload CNIC images first if they exist
-      if (cnicFrontFile) {
-        const uploadResponse = await uploadImage(cnicFrontFile);
-        formData.cnicFrontImage = uploadResponse.path;
-      }
+      // Create a copy of formData to modify
+      const customerData = { ...formData };
 
-      if (cnicBackFile) {
-        const uploadResponse = await uploadImage(cnicBackFile);
-        formData.cnicBackImage = uploadResponse.path;
-      }
+      // The CNIC images should now be already uploaded before saving
+      // No need to upload them again here, just use the values from the form
 
       // Add notification preference if enabled
-      const customerData = {
-        ...formData,
-        notificationPreference: notificationEnabled
-          ? {
-              frequency: notificationFrequency,
-              channel: notificationChannel,
-            }
-          : undefined,
-      };
+      if (notificationEnabled) {
+        customerData.notificationPreference = {
+          frequency: notificationFrequency,
+          channel: notificationChannel,
+        };
+      } else {
+        customerData.notificationPreference = undefined;
+      }
 
       if (editingIndex !== null && customers[editingIndex]?.id) {
         // Update existing customer
@@ -420,7 +538,7 @@ export const Customer: React.FC = () => {
       resetForm();
     } catch (error) {
       notify.error("Failed to save customer.");
-      logger.error(error);
+      logger.error("Customer save error:", error);
     }
   };
 
@@ -480,7 +598,6 @@ export const Customer: React.FC = () => {
     setValue("reference", customer.reference || "");
     setValue("ntnNumber", customer.ntnNumber || "");
     setValue("creditLimit", customer.creditLimit || 0);
-    setValue("creditDetail", customer.creditDetail || "");
     setValue("ledgerDetails", customer.ledgerDetails || "");
     setValue("ledgerNumber", customer.ledgerNumber || 0);
     setValue("phoneNumbers", customer.phoneNumbers || []);
@@ -621,7 +738,7 @@ export const Customer: React.FC = () => {
                 Route <span className="text-error">*</span>
               </label>
               <select
-                {...register("routeId")}
+                {...register("deliveryRouteId")}
                 className="select select-bordered w-full"
                 required
               >
@@ -655,23 +772,270 @@ export const Customer: React.FC = () => {
             </div>
 
             {/* CNIC Images */}
-            <div>
-              <label className="block font-medium mb-1">CNIC Front Side</label>
-              <ImageUploader
-                buttonText="Upload CNIC Front"
-                onImageSelected={handleCnicFrontSelected}
-                initialPreview={cnicFrontPreview}
-                previewSize="small"
-              />
-            </div>
-            <div>
-              <label className="block font-medium mb-1">CNIC Back Side</label>
-              <ImageUploader
-                buttonText="Upload CNIC Back"
-                onImageSelected={handleCnicBackSelected}
-                initialPreview={cnicBackPreview}
-                previewSize="small"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="flex flex-col">
+                <label className="block font-medium mb-1">
+                  CNIC Front Side
+                </label>
+                <div className="flex flex-col space-y-2">
+                  {!watchedValues.cnicFrontImage ? (
+                    <div className="flex flex-col space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex-grow">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                handleCnicFrontSelected(e.target.files[0]);
+                              }
+                            }}
+                            className="file-input file-input-bordered w-full"
+                          />
+                        </div>
+                      </div>
+                      {cnicFrontPreview && (
+                        <div className="mt-2 bg-gray-50 p-2 rounded-md">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <img
+                                src={cnicFrontPreview}
+                                alt="CNIC Front Preview"
+                                className="w-24 h-16 object-cover rounded"
+                              />
+                              <span className="text-xs text-gray-500 ml-2">
+                                Selected image
+                              </span>
+                            </div>
+                            <button
+                              className="btn btn-circle btn-xs btn-ghost text-error hover:bg-error hover:text-white transition-colors duration-200 flex items-center justify-center"
+                              onClick={() => {
+                                if (cnicFrontPreview?.startsWith("blob:")) {
+                                  URL.revokeObjectURL(cnicFrontPreview);
+                                }
+                                setCnicFrontPreview("");
+                                setCnicFrontFile(null);
+                              }}
+                            >
+                              <span className="text-lg font-bold leading-none">
+                                ×
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex justify-end mt-1">
+                        <Button
+                          onClick={async () => {
+                            if (
+                              cnicFrontFile &&
+                              cnicFrontFile instanceof File &&
+                              cnicFrontFile.size > 0
+                            ) {
+                              try {
+                                logger.info(
+                                  `Uploading CNIC front: ${cnicFrontFile.name}, size: ${cnicFrontFile.size}, type: ${cnicFrontFile.type}`,
+                                );
+                                const uploadResponse =
+                                  await uploadImage(cnicFrontFile);
+
+                                if (uploadResponse?.path) {
+                                  setValue(
+                                    "cnicFrontImage",
+                                    uploadResponse.path,
+                                  );
+                                  logger.info(
+                                    "CNIC front uploaded successfully",
+                                    { path: uploadResponse.path },
+                                  );
+                                  notify.success(
+                                    "CNIC front image uploaded successfully",
+                                  );
+
+                                  // Clean up preview
+                                  if (cnicFrontPreview?.startsWith("blob:")) {
+                                    URL.revokeObjectURL(cnicFrontPreview);
+                                  }
+                                  setCnicFrontPreview("");
+                                  setCnicFrontFile(null);
+                                } else {
+                                  logger.error("Upload response missing path", {
+                                    response: uploadResponse,
+                                  });
+                                  notify.error(
+                                    "CNIC front upload failed - no path returned",
+                                  );
+                                }
+                              } catch (error) {
+                                logger.error(
+                                  "Failed to upload CNIC front image:",
+                                  error,
+                                );
+                                notify.error(
+                                  "Failed to upload CNIC front image",
+                                );
+                              }
+                            } else {
+                              notify.error(
+                                "Please select a valid CNIC front image first",
+                              );
+                            }
+                          }}
+                          className="btn-sm"
+                          shape="info"
+                          disabled={!cnicFrontFile}
+                        >
+                          Upload
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-2 bg-gray-50 p-2 rounded-md">
+                      <div className="flex items-center">
+                        <img
+                          src={watchedValues.cnicFrontImage}
+                          alt="CNIC Front"
+                          className="w-24 h-16 object-cover rounded"
+                        />
+                        <span className="text-xs text-gray-500 ml-2">
+                          CNIC Front Uploaded
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-col">
+                <label className="block font-medium mb-1">CNIC Back Side</label>
+                <div className="flex flex-col space-y-2">
+                  {!watchedValues.cnicBackImage ? (
+                    <div className="flex flex-col space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex-grow">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                handleCnicBackSelected(e.target.files[0]);
+                              }
+                            }}
+                            className="file-input file-input-bordered w-full"
+                          />
+                        </div>
+                      </div>
+                      {cnicBackPreview && (
+                        <div className="mt-2 bg-gray-50 p-2 rounded-md">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <img
+                                src={cnicBackPreview}
+                                alt="CNIC Back Preview"
+                                className="w-24 h-16 object-cover rounded"
+                              />
+                              <span className="text-xs text-gray-500 ml-2">
+                                Selected image
+                              </span>
+                            </div>
+                            <button
+                              className="btn btn-circle btn-xs btn-ghost text-error hover:bg-error hover:text-white transition-colors duration-200 flex items-center justify-center"
+                              onClick={() => {
+                                if (cnicBackPreview?.startsWith("blob:")) {
+                                  URL.revokeObjectURL(cnicBackPreview);
+                                }
+                                setCnicBackPreview("");
+                                setCnicBackFile(null);
+                              }}
+                            >
+                              <span className="text-lg font-bold leading-none">
+                                ×
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex justify-end mt-1">
+                        <Button
+                          onClick={async () => {
+                            if (
+                              cnicBackFile &&
+                              cnicBackFile instanceof File &&
+                              cnicBackFile.size > 0
+                            ) {
+                              try {
+                                logger.info(
+                                  `Uploading CNIC back: ${cnicBackFile.name}, size: ${cnicBackFile.size}, type: ${cnicBackFile.type}`,
+                                );
+                                const uploadResponse =
+                                  await uploadImage(cnicBackFile);
+
+                                if (uploadResponse?.path) {
+                                  setValue(
+                                    "cnicBackImage",
+                                    uploadResponse.path,
+                                  );
+                                  logger.info(
+                                    "CNIC back uploaded successfully",
+                                    { path: uploadResponse.path },
+                                  );
+                                  notify.success(
+                                    "CNIC back image uploaded successfully",
+                                  );
+
+                                  // Clean up preview
+                                  if (cnicBackPreview?.startsWith("blob:")) {
+                                    URL.revokeObjectURL(cnicBackPreview);
+                                  }
+                                  setCnicBackPreview("");
+                                  setCnicBackFile(null);
+                                } else {
+                                  logger.error("Upload response missing path", {
+                                    response: uploadResponse,
+                                  });
+                                  notify.error(
+                                    "CNIC back upload failed - no path returned",
+                                  );
+                                }
+                              } catch (error) {
+                                logger.error(
+                                  "Failed to upload CNIC back image:",
+                                  error,
+                                );
+                                notify.error(
+                                  "Failed to upload CNIC back image",
+                                );
+                              }
+                            } else {
+                              notify.error(
+                                "Please select a valid CNIC back image first",
+                              );
+                            }
+                          }}
+                          className="btn-sm"
+                          shape="info"
+                          disabled={!cnicBackFile}
+                        >
+                          Upload
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-2 bg-gray-50 p-2 rounded-md">
+                      <div className="flex items-center">
+                        <img
+                          src={watchedValues.cnicBackImage}
+                          alt="CNIC Back"
+                          className="w-24 h-16 object-cover rounded"
+                        />
+                        <span className="text-xs text-gray-500 ml-2">
+                          CNIC Back Uploaded
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Credit Limit */}
@@ -681,17 +1045,6 @@ export const Customer: React.FC = () => {
                 type="number"
                 placeholder="Enter Credit Limit"
                 {...register("creditLimit", { valueAsNumber: true })}
-                className="input input-bordered w-full"
-              />
-            </div>
-
-            {/* Credit Detail */}
-            <div>
-              <label className="block font-medium mb-1">Credit Detail</label>
-              <input
-                type="text"
-                placeholder="Enter Credit Detail"
-                {...register("creditDetail")}
                 className="input input-bordered w-full"
               />
             </div>
@@ -718,66 +1071,80 @@ export const Customer: React.FC = () => {
               />
             </div>
 
-            {/* Signature Section */}
-            <div className="md:col-span-2">
-              <div className="flex flex-col gap-2">
-                <h3 className="text-lg font-semibold mb-2">Signature</h3>
-                <div className="flex-1 flex flex-col">
-                  <ImageUploader
-                    buttonText="Select Signature"
-                    onImageSelected={handleSignatureSelected}
-                    initialPreview={signaturePreview}
-                    previewSize="medium"
-                  />
-                  <Button
-                    onClick={handleAddSignature}
-                    className="mt-4 md:w-1/8"
-                    shape="info"
-                    disabled={!signatureFile}
-                  >
-                    Add Signature
-                  </Button>
+            {/* Signatures */}
+            <div className="mt-4 p-4 bg-base-100 rounded-md shadow-sm border-l-4 border-accent">
+              <h3 className="text-xl font-semibold mb-4">Signatures</h3>
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center space-x-2">
+                  <div className="flex-grow">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          handleSignatureSelected(e.target.files[0]);
+                        }
+                      }}
+                      className="file-input file-input-bordered w-full"
+                    />
+                  </div>
                 </div>
 
-                {(watchedValues.signatures ?? []).length > 0 && (
-                  <div className="overflow-x-auto">
-                    <table className="table w-1/4">
-                      <thead>
-                        <tr>
-                          <th>Image</th>
-                          <th>Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(watchedValues.signatures ?? []).map(
-                          (signature, index) => (
-                            <tr key={index}>
-                              <td>
-                                {signature.image && (
-                                  <img
-                                    src={signature.image}
-                                    alt="Signature"
-                                    className="w-16 h-12 object-cover rounded"
-                                  />
-                                )}
-                              </td>
-                              <td>
-                                <button
-                                  onClick={() => {
-                                    handleRemoveSignature(index);
-                                  }}
-                                  className="justify-center"
-                                >
-                                  <TrashIcon className="w-5 h-5 text-red-500" />
-                                </button>
-                              </td>
-                            </tr>
-                          ),
-                        )}
-                      </tbody>
-                    </table>
+                {signaturePreview && (
+                  <div className="mt-2 bg-gray-50 p-2 rounded-md">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <img
+                          src={signaturePreview}
+                          alt="Signature Preview"
+                          className="w-24 h-16 object-cover rounded"
+                        />
+                        <span className="text-xs text-gray-500 ml-2">
+                          Selected signature
+                        </span>
+                      </div>
+                      <button
+                        className="btn btn-circle btn-xs btn-ghost text-error hover:bg-error hover:text-white transition-colors duration-200 flex items-center justify-center"
+                        onClick={() => {
+                          if (signaturePreview?.startsWith("blob:")) {
+                            URL.revokeObjectURL(signaturePreview);
+                          }
+                          setSignaturePreview("");
+                          setSignatureFile(null);
+                        }}
+                      >
+                        <span className="text-lg font-bold leading-none">
+                          ×
+                        </span>
+                      </button>
+                    </div>
                   </div>
                 )}
+
+                {signatureFile && (
+                  <div className="flex justify-end mt-1">
+                    <Button
+                      className="btn-sm"
+                      shape="info"
+                      onClick={handleAddSignature}
+                      disabled={!signatureFile}
+                    >
+                      Add Signature
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                {(watchedValues.signatures ?? []).map((signature, index) => (
+                  <div key={index} className="relative">
+                    <img
+                      src={signature.image}
+                      alt={`Signature ${index + 1}`}
+                      className="w-full h-32 object-contain border rounded-md"
+                    />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -977,62 +1344,80 @@ export const Customer: React.FC = () => {
             </div>
 
             {/* Other Images */}
-            <div className="mb-8 p-4 bg-base-100 rounded-md shadow-sm">
+            <div className="mb-8 p-4 bg-base-100 rounded-md shadow-sm border-l-4 border-accent">
               <h3 className="text-xl font-semibold mb-4">Other Images</h3>
-              <div className="mb-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="md:col-span-2">
-                    <ImageUploader
-                      buttonText="Select Image"
-                      onImageSelected={handleOtherImageSelected}
-                      initialPreview={otherImagePreview}
-                      previewSize="medium"
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center space-x-2">
+                  <div className="flex-grow">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          handleOtherImageSelected(e.target.files[0]);
+                        }
+                      }}
+                      className="file-input file-input-bordered w-full"
                     />
                   </div>
-                  <button
-                    onClick={handleAddOtherImage}
-                    className="btn btn-info w-full"
-                    disabled={!otherImageFile}
-                  >
-                    Add Image
-                  </button>
                 </div>
+
+                {otherImagePreview && (
+                  <div className="mt-2 bg-gray-50 p-2 rounded-md">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <img
+                          src={otherImagePreview}
+                          alt="Image Preview"
+                          className="w-24 h-16 object-cover rounded"
+                        />
+                        <span className="text-xs text-gray-500 ml-2">
+                          Selected image
+                        </span>
+                      </div>
+                      <button
+                        className="btn btn-circle btn-xs btn-ghost text-error hover:bg-error hover:text-white transition-colors duration-200 flex items-center justify-center"
+                        onClick={() => {
+                          if (otherImagePreview?.startsWith("blob:")) {
+                            URL.revokeObjectURL(otherImagePreview);
+                          }
+                          setOtherImagePreview("");
+                          setOtherImageFile(null);
+                        }}
+                      >
+                        <span className="text-lg font-bold leading-none">
+                          ×
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {otherImageFile && (
+                  <div className="flex justify-end mt-1">
+                    <Button
+                      className="btn-sm"
+                      shape="info"
+                      onClick={handleAddOtherImage}
+                      disabled={!otherImageFile}
+                    >
+                      Add Image
+                    </Button>
+                  </div>
+                )}
               </div>
-              {(watchedValues.otherImages ?? []).length > 0 && (
-                <div className="overflow-x-auto">
-                  <table className="table w-full">
-                    <thead>
-                      <tr>
-                        <th>Image</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(watchedValues.otherImages ?? []).map((image, index) => (
-                        <tr key={index}>
-                          <td>
-                            <img
-                              src={image}
-                              alt="Other"
-                              className="w-16 h-12 object-cover rounded"
-                            />
-                          </td>
-                          <td>
-                            <button
-                              onClick={() => {
-                                handleRemoveOtherImage(index);
-                              }}
-                              className="justify-center"
-                            >
-                              <TrashIcon className="w-5 h-5 text-red-500" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                {(watchedValues.otherImages ?? []).map((image, index) => (
+                  <div key={index} className="relative">
+                    <img
+                      src={image}
+                      alt={`Other Image ${index + 1}`}
+                      className="w-full h-32 object-contain border rounded-md"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Post-dated Cheques Section */}
@@ -1101,22 +1486,40 @@ export const Customer: React.FC = () => {
                   <label className="text-sm font-medium mb-1 block">
                     Upload Cheque
                   </label>
-                  <ImageUploader
-                    buttonText="Select Cheque"
-                    onImageSelected={handleChequeSelected}
-                    initialPreview={chequePreview}
-                    previewSize="small"
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        handleChequeSelected(e.target.files[0]);
+                      }
+                    }}
+                    className="file-input file-input-bordered w-full"
                   />
                 </div>
 
                 <div className="md:col-span-3 flex justify-start mt-2">
                   {chequePreview && (
-                    <div className="flex-shrink-0 mr-4">
+                    <div className="flex-shrink-0 mr-4 relative">
                       <img
                         src={chequePreview}
                         alt="Cheque"
                         className="w-24 h-16 object-cover rounded"
                       />
+                      <button
+                        className="btn btn-xs btn-ghost text-error hover:bg-error hover:text-white transition-colors duration-200 absolute -top-2 -right-2 rounded-full w-5 h-5 flex items-center justify-center p-0"
+                        onClick={() => {
+                          if (chequePreview?.startsWith("blob:")) {
+                            URL.revokeObjectURL(chequePreview);
+                          }
+                          setChequePreview("");
+                          setChequeFile(null);
+                        }}
+                      >
+                        <span className="text-lg font-bold leading-none">
+                          ×
+                        </span>
+                      </button>
                     </div>
                   )}
                   <button
