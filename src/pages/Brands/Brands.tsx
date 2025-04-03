@@ -147,6 +147,7 @@ const Brands = () => {
     }
   }, [brandsData]);
 
+  // Only initialize route inputs when they're empty AND we're at step 2
   useEffect(() => {
     if (step === 2 && routeInputs.length === 0) {
       initializeRouteInputs();
@@ -192,6 +193,26 @@ const Brands = () => {
     }
 
     setStep(2);
+
+    // Initialize route inputs if in edit mode when moving to step 2
+    if (isEditMode && editingBrandId) {
+      const brand = brands.find((b) => b.id === editingBrandId);
+      if (!brand) return;
+
+      const existingRouteInputs = routes.map((route) => {
+        const existingFreight = brand.freights.find(
+          (f) => f.routeId === route.id,
+        );
+        return {
+          routeId: route.id ?? "",
+          amountPerBag: existingFreight ? existingFreight.amountPerBag : null,
+          truckSharePerBag: existingFreight
+            ? existingFreight.truckSharePerBag
+            : null,
+        };
+      });
+      setRouteInputs(existingRouteInputs);
+    }
   };
 
   const handlePreviousStep = () => {
@@ -267,20 +288,11 @@ const Brands = () => {
       companyId: selectedCompanyId,
       lessCommission,
       taxIds,
-      freights: validFreights
-        .filter(
-          (
-            route,
-          ): route is RouteInput & {
-            amountPerBag: number;
-            truckSharePerBag: number;
-          } => route.amountPerBag !== null && route.truckSharePerBag !== null,
-        )
-        .map((freight) => ({
-          ...freight,
-          amountPerBag: Math.round(freight.amountPerBag),
-          truckSharePerBag: Math.round(freight.truckSharePerBag),
-        })),
+      freights: validFreights.map((freight) => ({
+        routeId: freight.routeId,
+        amountPerBag: Math.round(freight.amountPerBag ?? 0),
+        truckSharePerBag: Math.round(freight.truckSharePerBag ?? 0),
+      })),
     };
 
     try {
@@ -361,7 +373,20 @@ const Brands = () => {
     setValue("weightPerBagKg", brand.weightPerBagKg);
     setValue("commissionPerBag", brand.commissionPerBag);
 
-    setRouteInputs([]);
+    // Set route inputs when editing, but don't rely on the useEffect to initialize them
+    const existingRouteInputs = routes.map((route) => {
+      const existingFreight = brand.freights.find(
+        (f) => f.routeId === route.id,
+      );
+      return {
+        routeId: route.id ?? "",
+        amountPerBag: existingFreight ? existingFreight.amountPerBag : null,
+        truckSharePerBag: existingFreight
+          ? existingFreight.truckSharePerBag
+          : null,
+      };
+    });
+    setRouteInputs(existingRouteInputs);
     setStep(1);
   };
 
