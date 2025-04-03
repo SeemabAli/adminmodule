@@ -27,7 +27,7 @@ import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
 import { fetchAllRoutes } from "../DeliveryRoutes/route.service";
 import type { DeliveryRoute } from "../DeliveryRoutes/deliveryRoute.schema";
 import ImageUploader from "@/common/components/ImageUploader";
-import { uploadImage } from "@/common/services/image.service";
+import { uploadImage } from "@/common/services/upload.service";
 import { X, Eye } from "lucide-react";
 
 // // Define proper types based on the schema
