@@ -41,9 +41,9 @@ const TruckOtherExpense = () => {
     defaultValues: {
       id: "",
       name: "",
-      firstTrip: 0,
-      secondTrip: 0,
-      thirdTrip: 0,
+      firstTrip: undefined,
+      secondTrip: undefined,
+      thirdTrip: undefined,
     },
   });
 
@@ -151,6 +151,7 @@ const TruckOtherExpense = () => {
             placeholder="1st Trip Amount"
             name={"firstTrip"}
             label={"First Trip Amount"}
+            valueAsNumber
             register={register}
             errorMessage={errors.firstTrip?.message}
           />
@@ -159,6 +160,7 @@ const TruckOtherExpense = () => {
             placeholder="2nd Trip Amount"
             name={"secondTrip"}
             label={"Second Trip Amount"}
+            valueAsNumber
             register={register}
             errorMessage={errors.secondTrip?.message}
           />
@@ -167,6 +169,7 @@ const TruckOtherExpense = () => {
             placeholder="3rd Trip Amount"
             name={"thirdTrip"}
             label={"Third Trip Amount"}
+            valueAsNumber
             register={register}
             errorMessage={errors.thirdTrip?.message}
           />

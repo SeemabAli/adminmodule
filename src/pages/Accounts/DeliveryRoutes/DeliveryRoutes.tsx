@@ -57,8 +57,8 @@ const DeliveryRoutes = () => {
         toll: hasToll ? formData.toll : undefined,
       };
 
-      await createRoute(routePayload);
-      setRoutes([...routes, routePayload]);
+      const newRoute = await createRoute(routePayload);
+      setRoutes([...routes, newRoute]);
       reset();
       setHasToll(false);
       notify.success("Route added successfully!");

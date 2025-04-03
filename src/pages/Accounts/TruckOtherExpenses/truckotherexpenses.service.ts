@@ -7,9 +7,9 @@ export const createTruckOtherExpenses = async (data: TruckOtherExpenses) => {
     withAuthorization: true,
     data: {
       ...data,
-      firstTrip: data.firstTrip ?? null,
-      secondTrip: data.secondTrip ?? null,
-      thirdTrip: data.thirdTrip ?? null,
+      firstTrip: data.firstTrip ?? undefined,
+      secondTrip: data.secondTrip ?? undefined,
+      thirdTrip: data.thirdTrip ?? undefined,
     },
   });
   return response;
@@ -37,9 +37,9 @@ export const updateTruckOtherExpenses = async (
       withAuthorization: true,
       data: {
         ...data,
-        firstTrip: data.firstTrip ?? null,
-        secondTrip: data.secondTrip ?? null,
-        thirdTrip: data.thirdTrip ?? null,
+        firstTrip: data.firstTrip ?? undefined,
+        secondTrip: data.secondTrip ?? undefined,
+        thirdTrip: data.thirdTrip ?? undefined,
       },
     },
   );

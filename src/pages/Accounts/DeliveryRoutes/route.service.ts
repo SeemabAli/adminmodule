@@ -2,7 +2,7 @@ import { type DeliveryRoute } from "./deliveryRoute.schema";
 import { sendApiRequest } from "@/common/services/api.service";
 
 export const createRoute = async (data: DeliveryRoute) => {
-  const response = await sendApiRequest("/delivery-routes", {
+  const response = await sendApiRequest<DeliveryRoute>("/delivery-routes", {
     method: "POST",
     withAuthorization: true,
     data,
