@@ -17,6 +17,8 @@ import { useService } from "@/common/hooks/custom/useService";
 import { ErrorModal } from "@/common/components/Error";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
 import { ApiException } from "@/utils/exceptions";
+import { uploadPDF } from "@/common/services/upload.service";
+import { config } from "@/config/config";
 
 export type Employees = {
   id?: string;
@@ -27,8 +29,7 @@ export type Employees = {
   designation: string;
   department?: string;
   salary: number;
-  documents?: File | null;
-  documentUrl?: string;
+  document?: string | null;
   role?: string | null;
 };
 
@@ -36,7 +37,9 @@ const EmployeeManagement = () => {
   const [employees, setEmployees] = useState<Employees[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [documents, setDocuments] = useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [documentPath, setDocumentPath] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   // Role management states
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
@@ -69,13 +72,12 @@ const EmployeeManagement = () => {
       designation: "",
       department: "",
       salary: 0,
-      documents: null,
-      documentUrl: "",
+      document: null,
       role: null,
     },
   });
 
-  // Handle PDF Upload
+  // Handle PDF Selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       const file = e.target.files[0];
@@ -84,7 +86,28 @@ const EmployeeManagement = () => {
         notify.error("Please upload a PDF file!");
         return;
       }
-      setDocuments(file);
+      setSelectedFile(file);
+      setDocumentPath(null); // Reset document path when new file is selected
+    }
+  };
+
+  // Handle PDF Upload
+  const handleUploadPDF = async () => {
+    if (!selectedFile) {
+      notify.error("Please select a PDF file first!");
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const response = await uploadPDF(selectedFile);
+      setDocumentPath(response.path);
+      notify.success("Document uploaded successfully!");
+    } catch (error) {
+      logger.error("Failed to upload PDF:", error);
+      notify.error("Failed to upload document. Please try again.");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -99,8 +122,7 @@ const EmployeeManagement = () => {
         id: formData.id ?? undefined,
         salary: salaryValue,
         department: getValues("department") ?? "",
-        documents: documents,
-        documentUrl: documents ? URL.createObjectURL(documents) : "",
+        document: documentPath,
         role: null,
       };
 
@@ -111,7 +133,8 @@ const EmployeeManagement = () => {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-      setDocuments(null);
+      setSelectedFile(null);
+      setDocumentPath(null);
       notify.success("Employee added successfully!");
     } catch (error: unknown) {
       logger.error(error);
@@ -142,10 +165,7 @@ const EmployeeManagement = () => {
         id: employeeId,
         salary: salaryValue,
         department: getValues("department") ?? "",
-        documents: documents ?? targetEmployee?.documents ?? null,
-        documentUrl: documents
-          ? URL.createObjectURL(documents)
-          : (targetEmployee?.documentUrl ?? ""),
+        document: documentPath ?? targetEmployee?.document ?? null,
         role: targetEmployee?.role ?? null,
       };
 
@@ -167,7 +187,8 @@ const EmployeeManagement = () => {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-      setDocuments(null);
+      setSelectedFile(null);
+      setDocumentPath(null);
       notify.success("Employee updated successfully!");
     } catch (error: unknown) {
       notify.error("Failed to update employee.");
@@ -187,7 +208,7 @@ const EmployeeManagement = () => {
     setValue("designation", targetEmployee.designation);
     setValue("department", targetEmployee.department);
     setValue("salary", targetEmployee.salary);
-    setDocuments(targetEmployee.documents ?? null);
+    setDocumentPath(targetEmployee.document ?? null);
     setFocus("name");
     setEditingId(id);
   };
@@ -208,13 +229,12 @@ const EmployeeManagement = () => {
   // Handle Download PDF
   const handleDownloadPDF = (index: number) => {
     const employee = employees[index];
-    if (employee?.documents && employee.documentUrl) {
-      const link = document.createElement("a");
-      link.href = employee.documentUrl;
-      link.download = `${employee.name.replace(/\s+/g, "_")}_documents.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    if (employee?.document) {
+      // Assuming your backend provides a download endpoint that accepts the document path
+      window.open(
+        `${config.api.baseUrl}/download?path=${employee.document}`,
+        "_blank",
+      );
     } else {
       notify.error("No document available for download!");
     }
@@ -289,8 +309,7 @@ const EmployeeManagement = () => {
           ),
         ),
         department: employee.department ?? "",
-        documents: employee.documents ?? null,
-        documentUrl: employee.documentUrl ?? "",
+        document: employee.document ?? null,
         role: employee.role ?? null,
       })) as Employees[];
       setEmployees(formattedData);
@@ -374,16 +393,32 @@ const EmployeeManagement = () => {
           />
           <div className="block mb-1">
             <label className="font-medium">Documents (PDF)</label>
-            <input
-              type="file"
-              ref={fileInputRef}
-              accept="application/pdf"
-              onChange={handleFileChange}
-              className="file-input file-input-bordered w-full"
-            />
-            {documents && (
+            <div className="flex gap-2">
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="application/pdf"
+                onChange={handleFileChange}
+                className="file-input file-input-bordered w-full"
+              />
+              <Button
+                onClick={handleUploadPDF}
+                shape="primary"
+                pending={uploading}
+                disabled={!selectedFile}
+                className="whitespace-nowrap"
+              >
+                Upload
+              </Button>
+            </div>
+            {selectedFile && !documentPath && (
+              <span className="text-sm text-info">
+                File selected: Click Upload to proceed
+              </span>
+            )}
+            {documentPath && (
               <span className="text-sm text-success">
-                File selected: {documents.name}
+                Document uploaded successfully!
               </span>
             )}
           </div>
@@ -455,7 +490,7 @@ const EmployeeManagement = () => {
                     )}
                   </td>
                   <td className="p-3">
-                    {employee.documents ? (
+                    {employee.document ? (
                       <button
                         onClick={() => {
                           handleDownloadPDF(index);

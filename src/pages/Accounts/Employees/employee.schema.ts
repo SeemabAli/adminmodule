@@ -32,8 +32,7 @@ export const employeeSchema = z.object({
     message: "Salary is required",
   }),
 
-  documents: z.any().optional().nullable(),
-  documentUrl: z.string().optional(),
+  document: z.any().optional().nullable(),
   role: z.string().nullable().optional(),
 });
 
