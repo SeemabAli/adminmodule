@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { useState, useEffect } from "react";
@@ -14,11 +16,18 @@ import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ErrorModal } from "@/common/components/Error";
 import { useService } from "@/common/hooks/custom/useService";
-import { customerSchema, type ICustomer } from "./customer.schema";
+import {
+  customerSchema,
+  type ICustomer,
+  type Phone,
+  type Address,
+  type PostDatedCheque,
+} from "./customer.schema";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
-import { type Phone } from "./customer.schema";
 import { fetchAllRoutes } from "../DeliveryRoutes/route.service";
 import type { DeliveryRoute } from "../DeliveryRoutes/deliveryRoute.schema";
+import ImageUploader from "@/common/components/ImageUploader";
+import { uploadImage } from "@/common/services/image.service";
 
 // // Define proper types based on the schema
 // interface Phone {
@@ -68,29 +77,81 @@ const smsFrequencyOptions = ["Daily", "Weekly", "Monthly", "Yearly"];
 export const Customer: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [customers, setCustomers] = useState<ICustomer[]>([]);
-  const [phoneNumber, setPhoneNumber] = useState<string>("");
-  const [phoneStatus, setPhoneStatus] = useState<
-    "Ptcl" | "Mobile" | "Whatsapp"
-  >("Mobile");
-  const [addressText, setAddressText] = useState("");
-  const [addressMap, setAddressMap] = useState("");
-  const [chequeDueDate, setChequeDueDate] = useState("");
-  const [signatureImage, setSignatureImage] = useState("");
-  const [chequeDetails, setChequeDetails] = useState("");
-  const [chequeImage, setChequeImage] = useState("");
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [otherImage, setOtherImage] = useState("");
   const [routes, setRoutes] = useState<DeliveryRoute[]>([]);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState<string>("");
+  const [phoneType, setPhoneType] = useState<"MOBILE" | "PTCL" | "WHATSAPP">(
+    "MOBILE",
+  );
+  const [currentAddress, setCurrentAddress] = useState("");
+  const [chequeDate, setChequeDate] = useState("");
+  const [chequeAmount, setChequeAmount] = useState<number>(0);
+  const [chequeNumber, setChequeNumber] = useState<string>("");
+  const [chequeDetails, setChequeDetails] = useState("");
 
-  // Map state
-  const [showMap, setShowMap] = useState(false);
-  const [mapSearchQuery, setMapSearchQuery] = useState("");
+  // Image files
+  const [cnicFrontFile, setCnicFrontFile] = useState<File | null>(null);
+  const [cnicBackFile, setCnicBackFile] = useState<File | null>(null);
+  const [chequeFile, setChequeFile] = useState<File | null>(null);
+  const [signatureFile, setSignatureFile] = useState<File | null>(null);
+  const [otherImageFile, setOtherImageFile] = useState<File | null>(null);
 
-  // For sending SMS to existing customers
-  const [showSmsModal, setShowSmsModal] = useState(false);
-  const [selectedCustomerIndexes, setSelectedCustomerIndexes] = useState<
-    number[]
-  >([]);
+  // Image previews
+  const [cnicFrontPreview, setCnicFrontPreview] = useState("");
+  const [cnicBackPreview, setCnicBackPreview] = useState("");
+  const [chequePreview, setChequePreview] = useState("");
+  const [signaturePreview, setSignaturePreview] = useState("");
+  const [otherImagePreview, setOtherImagePreview] = useState("");
+
+  // Notification preference state
+  const [notificationEnabled, setNotificationEnabled] = useState(false);
+  const [notificationFrequency, setNotificationFrequency] = useState<
+    "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY"
+  >("MONTHLY");
+  const [notificationChannel, setNotificationChannel] = useState<
+    "SMS" | "WHATSAPP" | "EMAIL" | "PUSH"
+  >("WHATSAPP");
+
+  // Handle image file selections
+  const handleCnicFrontSelected = (file: File) => {
+    if (cnicFrontPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(cnicFrontPreview);
+    }
+    setCnicFrontFile(file);
+    setCnicFrontPreview(URL.createObjectURL(file));
+  };
+
+  const handleCnicBackSelected = (file: File) => {
+    if (cnicBackPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(cnicBackPreview);
+    }
+    setCnicBackFile(file);
+    setCnicBackPreview(URL.createObjectURL(file));
+  };
+
+  const handleChequeSelected = (file: File) => {
+    if (chequePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(chequePreview);
+    }
+    setChequeFile(file);
+    setChequePreview(URL.createObjectURL(file));
+  };
+
+  const handleSignatureSelected = (file: File) => {
+    if (signaturePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(signaturePreview);
+    }
+    setSignatureFile(file);
+    setSignaturePreview(URL.createObjectURL(file));
+  };
+
+  const handleOtherImageSelected = (file: File) => {
+    if (otherImagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(otherImagePreview);
+    }
+    setOtherImageFile(file);
+    setOtherImagePreview(URL.createObjectURL(file));
+  };
 
   // Use the API service
   const { error, data, isLoading } = useService(fetchAllCustomers);
@@ -100,60 +161,33 @@ export const Customer: React.FC = () => {
     useForm<ICustomer>({
       resolver: zodResolver(customerSchema),
       defaultValues: {
-        customerName: "",
-        acTitle: "",
+        fullName: "",
+        accountTitle: "",
         dealingPerson: "",
         reference: "",
-        cnicFront: "",
-        cnicBack: "",
-        ntn: "",
-        phones: [],
-        addresses: [],
-        route: "",
+        ntnNumber: "",
         creditLimit: 0,
-        postDatedCheques: [],
+        creditDetail: "",
         ledgerDetails: "",
         ledgerNumber: 0,
-        signatures: [],
-        otherImages: [],
+        phoneNumbers: [],
+        cnicBackImage: "",
+        cnicFrontImage: "",
+        addresses: [],
+        notificationPreference: undefined,
+        postDatedCheques: [],
       },
     });
 
   // Watch values from the form
   const watchedValues = watch();
 
-  // SMS Pattern state - kept separate from the form
-  const [smsEnabled, setSmsEnabled] = useState(false);
-  const [smsFrequency, setSmsFrequency] = useState<
-    "Daily" | "Weekly" | "Monthly" | "Yearly"
-  >("Monthly");
-  const [smsVia, setSmsVia] = useState("SMS");
-
-  // Fetch routes on component mount
-  useEffect(() => {
-    const fetchRoutes = async () => {
-      try {
-        const routesData = await fetchAllRoutes();
-        setRoutes(routesData);
-      } catch (error) {
-        logger.error("Failed to fetch routes", error);
-        notify.error("Could not load routes");
-      }
-    };
-
-    void fetchRoutes();
-  }, []);
-
   const handleNextStep = () => {
     if (currentStep === 1) {
       // Validate only required fields for step 1
-      if (
-        !watchedValues.customerName ||
-        !watchedValues.acTitle ||
-        !watchedValues.route
-      ) {
+      if (!watchedValues.fullName || !watchedValues.accountTitle) {
         notify.error(
-          "Please complete all required fields: Customer Name, A/C Title, and Route",
+          "Please complete all required fields: Full Name and Account Title",
         );
         return;
       }
@@ -172,66 +206,78 @@ export const Customer: React.FC = () => {
       notify.error("Please enter a phone number");
       return;
     }
-    const currentPhones = watchedValues.phones || [];
-    setValue("phones", [
+    const currentPhones = watchedValues.phoneNumbers || [];
+    setValue("phoneNumbers", [
       ...currentPhones,
-      { number: phoneNumber, status: phoneStatus } as Phone,
+      { number: phoneNumber, type: phoneType },
     ]);
     setPhoneNumber("");
-    setPhoneStatus("Mobile");
+    setPhoneType("MOBILE");
   };
 
   const handleRemovePhone = (index: number) => {
-    const currentPhones = [...watchedValues.phones];
+    const currentPhones = [...(watchedValues.phoneNumbers || [])];
     currentPhones.splice(index, 1);
-    //TODO: Fix this
-    // setValue("phones", currentPhones);
+    setValue("phoneNumbers", currentPhones);
   };
 
   const handleAddAddress = () => {
-    if (!addressText) {
+    if (!currentAddress) {
       notify.error("Please enter an address");
       return;
     }
     const currentAddresses = watchedValues.addresses || [];
-    setValue("addresses", [
-      ...currentAddresses,
-      { text: addressText, map: addressMap },
-    ]);
-    setAddressText("");
-    setAddressMap("");
+    setValue("addresses", [...currentAddresses, { currentAddress }]);
+    setCurrentAddress("");
   };
 
   const handleRemoveAddress = (index: number) => {
-    const currentAddresses = [...watchedValues.addresses];
+    const currentAddresses = [...(watchedValues.addresses || [])];
     currentAddresses.splice(index, 1);
-    //TODO: Fix this
-    // setValue("addresses", currentAddresses.length > 0 ? currentAddresses : [{ text: "", map: "" }]);
+    setValue("addresses", currentAddresses);
   };
 
-  const handleAddCheque = () => {
-    if (!chequeDueDate || !chequeDetails) return;
-    const currentCheques = watchedValues.postDatedCheques ?? [];
-    setValue("postDatedCheques", [
-      ...currentCheques,
-      { dueDate: chequeDueDate, details: chequeDetails, image: chequeImage },
-    ]);
-    setChequeDueDate("");
-    setChequeDetails("");
-    setChequeImage("");
-  };
+  const handleAddCheque = async () => {
+    if (!chequeDate || !chequeDetails) return;
 
-  const handleAddSignature = () => {
-    if (!signatureImage) return;
-    const currentSignatures = watchedValues.signatures ?? [];
-    setValue("signatures", [...currentSignatures, { image: signatureImage }]);
-    setSignatureImage("");
-  };
+    try {
+      // Upload cheque image if exists
+      let imagePath = "";
+      if (chequeFile) {
+        const uploadResponse = await uploadImage(chequeFile);
+        imagePath = uploadResponse.path;
+      }
 
-  const handleRemoveSignature = (index: number) => {
-    const currentSignatures = [...(watchedValues.signatures ?? [])];
-    currentSignatures.splice(index, 1);
-    setValue("signatures", currentSignatures);
+      // Add cheque to the form
+      const currentCheques = watchedValues.postDatedCheques ?? [];
+      setValue("postDatedCheques", [
+        ...currentCheques,
+        {
+          status: "PENDING",
+          date: chequeDate,
+          amount: chequeAmount,
+          number: chequeNumber ? parseInt(chequeNumber, 10) : undefined,
+          details: chequeDetails,
+          image: imagePath,
+        },
+      ]);
+
+      // Reset state
+      setChequeDate("");
+      setChequeAmount(0);
+      setChequeNumber("");
+      setChequeDetails("");
+      setChequeFile(null);
+      if (chequePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(chequePreview);
+      }
+      setChequePreview("");
+
+      notify.success("Cheque added successfully");
+    } catch (error) {
+      notify.error("Failed to add cheque");
+      logger.error(error);
+    }
   };
 
   const handleRemoveCheque = (index: number) => {
@@ -240,24 +286,111 @@ export const Customer: React.FC = () => {
     setValue("postDatedCheques", currentCheques);
   };
 
+  const handleAddSignature = async () => {
+    if (!signatureFile) return;
+
+    try {
+      // Upload the file first
+      const uploadResponse = await uploadImage(signatureFile);
+
+      // Add signature to the form
+      const currentSignatures = watchedValues.signatures ?? [];
+      setValue("signatures", [
+        ...currentSignatures,
+        { image: uploadResponse.path },
+      ]);
+
+      // Reset state
+      setSignatureFile(null);
+      if (signaturePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(signaturePreview);
+      }
+      setSignaturePreview("");
+
+      notify.success("Signature added successfully");
+    } catch (error) {
+      notify.error("Failed to add signature");
+      logger.error(error);
+    }
+  };
+
+  const handleRemoveSignature = (index: number) => {
+    const currentSignatures = [...(watchedValues.signatures ?? [])];
+    currentSignatures.splice(index, 1);
+    setValue("signatures", currentSignatures);
+  };
+
+  const handleSignatureImageUpload = (file: File) => {
+    if (signaturePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(signaturePreview);
+    }
+    setSignatureFile(file);
+    setSignaturePreview(URL.createObjectURL(file));
+  };
+
+  const handleOtherImageUpload = (file: File) => {
+    if (otherImagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(otherImagePreview);
+    }
+    setOtherImageFile(file);
+    setOtherImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleAddOtherImage = async () => {
+    if (!otherImageFile) {
+      notify.error("Please select an image first.");
+      return;
+    }
+
+    try {
+      // Upload the file first
+      const uploadResponse = await uploadImage(otherImageFile);
+
+      // Add image to the form
+      const currentImages = watchedValues.otherImages || [];
+      setValue("otherImages", [...currentImages, uploadResponse.path]);
+
+      // Reset state
+      setOtherImageFile(null);
+      if (otherImagePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(otherImagePreview);
+      }
+      setOtherImagePreview("");
+
+      notify.success("Image added successfully!");
+    } catch (error) {
+      notify.error("Failed to add image");
+      logger.error(error);
+    }
+  };
+
+  const handleRemoveOtherImage = (index: number) => {
+    const currentImages = [...(watchedValues.otherImages || [])];
+    currentImages.splice(index, 1);
+    setValue("otherImages", currentImages);
+    notify.success("Image removed successfully!");
+  };
+
   const handleSave = async (formData: ICustomer) => {
     try {
-      // Add SMS pattern if enabled
+      // Upload CNIC images first if they exist
+      if (cnicFrontFile) {
+        const uploadResponse = await uploadImage(cnicFrontFile);
+        formData.cnicFrontImage = uploadResponse.path;
+      }
+
+      if (cnicBackFile) {
+        const uploadResponse = await uploadImage(cnicBackFile);
+        formData.cnicBackImage = uploadResponse.path;
+      }
+
+      // Add notification preference if enabled
       const customerData = {
         ...formData,
-        name: formData.customerName,
-        address:
-          formData.addresses && formData.addresses.length > 0
-            ? (formData.addresses[0]?.text ?? "")
-            : "",
-        phone:
-          formData.phones.length > 0 ? (formData.phones[0]?.number ?? "") : "",
-        email: "", // Add logic to get email if available
-        smsPattern: smsEnabled
+        notificationPreference: notificationEnabled
           ? {
-              enabled: smsEnabled,
-              frequency: smsFrequency,
-              via: smsVia,
+              frequency: notificationFrequency,
+              channel: notificationChannel,
             }
           : undefined,
       };
@@ -265,7 +398,7 @@ export const Customer: React.FC = () => {
       if (editingIndex !== null && customers[editingIndex]?.id) {
         // Update existing customer
         const updatedCustomer = await updateCustomer(
-          customers[editingIndex].id,
+          customers[editingIndex].id!,
           customerData,
         );
 
@@ -279,7 +412,7 @@ export const Customer: React.FC = () => {
       } else {
         // Create new customer
         const newCustomer = await createCustomer(customerData);
-        setCustomers([...customers, { ...newCustomer, ...formData }]);
+        setCustomers([...customers, newCustomer]);
         notify.success("Customer saved successfully!");
       }
 
@@ -294,17 +427,41 @@ export const Customer: React.FC = () => {
   const resetForm = () => {
     reset();
     setPhoneNumber("");
-    setPhoneStatus("Mobile");
-    setAddressText("");
-    setAddressMap("");
-    setChequeDueDate("");
-    setSignatureImage("");
+    setPhoneType("MOBILE");
+    setCurrentAddress("");
+    setChequeDate("");
+    setChequeAmount(0);
+    setChequeNumber("");
     setChequeDetails("");
-    setChequeImage("");
-    setOtherImage("");
-    setSmsEnabled(false);
-    setSmsFrequency("Monthly");
-    setSmsVia("SMS");
+
+    // Reset image files
+    setCnicFrontFile(null);
+    setCnicBackFile(null);
+    setChequeFile(null);
+    setSignatureFile(null);
+    setOtherImageFile(null);
+
+    // Clean up preview URLs
+    if (cnicFrontPreview?.startsWith("blob:"))
+      URL.revokeObjectURL(cnicFrontPreview);
+    if (cnicBackPreview?.startsWith("blob:"))
+      URL.revokeObjectURL(cnicBackPreview);
+    if (chequePreview?.startsWith("blob:")) URL.revokeObjectURL(chequePreview);
+    if (signaturePreview?.startsWith("blob:"))
+      URL.revokeObjectURL(signaturePreview);
+    if (otherImagePreview?.startsWith("blob:"))
+      URL.revokeObjectURL(otherImagePreview);
+
+    // Reset preview states
+    setCnicFrontPreview("");
+    setCnicBackPreview("");
+    setChequePreview("");
+    setSignaturePreview("");
+    setOtherImagePreview("");
+
+    setNotificationEnabled(false);
+    setNotificationFrequency("MONTHLY");
+    setNotificationChannel("WHATSAPP");
     setEditingIndex(null);
     setCurrentStep(1);
   };
@@ -317,37 +474,35 @@ export const Customer: React.FC = () => {
     reset();
 
     // Set all form fields
-    setValue("customerName", customer.customerName);
-    setValue("acTitle", customer.acTitle);
+    setValue("fullName", customer.fullName);
+    setValue("accountTitle", customer.accountTitle);
     setValue("dealingPerson", customer.dealingPerson || "");
     setValue("reference", customer.reference || "");
-    setValue("cnicFront", customer.cnicFront || "");
-    setValue("cnicBack", customer.cnicBack || "");
-    setValue("ntn", customer.ntn || "");
-    setValue("phones", customer.phones || []);
-    setValue("addresses", customer.addresses || []);
-    setValue("route", customer.route);
+    setValue("ntnNumber", customer.ntnNumber || "");
     setValue("creditLimit", customer.creditLimit || 0);
-    setValue("postDatedCheques", customer.postDatedCheques || []);
+    setValue("creditDetail", customer.creditDetail || "");
     setValue("ledgerDetails", customer.ledgerDetails || "");
     setValue("ledgerNumber", customer.ledgerNumber || 0);
-    setValue("signatures", customer.signatures || []);
-    setValue("otherImages", customer.otherImages || []);
+    setValue("phoneNumbers", customer.phoneNumbers || []);
+    setValue("cnicFrontImage", customer.cnicFrontImage || "");
+    setValue("cnicBackImage", customer.cnicBackImage || "");
+    setValue("addresses", customer.addresses || []);
+    setValue("postDatedCheques", customer.postDatedCheques || []);
 
-    // Set SMS pattern if it exists
-    if (customer.smsPattern) {
-      setSmsEnabled(customer.smsPattern.enabled);
-      setSmsFrequency(customer.smsPattern.frequency);
-      setSmsVia(customer.smsPattern.via);
+    // Set notification preference if it exists
+    if (customer.notificationPreference) {
+      setNotificationEnabled(true);
+      setNotificationFrequency(customer.notificationPreference.frequency);
+      setNotificationChannel(customer.notificationPreference.channel);
     } else {
-      setSmsEnabled(false);
-      setSmsFrequency("Monthly");
-      setSmsVia("SMS");
+      setNotificationEnabled(false);
+      setNotificationFrequency("MONTHLY");
+      setNotificationChannel("WHATSAPP");
     }
 
     setEditingIndex(index);
     setCurrentStep(1);
-    setFocus("customerName");
+    setFocus("fullName");
     notify.success("Customer loaded for editing.");
   };
 
@@ -370,138 +525,28 @@ export const Customer: React.FC = () => {
     });
   };
 
-  const handleCnicFrontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setValue("cnicFront", reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleCnicBackUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setValue("cnicBack", reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleChequeImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setChequeImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSignatureImageUpload = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    if (e.target.files?.[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSignatureImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleOtherImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setOtherImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleAddOtherImage = () => {
-    if (!otherImage) {
-      notify.error("Please select an image first.");
-      return;
-    }
-    const currentImages = watchedValues.otherImages || [];
-    setValue("otherImages", [...currentImages, otherImage]);
-    setOtherImage("");
-    notify.success("Image added successfully!");
-  };
-
-  const handleRemoveOtherImage = (index: number) => {
-    const currentImages = [...(watchedValues.otherImages || [])];
-    currentImages.splice(index, 1);
-    setValue("otherImages", currentImages);
-    notify.success("Image removed successfully!");
-  };
-
-  // Map related functions
-  const openMapSelector = () => {
-    setShowMap(true);
-  };
-
-  const closeMapSelector = () => {
-    setShowMap(false);
-  };
-
-  const handleMapSearch = () => {
-    if (mapSearchQuery) {
-      setAddressMap(
-        `https://maps.google.com/?q=${encodeURIComponent(mapSearchQuery)}`,
-      );
-      setAddressText(mapSearchQuery);
-      closeMapSelector();
-      notify.success("Location selected!");
-    }
-  };
-
-  // SMS Modal related functions
-  const openSmsModal = () => {
-    setShowSmsModal(true);
-    setSelectedCustomerIndexes([]);
-  };
-
-  const closeSmsModal = () => {
-    setShowSmsModal(false);
-  };
-
-  const toggleCustomerSelection = (index: number) => {
-    if (selectedCustomerIndexes.includes(index)) {
-      setSelectedCustomerIndexes(
-        selectedCustomerIndexes.filter((i) => i !== index),
-      );
-    } else {
-      setSelectedCustomerIndexes([...selectedCustomerIndexes, index]);
-    }
-  };
-
-  const handleSendSms = () => {
-    if (selectedCustomerIndexes.length === 0) {
-      notify.error("Please select customers to send messages to");
-      return;
-    }
-
-    // Get customer names for display in success message
-    const customerNames = selectedCustomerIndexes
-      .map((index) => customers[index]?.customerName)
-      .filter(Boolean);
-
-    // In a real app, you would send SMS here
-    notify.success(
-      `Messages sent to ${customerNames.join(", ")} via ${smsVia}`,
-    );
-    closeSmsModal();
-  };
+  // New method to handle cleanup of object URLs
+  useEffect(() => {
+    return () => {
+      // Clean up all object URLs on component unmount
+      if (cnicFrontPreview?.startsWith("blob:"))
+        URL.revokeObjectURL(cnicFrontPreview);
+      if (cnicBackPreview?.startsWith("blob:"))
+        URL.revokeObjectURL(cnicBackPreview);
+      if (chequePreview?.startsWith("blob:"))
+        URL.revokeObjectURL(chequePreview);
+      if (signaturePreview?.startsWith("blob:"))
+        URL.revokeObjectURL(signaturePreview);
+      if (otherImagePreview?.startsWith("blob:"))
+        URL.revokeObjectURL(otherImagePreview);
+    };
+  }, [
+    cnicFrontPreview,
+    cnicBackPreview,
+    chequePreview,
+    signaturePreview,
+    otherImagePreview,
+  ]);
 
   // Load data from API
   useEffect(() => {
@@ -509,6 +554,20 @@ export const Customer: React.FC = () => {
       setCustomers(data);
     }
   }, [data]);
+
+  // Fetch routes when component mounts
+  useEffect(() => {
+    const loadRoutes = async () => {
+      try {
+        const routesData = await fetchAllRoutes();
+        setRoutes(routesData);
+      } catch (error) {
+        logger.error("Failed to fetch routes:", error);
+        notify.error("Failed to load routes");
+      }
+    };
+    void loadRoutes();
+  }, []);
 
   if (error) {
     return (
@@ -535,36 +594,39 @@ export const Customer: React.FC = () => {
             {/* Required Fields - highlighted */}
             <div className="border-l-4 border-accent p-2">
               <label className="block font-medium mb-1">
-                Customer Name <span className="text-error">*</span>
+                Full Name <span className="text-error">*</span>
               </label>
               <input
                 type="text"
                 placeholder="Enter Full Name"
-                {...register("customerName")}
+                {...register("fullName")}
                 className="input input-bordered w-full"
               />
             </div>
             <div className="border-l-4 border-accent p-2">
               <label className="block font-medium mb-1">
-                A/C Title <span className="text-error">*</span>
+                Account Title <span className="text-error">*</span>
               </label>
               <input
                 type="text"
                 placeholder="Enter Account Title"
-                {...register("acTitle")}
+                {...register("accountTitle")}
                 className="input input-bordered w-full"
               />
             </div>
+
+            {/* Route Selection */}
             <div className="border-l-4 border-accent p-2">
               <label className="block font-medium mb-1">
                 Route <span className="text-error">*</span>
               </label>
               <select
-                {...register("route")}
+                {...register("routeId")}
                 className="select select-bordered w-full"
+                required
               >
                 <option value="">Select Route</option>
-                {routes.map((route) => (
+                {routes.map((route: DeliveryRoute) => (
                   <option key={route.id} value={route.id}>
                     {route.code}
                   </option>
@@ -583,11 +645,11 @@ export const Customer: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block font-medium mb-1">Reference</label>
+              <label className="block font-medium mb-1">NTN#</label>
               <input
                 type="text"
-                placeholder="Enter Name"
-                {...register("reference")}
+                placeholder="Enter Number"
+                {...register("ntnNumber")}
                 className="input input-bordered w-full"
               />
             </div>
@@ -595,49 +657,20 @@ export const Customer: React.FC = () => {
             {/* CNIC Images */}
             <div>
               <label className="block font-medium mb-1">CNIC Front Side</label>
-              <input
-                type="file"
-                onChange={handleCnicFrontUpload}
-                className="file-input file-input-bordered w-full"
-                accept="image/*"
+              <ImageUploader
+                buttonText="Upload CNIC Front"
+                onImageSelected={handleCnicFrontSelected}
+                initialPreview={cnicFrontPreview}
+                previewSize="small"
               />
-              {watchedValues.cnicFront && (
-                <div className="mt-2">
-                  <img
-                    src={watchedValues.cnicFront}
-                    alt="CNIC Front"
-                    className="w-32 h-20 object-cover rounded"
-                  />
-                </div>
-              )}
             </div>
             <div>
               <label className="block font-medium mb-1">CNIC Back Side</label>
-              <input
-                type="file"
-                onChange={handleCnicBackUpload}
-                className="file-input file-input-bordered w-full"
-                accept="image/*"
-              />
-              {watchedValues.cnicBack && (
-                <div className="mt-2">
-                  <img
-                    src={watchedValues.cnicBack}
-                    alt="CNIC Back"
-                    className="w-32 h-20 object-cover rounded"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* NTN */}
-            <div>
-              <label className="block font-medium mb-1">NTN#</label>
-              <input
-                type="text"
-                placeholder="Enter Number"
-                {...register("ntn")}
-                className="input input-bordered w-full"
+              <ImageUploader
+                buttonText="Upload CNIC Back"
+                onImageSelected={handleCnicBackSelected}
+                initialPreview={cnicBackPreview}
+                previewSize="small"
               />
             </div>
 
@@ -648,6 +681,17 @@ export const Customer: React.FC = () => {
                 type="number"
                 placeholder="Enter Credit Limit"
                 {...register("creditLimit", { valueAsNumber: true })}
+                className="input input-bordered w-full"
+              />
+            </div>
+
+            {/* Credit Detail */}
+            <div>
+              <label className="block font-medium mb-1">Credit Detail</label>
+              <input
+                type="text"
+                placeholder="Enter Credit Detail"
+                {...register("creditDetail")}
                 className="input input-bordered w-full"
               />
             </div>
@@ -679,17 +723,17 @@ export const Customer: React.FC = () => {
               <div className="flex flex-col gap-2">
                 <h3 className="text-lg font-semibold mb-2">Signature</h3>
                 <div className="flex-1 flex flex-col">
-                  <input
-                    type="file"
-                    onChange={handleSignatureImageUpload}
-                    className="file-input file-input-bordered w-full md:w-1/2"
-                    accept="image/*"
+                  <ImageUploader
+                    buttonText="Select Signature"
+                    onImageSelected={handleSignatureSelected}
+                    initialPreview={signaturePreview}
+                    previewSize="medium"
                   />
                   <Button
                     onClick={handleAddSignature}
                     className="mt-4 md:w-1/8"
                     shape="info"
-                    disabled={!signatureImage}
+                    disabled={!signatureFile}
                   >
                     Add Signature
                   </Button>
@@ -741,11 +785,9 @@ export const Customer: React.FC = () => {
 
         {currentStep === 2 && (
           <div className="w-full">
-            {/* Phone Numbers Section - required */}
+            {/* Phone Numbers Section */}
             <div className="mb-8 border-l-4 border-accent p-4 bg-base-100 rounded-md shadow-sm">
-              <h3 className="text-xl font-semibold mb-4">
-                Phone Numbers <span className="text-error">*</span>
-              </h3>
+              <h3 className="text-xl font-semibold mb-4">Phone Numbers</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <input
                   type="text"
@@ -757,17 +799,17 @@ export const Customer: React.FC = () => {
                   className="input input-bordered w-full"
                 />
                 <select
-                  value={phoneStatus}
+                  value={phoneType}
                   onChange={(e) => {
-                    setPhoneStatus(
-                      e.target.value as "Ptcl" | "Mobile" | "Whatsapp",
+                    setPhoneType(
+                      e.target.value as "MOBILE" | "PTCL" | "WHATSAPP",
                     );
                   }}
                   className="select select-bordered w-full"
                 >
-                  <option value="Ptcl">Ptcl</option>
-                  <option value="Mobile">Mobile</option>
-                  <option value="Whatsapp">Whatsapp</option>
+                  <option value="MOBILE">Mobile</option>
+                  <option value="PTCL">PTCL</option>
+                  <option value="WHATSAPP">WhatsApp</option>
                 </select>
                 <button
                   onClick={handleAddPhone}
@@ -777,98 +819,77 @@ export const Customer: React.FC = () => {
                   Add
                 </button>
               </div>
-              {watchedValues.phones.length > 0 && (
+              {(watchedValues.phoneNumbers ?? []).length > 0 && (
                 <div className="overflow-x-auto">
                   <table className="table w-full">
                     <thead>
                       <tr>
                         <th>Phone Number</th>
-                        <th>Status</th>
+                        <th>Type</th>
                         <th>Action</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {watchedValues.phones.map((phone, index) => (
-                        <tr key={index}>
-                          <td>{phone.number}</td>
-                          <td>{phone.status}</td>
-                          <td>
-                            <button
-                              onClick={() => {
-                                handleRemovePhone(index);
-                              }}
-                              className="justify-center"
-                            >
-                              <TrashIcon className="w-5 h-5 text-red-500" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                      {(watchedValues.phoneNumbers ?? []).map(
+                        (phone, index) => (
+                          <tr key={index}>
+                            <td>{phone.number}</td>
+                            <td>{phone.type}</td>
+                            <td>
+                              <button
+                                onClick={() => {
+                                  handleRemovePhone(index);
+                                }}
+                                className="justify-center"
+                              >
+                                <TrashIcon className="w-5 h-5 text-red-500" />
+                              </button>
+                            </td>
+                          </tr>
+                        ),
+                      )}
                     </tbody>
                   </table>
                 </div>
               )}
             </div>
 
-            {/* Addresses Section - required */}
+            {/* Addresses Section */}
             <div className="mb-8 border-l-4 border-accent p-4 bg-base-100 rounded-md shadow-sm">
-              <h3 className="text-xl font-semibold mb-4">
-                Address <span className="text-error">*</span>
-              </h3>
+              <h3 className="text-xl font-semibold mb-4">Address</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div className="md:col-span-2">
                   <input
                     type="text"
-                    placeholder="Address Text"
-                    value={addressText}
+                    placeholder="Current Address"
+                    value={currentAddress}
                     onChange={(e) => {
-                      setAddressText(e.target.value);
+                      setCurrentAddress(e.target.value);
                     }}
                     className="input input-bordered w-full"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={openMapSelector}
-                    className="btn btn-secondary w-full"
-                  >
-                    Select on Map
-                  </button>
-                  <button
-                    onClick={handleAddAddress}
-                    className="btn btn-info w-full"
-                    disabled={!addressText}
-                  >
-                    Add
-                  </button>
-                </div>
+                <button
+                  onClick={handleAddAddress}
+                  className="btn btn-info w-full"
+                  disabled={!currentAddress}
+                >
+                  Add
+                </button>
               </div>
-              {watchedValues.addresses.length > 0 && (
+              {(watchedValues.addresses ?? []).length > 0 && (
                 <div className="overflow-x-auto">
                   <table className="table w-full">
                     <thead>
                       <tr>
                         <th>Address</th>
-                        <th>Map</th>
                         <th>Action</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {watchedValues.addresses.map((address, index) => (
+                      {(watchedValues.addresses ?? []).map((address, index) => (
                         <tr key={index}>
-                          <td>{address.text}</td>
-                          <td>
-                            {address.map && (
-                              <a
-                                href={address.map}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="link link-primary"
-                              >
-                                View on Map
-                              </a>
-                            )}
-                          </td>
+                          <td>{address.currentAddress}</td>
                           <td>
                             <button
                               onClick={() => {
@@ -887,21 +908,23 @@ export const Customer: React.FC = () => {
               )}
             </div>
 
-            {/* SMS Send Pattern */}
+            {/* Notification Preference */}
             <div className="mb-8 p-4 bg-base-100 rounded-md shadow-sm">
               <div className="flex items-center mb-4">
                 <input
                   type="checkbox"
-                  checked={smsEnabled}
+                  checked={notificationEnabled}
                   onChange={() => {
-                    setSmsEnabled(!smsEnabled);
+                    setNotificationEnabled(!notificationEnabled);
                   }}
                   className="checkbox mr-2"
                 />
-                <h3 className="text-xl font-semibold">SMS Send Pattern</h3>
+                <h3 className="text-xl font-semibold">
+                  Notification Preference
+                </h3>
               </div>
 
-              {smsEnabled && (
+              {notificationEnabled && (
                 <div className="pl-6 mt-2">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -909,39 +932,43 @@ export const Customer: React.FC = () => {
                         Frequency
                       </label>
                       <select
-                        value={smsFrequency}
+                        value={notificationFrequency}
                         onChange={(e) => {
-                          setSmsFrequency(
+                          setNotificationFrequency(
                             e.target.value as
-                              | "Daily"
-                              | "Weekly"
-                              | "Monthly"
-                              | "Yearly",
+                              | "DAILY"
+                              | "WEEKLY"
+                              | "MONTHLY"
+                              | "YEARLY",
                           );
                         }}
                         className="select select-bordered w-full"
                       >
-                        {smsFrequencyOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
+                        <option value="DAILY">Daily</option>
+                        <option value="WEEKLY">Weekly</option>
+                        <option value="MONTHLY">Monthly</option>
+                        <option value="YEARLY">Yearly</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block font-medium mb-2">Send Via</label>
+                      <label className="block font-medium mb-2">Channel</label>
                       <select
-                        value={smsVia}
+                        value={notificationChannel}
                         onChange={(e) => {
-                          setSmsVia(e.target.value);
+                          setNotificationChannel(
+                            e.target.value as
+                              | "SMS"
+                              | "WHATSAPP"
+                              | "EMAIL"
+                              | "PUSH",
+                          );
                         }}
                         className="select select-bordered w-full"
                       >
-                        {smsViaOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
+                        <option value="SMS">SMS</option>
+                        <option value="WHATSAPP">WhatsApp</option>
+                        <option value="EMAIL">Email</option>
+                        <option value="PUSH">Push Notification</option>
                       </select>
                     </div>
                   </div>
@@ -952,22 +979,24 @@ export const Customer: React.FC = () => {
             {/* Other Images */}
             <div className="mb-8 p-4 bg-base-100 rounded-md shadow-sm">
               <h3 className="text-xl font-semibold mb-4">Other Images</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div className="md:col-span-2">
-                  <input
-                    type="file"
-                    onChange={handleOtherImageUpload}
-                    className="file-input file-input-bordered w-full"
-                    accept="image/*"
-                  />
+              <div className="mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2">
+                    <ImageUploader
+                      buttonText="Select Image"
+                      onImageSelected={handleOtherImageSelected}
+                      initialPreview={otherImagePreview}
+                      previewSize="medium"
+                    />
+                  </div>
+                  <button
+                    onClick={handleAddOtherImage}
+                    className="btn btn-info w-full"
+                    disabled={!otherImageFile}
+                  >
+                    Add Image
+                  </button>
                 </div>
-                <button
-                  onClick={handleAddOtherImage}
-                  className="btn btn-info w-full"
-                  disabled={!otherImage}
-                >
-                  Add Image
-                </button>
               </div>
               {(watchedValues.otherImages ?? []).length > 0 && (
                 <div className="overflow-x-auto">
@@ -1011,15 +1040,13 @@ export const Customer: React.FC = () => {
               <h3 className="text-xl font-semibold mb-4">Post-dated Cheques</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
-                  <label className="text-sm font-medium mb-1 block">
-                    Due Date
-                  </label>
+                  <label className="text-sm font-medium mb-1 block">Date</label>
                   <input
                     type="date"
-                    placeholder="Due Date"
-                    value={chequeDueDate}
+                    placeholder="Date"
+                    value={chequeDate}
                     onChange={(e) => {
-                      setChequeDueDate(e.target.value);
+                      setChequeDate(e.target.value);
                     }}
                     className="input input-bordered w-full"
                   />
@@ -1027,11 +1054,41 @@ export const Customer: React.FC = () => {
 
                 <div>
                   <label className="text-sm font-medium mb-1 block">
-                    Cheque Details
+                    Amount
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Amount"
+                    value={chequeAmount}
+                    onChange={(e) => {
+                      setChequeAmount(Number(e.target.value));
+                    }}
+                    className="input input-bordered w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-1 block">
+                    Cheque Number
                   </label>
                   <input
                     type="text"
-                    placeholder="Cheque Details"
+                    placeholder="Enter Cheque Number"
+                    value={chequeNumber}
+                    onChange={(e) => {
+                      setChequeNumber(e.target.value);
+                    }}
+                    className="input input-bordered w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-1 block">
+                    Details
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Details"
                     value={chequeDetails}
                     onChange={(e) => {
                       setChequeDetails(e.target.value);
@@ -1044,19 +1101,19 @@ export const Customer: React.FC = () => {
                   <label className="text-sm font-medium mb-1 block">
                     Upload Cheque
                   </label>
-                  <input
-                    type="file"
-                    onChange={handleChequeImageUpload}
-                    className="file-input file-input-bordered w-full"
-                    accept="image/*"
+                  <ImageUploader
+                    buttonText="Select Cheque"
+                    onImageSelected={handleChequeSelected}
+                    initialPreview={chequePreview}
+                    previewSize="small"
                   />
                 </div>
 
                 <div className="md:col-span-3 flex justify-start mt-2">
-                  {chequeImage && (
+                  {chequePreview && (
                     <div className="flex-shrink-0 mr-4">
                       <img
-                        src={chequeImage}
+                        src={chequePreview}
                         alt="Cheque"
                         className="w-24 h-16 object-cover rounded"
                       />
@@ -1065,7 +1122,7 @@ export const Customer: React.FC = () => {
                   <button
                     onClick={handleAddCheque}
                     className="btn btn-info"
-                    disabled={!chequeDueDate || !chequeDetails}
+                    disabled={!chequeDate || !chequeDetails}
                   >
                     Add Cheque
                   </button>
@@ -1077,7 +1134,9 @@ export const Customer: React.FC = () => {
                   <table className="table w-full">
                     <thead>
                       <tr>
-                        <th>Due Date</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Cheque Number</th>
                         <th>Details</th>
                         <th>Image</th>
                         <th>Action</th>
@@ -1087,7 +1146,9 @@ export const Customer: React.FC = () => {
                       {(watchedValues.postDatedCheques ?? []).map(
                         (cheque, index) => (
                           <tr key={index}>
-                            <td>{cheque.dueDate}</td>
+                            <td>{cheque.date}</td>
+                            <td>{cheque.amount}</td>
+                            <td>{cheque.number}</td>
                             <td>{cheque.details}</td>
                             <td>
                               {cheque.image && (
@@ -1152,40 +1213,33 @@ export const Customer: React.FC = () => {
         <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
           <div className="flex justify-between mb-4">
             <h3 className="text-xl font-semibold">Customers List</h3>
-            {customers.length > 0 && (
-              <button onClick={openSmsModal} className="btn btn-primary">
-                Send SMS to Selected
-              </button>
-            )}
           </div>
           <div className="overflow-x-auto">
             <table className="table w-full">
               <thead>
                 <tr>
-                  <th>Customer</th>
-                  <th>A/C Title</th>
+                  <th>Full Name</th>
+                  <th>Account Title</th>
                   <th>Phone</th>
                   <th>Address</th>
-                  <th>Route</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {customers.map((customer, index) => (
                   <tr key={index}>
-                    <td>{customer.customerName}</td>
-                    <td>{customer.acTitle}</td>
+                    <td>{customer.fullName}</td>
+                    <td>{customer.accountTitle}</td>
                     <td>
-                      {customer.phones.length > 0
-                        ? customer.phones[0]?.number
+                      {(customer.phoneNumbers ?? []).length > 0
+                        ? (customer.phoneNumbers ?? [])[0]?.number
                         : "-"}
                     </td>
                     <td>
-                      {customer.addresses.length > 0
-                        ? customer.addresses[0]?.text
+                      {customer.addresses && customer.addresses.length > 0
+                        ? customer.addresses[0]?.currentAddress
                         : "-"}
                     </td>
-                    <td>{customer.route}</td>
                     <td>
                       <div className="flex gap-2">
                         <button
@@ -1210,122 +1264,6 @@ export const Customer: React.FC = () => {
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-      )}
-
-      {/* Map Modal */}
-      {showMap && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-base-100 p-6 rounded-lg w-full max-w-3xl">
-            <h3 className="text-xl font-bold mb-4">Select Location</h3>
-
-            <div className="mb-4">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Search for a location"
-                  value={mapSearchQuery}
-                  onChange={(e) => {
-                    setMapSearchQuery(e.target.value);
-                  }}
-                  className="input input-bordered flex-grow"
-                />
-                <button onClick={handleMapSearch} className="btn btn-primary">
-                  Search
-                </button>
-              </div>
-            </div>
-
-            {/* Embedded Google Map */}
-            <div className="h-96 w-full mb-4 bg-gray-200 flex items-center justify-center">
-              <iframe
-                title="Google Maps"
-                width="100%"
-                height="100%"
-                src={`https://www.google.com/maps/embed/v1/place?key=YOUR_API_KEY&q=${encodeURIComponent(mapSearchQuery || "Pakistan")}`}
-                allowFullScreen
-              ></iframe>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <button onClick={closeMapSelector} className="btn btn-outline">
-                Cancel
-              </button>
-              <button
-                onClick={handleMapSearch}
-                className="btn btn-primary"
-                disabled={!mapSearchQuery}
-              >
-                Confirm Location
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* SMS Modal */}
-      {showSmsModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-base-100 p-6 rounded-lg w-full max-w-2xl">
-            <h3 className="text-xl font-bold mb-4">Send SMS to Customers</h3>
-
-            <div className="mb-4">
-              <label className="block font-medium mb-1">Select Customers</label>
-              <div className="max-h-60 overflow-y-auto border rounded p-2">
-                {customers.map((customer, index) => (
-                  <div key={index} className="form-control">
-                    <label className="label cursor-pointer justify-start gap-2">
-                      <input
-                        type="checkbox"
-                        className="checkbox"
-                        checked={selectedCustomerIndexes.includes(index)}
-                        onChange={() => {
-                          toggleCustomerSelection(index);
-                        }}
-                      />
-                      <span className="label-text">
-                        {customer.customerName} (
-                        {customer.phones?.length > 0
-                          ? customer.phones[0]?.number
-                          : "No phone"}
-                        )
-                      </span>
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <label className="block font-medium mb-1">Send Via</label>
-              <select
-                value={smsVia}
-                onChange={(e) => {
-                  setSmsVia(e.target.value);
-                }}
-                className="select select-bordered w-full"
-              >
-                {smsViaOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <button onClick={closeSmsModal} className="btn btn-outline">
-                Cancel
-              </button>
-              <button
-                onClick={handleSendSms}
-                className="btn btn-primary"
-                disabled={selectedCustomerIndexes.length === 0}
-              >
-                Send SMS
-              </button>
-            </div>
           </div>
         </div>
       )}
