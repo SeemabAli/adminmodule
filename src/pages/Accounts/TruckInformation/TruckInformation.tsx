@@ -183,7 +183,7 @@ export const TruckInformation = () => {
               ))}
             </select>
             {errors.routeId && (
-              <span className="text-red-500 text-sm">
+              <span className="text-red-500 text-xs font-light">
                 {errors.routeId.message}
               </span>
             )}

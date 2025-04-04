@@ -26,9 +26,12 @@ export const employeeSchema = z.object({
 
   department: z.string().optional(),
 
-  salary: z.number().refine((value) => value !== null && value !== undefined, {
-    message: "Salary is required",
-  }),
+  salary: z
+    .number()
+    .min(1, "Salary must be greater than 0")
+    .refine((value) => value !== null && value !== undefined, {
+      message: "Salary is required",
+    }),
 
   document: z.any().optional().nullable(),
   role: z.string().nullable().optional(),

@@ -252,7 +252,7 @@ export const Customer: React.FC = () => {
         dealingPerson: "",
         reference: "",
         ntnNumber: "",
-        creditLimit: 0,
+        creditLimit: 1,
         ledgerDetails: "",
         ledgerNumber: 0,
         phoneNumbers: [],

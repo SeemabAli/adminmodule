@@ -28,7 +28,14 @@ export const bankAccountSchema = z.object({
     .nonempty("Account number is required")
     .min(5, "Account number must be at least 5 characters")
     .max(30, "Account number must not exceed 30 characters"),
-  openingBalance: z.number(),
+  openingBalance: z
+    .number()
+    .min(1, "Opening balance must be greater than 0")
+    .refine((val: number) => !isNaN(val), "Opening balance must be a number")
+    .refine(
+      (val: number) => val >= 0,
+      "Opening balance must be greater than or equal to 0",
+    ),
   chequeCount: z.array(chequeSchema).optional(),
 });
 
