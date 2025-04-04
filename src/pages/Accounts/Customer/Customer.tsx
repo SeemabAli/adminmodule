@@ -792,7 +792,7 @@ export const Customer: React.FC = () => {
                             className="flex justify-between items-center p-2 bg-base-100 rounded"
                           >
                             <span>{phone.number}</span>
-                            <span className="badge badge-outline">
+                            <span className="badge badge-success">
                               {phone.type}
                             </span>
                           </div>
@@ -1159,7 +1159,7 @@ export const Customer: React.FC = () => {
                                 setCnicFrontFile(null);
                               }}
                             >
-                              <span className="text-lg font-bold leading-none">
+                              <span className="text-lg font-bold leading-none pb-1">
                                 ×
                               </span>
                             </button>
@@ -1290,7 +1290,7 @@ export const Customer: React.FC = () => {
                                 setCnicBackFile(null);
                               }}
                             >
-                              <span className="text-lg font-bold leading-none">
+                              <span className="text-lg font-bold leading-none pb-1">
                                 ×
                               </span>
                             </button>
@@ -1403,18 +1403,18 @@ export const Customer: React.FC = () => {
             </div>
 
             {/* Ledger Details */}
-            <div className="md:col-span-2">
+            <div>
               <label className="block font-medium mb-1">Ledger Details</label>
               <textarea
                 {...register("ledgerDetails")}
                 placeholder="Enter Ledger Details"
                 className="textarea textarea-bordered w-full"
-                rows={3}
+                rows={6}
               />
             </div>
 
             {/* Signatures */}
-            <div className="mt-4 p-4 bg-base-100 rounded-md shadow-sm border-l-4 border-accent">
+            <div className="mt-7 p-4 bg-base-100 rounded-md shadow-sm">
               <h3 className="text-xl font-semibold mb-4">Signatures</h3>
               <div className="flex flex-col space-y-2">
                 <div className="flex items-center space-x-2">
@@ -1455,7 +1455,7 @@ export const Customer: React.FC = () => {
                           setSignatureFile(null);
                         }}
                       >
-                        <span className="text-lg font-bold leading-none">
+                        <span className="text-lg font-bold leading-none pb-1">
                           ×
                         </span>
                       </button>
@@ -1727,7 +1727,7 @@ export const Customer: React.FC = () => {
                           setOtherImageFile(null);
                         }}
                       >
-                        <span className="text-lg font-bold leading-none">
+                        <span className="text-lg font-bold leading-none pb-1">
                           ×
                         </span>
                       </button>
@@ -1858,7 +1858,7 @@ export const Customer: React.FC = () => {
                           setChequeFile(null);
                         }}
                       >
-                        <span className="text-lg font-bold leading-none">
+                        <span className="text-lg font-bold leading-none pb-1">
                           ×
                         </span>
                       </button>
