@@ -1,0 +1,210 @@
+import { notify } from "@/lib/notify";
+import { useForm, type SubmitHandler } from "react-hook-form";
+import { useNavigate } from "react-router";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  changePasswordSchema,
+  type ChangePasswordData,
+} from "../schema/auth.schema";
+import { useState, useEffect } from "react";
+import {
+  changePassword,
+  checkPasswordChangeRequired,
+} from "../services/auth.service";
+import { FormField } from "@/common/components/ui/form/FormField";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { Button } from "@/common/components/ui/Button";
+
+import logo from "@/assets/logo.png";
+import { logger } from "@/lib/logger";
+
+export const ChangePasswordPage = () => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting: pending },
+  } = useForm<ChangePasswordData>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
+  const navigate = useNavigate();
+
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Check if user needs to change password on component mount
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const isChangeRequired = await checkPasswordChangeRequired();
+
+        // If change not required, redirect to home
+        if (!isChangeRequired) {
+          void navigate("/");
+        }
+      } catch (error) {
+        notify.error("Unable to verify account status");
+        logger.error(error);
+      }
+    };
+
+    void checkStatus();
+  }, [navigate]);
+
+  const togglePasswordVisibility = (field: "current" | "new" | "confirm") => {
+    if (field === "current") {
+      setShowCurrentPassword((prev) => !prev);
+    } else if (field === "new") {
+      setShowNewPassword((prev) => !prev);
+    } else {
+      setShowConfirmPassword((prev) => !prev);
+    }
+  };
+
+  const onSubmit: SubmitHandler<ChangePasswordData> = async (data) => {
+    try {
+      await changePassword(data);
+      notify.success("Password changed successfully");
+
+      // Update auth state if needed or just redirect
+      void navigate("/");
+    } catch (error) {
+      if (error instanceof Error) {
+        notify.error(error.message);
+      }
+    }
+  };
+
+  return (
+    <div className="flex justify-center items-center min-h-screen bg-[rgba(0,0,0,0.5)]">
+      <div className="card w-full max-w-md bg-base-200 shadow-2xl rounded-xl p-8 mx-4">
+        {/* Logo & Branding */}
+        <div className="flex flex-col items-center mb-4">
+          <img
+            src={logo}
+            alt="MB&CO Logo"
+            className="h-16 w-16 rounded-full shadow-xl"
+          />
+          <h1 className="text-2xl font-bold mt-3">MB&CO</h1>
+        </div>
+
+        <h2 className="text-xl font-semibold text-center">Change Password</h2>
+        <p className="text-sm text-base-content text-center mb-4">
+          Please set your permanent password
+        </p>
+
+        <form
+          noValidate
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-4"
+        >
+          {/* Current Password Input */}
+          <div className="form-control">
+            <FormField
+              type={showCurrentPassword ? "text" : "password"}
+              label="Current Password"
+              placeholder="Enter your temporary password"
+              errorMessage={errors.currentPassword?.message}
+              name="currentPassword"
+              register={register}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  togglePasswordVisibility("current");
+                }}
+                className="absolute inset-y-0 right-1 flex items-center text-gray-500 hover:text-gray-800"
+              >
+                {showCurrentPassword ? (
+                  <FaEyeSlash size={20} />
+                ) : (
+                  <FaEye size={20} />
+                )}
+              </button>
+            </FormField>
+          </div>
+
+          {/* New Password Input */}
+          <div className="form-control">
+            <FormField
+              type={showNewPassword ? "text" : "password"}
+              label="New Password"
+              placeholder="Create a strong password"
+              errorMessage={errors.newPassword?.message}
+              name="newPassword"
+              register={register}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  togglePasswordVisibility("new");
+                }}
+                className="absolute inset-y-0 right-1 flex items-center text-gray-500 hover:text-gray-800"
+              >
+                {showNewPassword ? (
+                  <FaEyeSlash size={20} />
+                ) : (
+                  <FaEye size={20} />
+                )}
+              </button>
+            </FormField>
+          </div>
+
+          {/* Confirm New Password Input */}
+          <div className="form-control">
+            <FormField
+              type={showConfirmPassword ? "text" : "password"}
+              label="Confirm Password"
+              placeholder="Confirm your new password"
+              errorMessage={errors.confirmPassword?.message}
+              name="confirmPassword"
+              register={register}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  togglePasswordVisibility("confirm");
+                }}
+                className="absolute inset-y-0 right-1 flex items-center text-gray-500 hover:text-gray-800"
+              >
+                {showConfirmPassword ? (
+                  <FaEyeSlash size={20} />
+                ) : (
+                  <FaEye size={20} />
+                )}
+              </button>
+            </FormField>
+          </div>
+
+          {/* Password Requirements */}
+          <div className="text-xs text-gray-500">
+            <p>Password must contain:</p>
+            <ul className="list-disc pl-4 mt-1">
+              <li>At least 8 characters</li>
+              <li>At least one uppercase letter</li>
+              <li>At least one lowercase letter</li>
+              <li>At least one number</li>
+              <li>At least one special character</li>
+            </ul>
+          </div>
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            shape="primary"
+            pending={pending}
+            className="w-full py-2 relative right-2 text-lg font-semibold"
+          >
+            Change Password
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+};
