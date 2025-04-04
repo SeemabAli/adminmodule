@@ -41,9 +41,9 @@ const TruckOtherExpense = () => {
     defaultValues: {
       id: "",
       name: "",
-      firstTrip: undefined,
-      secondTrip: undefined,
-      thirdTrip: undefined,
+      firstTrip: 0,
+      secondTrip: 0,
+      thirdTrip: 0,
     },
   });
 
@@ -233,7 +233,7 @@ const TruckOtherExpense = () => {
                       }}
                       className="flex items-center justify-center"
                     >
-                      <PencilSquareIcon className="w-4 h-4 text-info" />
+                      <PencilSquareIcon className="w-5 h-5 text-info" />
                     </button>
 
                     <button
@@ -242,7 +242,7 @@ const TruckOtherExpense = () => {
                       }}
                       className="flex items-center justify-center"
                     >
-                      <TrashIcon className="w-4 h-4 text-red-500" />
+                      <TrashIcon className="w-5 h-5 text-red-500" />
                     </button>
                   </td>
                 </tr>
