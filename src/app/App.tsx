@@ -26,6 +26,7 @@ import { TruckInformation } from "@/pages/Accounts/TruckInformation/TruckInforma
 import { FactoryExpenses } from "@/pages/Accounts/FactoryExpenses/FactoryExpenses";
 import { Customer } from "@/pages/Accounts/Customer/Customer";
 import { TruckRoute } from "@/pages/TruckRoute/TruckRoute";
+import { SetPasswordPage } from "@/core/auth/pages/SetPasswordPage";
 
 const router = createBrowserRouter(
   createRoutesFromElements([
@@ -36,6 +37,10 @@ const router = createBrowserRouter(
 
     <Route path="/" element={<RootLayout />}>
       <Route element={<UnauthorizedPage />} path="unauthorized" />
+      {/* Employee Routes */}
+      <Route element={<RequireAuth allowedRoles={[ROLES.EMPLOYEE]} />}>
+        <Route path="set-password" element={<SetPasswordPage />} />
+      </Route>
       <Route element={<PersistentLogin />}>
         {/* ADMIN ROUTES */}
         <Route element={<RequireAuth allowedRoles={[ROLES.ADMIN]} />}>
