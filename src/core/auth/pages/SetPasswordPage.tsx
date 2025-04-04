@@ -2,74 +2,43 @@ import { notify } from "@/lib/notify";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  changePasswordSchema,
-  type ChangePasswordData,
-} from "../schema/auth.schema";
-import { useState, useEffect } from "react";
-import {
-  changePassword,
-  checkPasswordChangeRequired,
-} from "../services/auth.service";
+import { setPasswordSchema, type setPasswordData } from "../schema/auth.schema";
+import { useState } from "react";
+import { setPassword as setPassword } from "../services/auth.service";
 import { FormField } from "@/common/components/ui/form/FormField";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Button } from "@/common/components/ui/Button";
 
 import logo from "@/assets/logo.png";
-import { logger } from "@/lib/logger";
 
-export const ChangePasswordPage = () => {
+export const SetPasswordPage = () => {
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting: pending },
-  } = useForm<ChangePasswordData>({
-    resolver: zodResolver(changePasswordSchema),
+  } = useForm<setPasswordData>({
+    resolver: zodResolver(setPasswordSchema),
     defaultValues: {
-      currentPassword: "",
       newPassword: "",
       confirmPassword: "",
     },
   });
 
   const navigate = useNavigate();
-
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Check if user needs to change password on component mount
-  useEffect(() => {
-    const checkStatus = async () => {
-      try {
-        const isChangeRequired = await checkPasswordChangeRequired();
-
-        // If change not required, redirect to home
-        if (!isChangeRequired) {
-          void navigate("/");
-        }
-      } catch (error) {
-        notify.error("Unable to verify account status");
-        logger.error(error);
-      }
-    };
-
-    void checkStatus();
-  }, [navigate]);
-
-  const togglePasswordVisibility = (field: "current" | "new" | "confirm") => {
-    if (field === "current") {
-      setShowCurrentPassword((prev) => !prev);
-    } else if (field === "new") {
+  const togglePasswordVisibility = (field: "new" | "confirm") => {
+    if (field === "new") {
       setShowNewPassword((prev) => !prev);
     } else {
       setShowConfirmPassword((prev) => !prev);
     }
   };
 
-  const onSubmit: SubmitHandler<ChangePasswordData> = async (data) => {
+  const onSubmit: SubmitHandler<setPasswordData> = async (data) => {
     try {
-      await changePassword(data);
+      await setPassword(data);
       notify.success("Password changed successfully");
 
       // Update auth state if needed or just redirect
@@ -104,32 +73,6 @@ export const ChangePasswordPage = () => {
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-4"
         >
-          {/* Current Password Input */}
-          <div className="form-control">
-            <FormField
-              type={showCurrentPassword ? "text" : "password"}
-              label="Current Password"
-              placeholder="Enter your temporary password"
-              errorMessage={errors.currentPassword?.message}
-              name="currentPassword"
-              register={register}
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  togglePasswordVisibility("current");
-                }}
-                className="absolute inset-y-0 right-1 flex items-center text-gray-500 hover:text-gray-800"
-              >
-                {showCurrentPassword ? (
-                  <FaEyeSlash size={20} />
-                ) : (
-                  <FaEye size={20} />
-                )}
-              </button>
-            </FormField>
-          </div>
-
           {/* New Password Input */}
           <div className="form-control">
             <FormField
@@ -201,7 +144,7 @@ export const ChangePasswordPage = () => {
             pending={pending}
             className="w-full py-2 relative right-2 text-lg font-semibold"
           >
-            Change Password
+            Set Password
           </Button>
         </form>
       </div>

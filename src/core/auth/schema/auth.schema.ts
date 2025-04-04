@@ -6,10 +6,12 @@ const baseSchema = z.object({
     .email("Email address is invalid")
     .or(z.literal("")),
   password: z
-    .string({ required_error: "Password is required" })
-    .min(8, "Password must be between 8 and 20 characters")
-    .max(20)
-    .or(z.literal("")),
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+      "Password must include uppercase, lowercase, number and special character",
+    ),
 });
 
 export const registerUserSchema = baseSchema
@@ -28,7 +30,7 @@ export const registerUserSchema = baseSchema
 
 export const signInUserSchema = baseSchema;
 
-export const changePasswordSchema = z
+export const setPasswordSchema = z
   .object({
     currentPassword: z.string().min(1, "Current password is required"),
     newPassword: z
@@ -48,4 +50,4 @@ export const changePasswordSchema = z
 // types
 export type RegisterUserData = z.infer<typeof registerUserSchema>;
 export type SignInUserData = z.infer<typeof signInUserSchema>;
-export type ChangePasswordData = z.infer<typeof changePasswordSchema>;
+export type setPasswordData = z.infer<typeof setPasswordSchema>;

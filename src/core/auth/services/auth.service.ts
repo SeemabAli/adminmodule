@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type {
-  ChangePasswordData,
+  setPasswordData,
   RegisterUserData,
   SignInUserData,
 } from "../schema/auth.schema";
@@ -8,6 +7,8 @@ import { sendApiRequest } from "@/common/services/api.service";
 
 type SignInResponse = {
   accessToken: string;
+  roles: number[];
+  requiresPasswordChange: boolean;
 };
 
 export type UserProfile = Omit<RegisterUserData, "password">;
@@ -37,26 +38,13 @@ export async function requestPasswordReset(email: string) {
  * Changes user password from temporary credentials to permanent password
  * @param data The password change form data
  */
-export async function changePassword(data: ChangePasswordData) {
+export async function setPassword(data: setPasswordData) {
   const response = await sendApiRequest<{ message: string }>(
-    "/auth/change-password",
+    "/auth/set-password",
     {
       method: "POST",
       data,
     },
   );
   return response;
-}
-
-/**
- * Check if the user needs to change their temporary password
- */
-export async function checkPasswordChangeRequired() {
-  const response = await sendApiRequest<{
-    data: any;
-    changeRequired: boolean;
-  }>("/auth/password-status", {
-    method: "GET",
-  });
-  return response.data.changeRequired;
 }

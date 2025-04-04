@@ -66,8 +66,17 @@ export const SigninPage = () => {
 
   const onSubmit: SubmitHandler<SignInUserData> = async function (data) {
     try {
-      const userAuthData = await signInUser(data);
-      dispatch(authActions.setAuth(userAuthData));
+      const { accessToken, roles, requiresPasswordChange } =
+        await signInUser(data);
+      dispatch(authActions.setAuth({ accessToken, roles }));
+
+      // redirect to set-password page on one time login
+      if (requiresPasswordChange) {
+        await navigate("/set-password");
+        notify.success("Create new password");
+        return;
+      }
+
       notify.success("Sign in successful");
       await navigate("/");
     } catch (error) {
