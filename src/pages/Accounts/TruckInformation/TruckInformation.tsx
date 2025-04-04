@@ -196,7 +196,7 @@ export const TruckInformation = () => {
                   type="radio"
                   value="insource"
                   {...register("sourcingType")}
-                  className="radio"
+                  className="radio-info"
                 />
                 Insource
               </label>
@@ -205,7 +205,7 @@ export const TruckInformation = () => {
                   type="radio"
                   value="outsource"
                   {...register("sourcingType")}
-                  className="radio"
+                  className="radio-info"
                 />
                 Outsource
               </label>
