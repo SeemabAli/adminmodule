@@ -18,14 +18,13 @@ import { ErrorModal } from "@/common/components/Error";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
 import { ApiException } from "@/utils/exceptions";
 import { uploadPDF } from "@/common/services/upload.service";
-import { config } from "@/config/config";
 
 export type Employees = {
   id?: string;
   name: string;
   phone: string;
   email: string;
-  cnic: number;
+  cnic: string;
   designation: string;
   department?: string;
   salary: number;
@@ -68,7 +67,7 @@ const EmployeeManagement = () => {
       name: "",
       phone: "+92",
       email: "",
-      cnic: 0,
+      cnic: "",
       designation: "",
       department: "",
       salary: 0,
@@ -226,20 +225,6 @@ const EmployeeManagement = () => {
     });
   };
 
-  // Handle Download PDF
-  const handleDownloadPDF = (index: number) => {
-    const employee = employees[index];
-    if (employee?.document) {
-      // Assuming your backend provides a download endpoint that accepts the document path
-      window.open(
-        `${config.api.baseUrl}/download?path=${employee.document}`,
-        "_blank",
-      );
-    } else {
-      notify.error("No document available for download!");
-    }
-  };
-
   // Open Role Modal
   const openRoleModal = (index: number) => {
     setRoleEmployeeIndex(index);
@@ -359,8 +344,7 @@ const EmployeeManagement = () => {
           <FormField
             placeholder="Employee CNIC"
             name="cnic"
-            label="Employee CNIC"
-            valueAsNumber
+            label="Employee CNIC (without dashes)"
             register={register}
             errorMessage={errors.cnic?.message}
           />
@@ -371,9 +355,9 @@ const EmployeeManagement = () => {
               className="select select-bordered w-full"
             >
               <option value="">Select Department</option>
-              <option value="Office Staff">Office Staff</option>
-              <option value="Driver">Driver</option>
-              <option value="Labour">Labour</option>
+              <option value="OFFICE_STAFF">Office Staff</option>
+              <option value="DRIVER">Driver</option>
+              <option value="LABOUR">Labour</option>
             </select>
           </div>
           <FormField
@@ -472,9 +456,7 @@ const EmployeeManagement = () => {
                   <td className="p-3">{employee.cnic}</td>
                   <td className="p-3">{employee.department}</td>
                   <td className="p-3">{employee.designation}</td>
-                  <td className="p-3">
-                    {convertNumberIntoLocalString(employee.salary.toString())}
-                  </td>
+                  <td className="p-3">{employee.salary}</td>
                   <td className="p-3">
                     {employee.role ? (
                       <span className="badge badge-info">{employee.role}</span>
@@ -491,14 +473,14 @@ const EmployeeManagement = () => {
                   </td>
                   <td className="p-3">
                     {employee.document ? (
-                      <button
-                        onClick={() => {
-                          handleDownloadPDF(index);
-                        }}
+                      <a
+                        href={employee.document}
+                        download="document"
+                        target="_blank"
                         className="btn btn-sm btn-success"
                       >
                         Download PDF
-                      </button>
+                      </a>
                     ) : (
                       <span className="text-gray-500">No document</span>
                     )}
@@ -510,7 +492,7 @@ const EmployeeManagement = () => {
                       }}
                       className="flex items-center justify-center"
                     >
-                      <PencilSquareIcon className="w-4 h-4 text-info" />
+                      <PencilSquareIcon className="w-5 h-5 text-info" />
                     </button>
 
                     <button
@@ -519,7 +501,7 @@ const EmployeeManagement = () => {
                       }}
                       className="flex items-center justify-center"
                     >
-                      <TrashIcon className="w-4 h-4 text-red-500" />
+                      <TrashIcon className="w-5 h-5 text-red-500" />
                     </button>
                     {employee.role && (
                       <button

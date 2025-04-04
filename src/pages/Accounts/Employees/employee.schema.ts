@@ -20,9 +20,7 @@ export const employeeSchema = z.object({
     .nonempty("Email is required")
     .email("Invalid email address"),
 
-  cnic: z.number().refine((value) => value !== null && value !== undefined, {
-    message: "CNIC is required",
-  }),
+  cnic: z.string().nonempty("CNIC is required"),
 
   designation: z.string().nonempty("Designation is required"),
 
