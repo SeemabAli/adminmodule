@@ -68,6 +68,7 @@ export const SigninPage = () => {
     try {
       const { accessToken, roles, requiresPasswordChange } =
         await signInUser(data);
+
       dispatch(authActions.setAuth({ accessToken, roles }));
 
       // redirect to set-password page on one time login

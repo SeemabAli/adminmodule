@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+const passwordRegex =
+  /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#+-_=^~\\[\]{}|:;<>,.()]).+/;
+
 const baseSchema = z.object({
   email: z
     .string({ required_error: "Email is required" })
@@ -9,7 +12,7 @@ const baseSchema = z.object({
     .string()
     .min(8, "Password must be at least 8 characters")
     .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+      passwordRegex,
       "Password must include uppercase, lowercase, number and special character",
     ),
 });
@@ -32,12 +35,11 @@ export const signInUserSchema = baseSchema;
 
 export const setPasswordSchema = z
   .object({
-    currentPassword: z.string().min(1, "Current password is required"),
     newPassword: z
       .string()
       .min(8, "Password must be at least 8 characters")
       .regex(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+        passwordRegex,
         "Password must include uppercase, lowercase, number and special character",
       ),
     confirmPassword: z.string().min(1, "Please confirm your password"),

@@ -10,6 +10,8 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Button } from "@/common/components/ui/Button";
 
 import logo from "@/assets/logo.png";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/app/store/store";
 
 export const SetPasswordPage = () => {
   const {
@@ -23,6 +25,8 @@ export const SetPasswordPage = () => {
       confirmPassword: "",
     },
   });
+
+  const accessToken = useSelector((state: RootState) => state.auth.accessToken);
 
   const navigate = useNavigate();
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -38,7 +42,8 @@ export const SetPasswordPage = () => {
 
   const onSubmit: SubmitHandler<setPasswordData> = async (data) => {
     try {
-      await setPassword(data);
+      console.log("AccessToken", accessToken);
+      await setPassword(data.newPassword, accessToken);
       notify.success("Password changed successfully");
 
       // Update auth state if needed or just redirect
@@ -51,7 +56,7 @@ export const SetPasswordPage = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-[rgba(0,0,0,0.5)]">
+    <div className="flex justify-center items-center min-h-screen bg-[rgba(0,0,0,0.1)]">
       <div className="card w-full max-w-md bg-base-200 shadow-2xl rounded-xl p-8 mx-4">
         {/* Logo & Branding */}
         <div className="flex flex-col items-center mb-4">

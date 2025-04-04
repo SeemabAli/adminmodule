@@ -1,8 +1,5 @@
-import type {
-  setPasswordData,
-  RegisterUserData,
-  SignInUserData,
-} from "../schema/auth.schema";
+import { axiosPublic } from "@/api/axios";
+import type { RegisterUserData, SignInUserData } from "../schema/auth.schema";
 import { sendApiRequest } from "@/common/services/api.service";
 
 type SignInResponse = {
@@ -38,12 +35,15 @@ export async function requestPasswordReset(email: string) {
  * Changes user password from temporary credentials to permanent password
  * @param data The password change form data
  */
-export async function setPassword(data: setPasswordData) {
-  const response = await sendApiRequest<{ message: string }>(
+export async function setPassword(newPassword: string, accessToken?: string) {
+  const response = await axiosPublic<{ message: string }>(
     "/auth/set-password",
     {
       method: "POST",
-      data,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      data: { password: newPassword },
     },
   );
   return response;
