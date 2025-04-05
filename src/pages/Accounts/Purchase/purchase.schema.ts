@@ -1,40 +1,40 @@
 import { z } from "zod";
 
-export const purchaseSchema = z.object({
+// Define the purchase item schema
+export const purchaseItemSchema = z.object({
   id: z.string().optional(),
-  transactionDate: z.string().nonempty("Transaction date is required"),
-  companyId: z.string().nonempty("Company is required"),
-  purchaseOrderId: z.string().nonempty("Purchase order ID is required"),
-  truckId: z.string().nonempty("Truck is required"),
-  truckStatus: z.string().nonempty("Truck status is required"),
-  driverId: z.string().nonempty("Driver is required"),
-  driverName: z.string().nonempty("Driver name is required"),
-  saleRouteId: z.string().optional(),
-  items: z.array(
-    z.object({
-      brandId: z.string().nonempty("Brand is required"),
-      routeId: z.string().nonempty("Route is required"),
-      qtyInTon: z
-        .number()
-        .positive("Quantity must be positive")
-        .or(z.string().regex(/^\d+$/).transform(Number))
-        .refine((val) => val > 0, "Quantity must be greater than 0"),
-      bags: z.number().positive(),
-      freightPerBag: z.number().positive(),
-      totalFreight: z.number().positive(),
-      ratePerTon: z.number().positive(),
-      ratePerBag: z.number().positive(),
-      unitPrice: z.number().positive(),
-      totalPrice: z.number().positive(),
-      commissionPerBag: z.number().nonnegative(),
-      whtTax: z.number().nonnegative(),
-    }),
-  ),
+  brandId: z.string().min(1, "Brand is required"),
+  brandName: z.string().optional(),
+  routeId: z.string().min(1, "Route is required"),
+  routeName: z.string().optional(),
+  qtyInTon: z.number().min(0.01, "Quantity must be greater than 0"),
+  bags: z.number().optional(),
+  freightPerBag: z.number().optional(),
+  totalFreight: z.number().optional(),
+  ratePerTon: z.number().min(0.01, "Rate per ton must be greater than 0"),
+  ratePerBag: z.number().optional(),
+  unitPrice: z.number().optional(),
+  totalPrice: z.number().optional(),
+  commissionPerBag: z.number().optional(),
+  whtTax: z.number().optional(),
 });
 
+// Define the purchase schema
+export const purchaseSchema = z.object({
+  transactionDate: z.string(),
+  companyId: z.string().min(1, "Company is required"),
+  truckId: z.string().min(1, "Truck is required"),
+  truckStatus: z.string().optional(),
+  driverId: z.string().optional(),
+  driverName: z.string().optional(),
+  items: z.array(purchaseItemSchema).optional(),
+});
+
+// Type definitions based on the schema
+export type PurchaseItem = z.infer<typeof purchaseItemSchema>;
 export type PurchaseFormData = z.infer<typeof purchaseSchema>;
 
-// Additional types for related entities
+// Type definitions for other entities used in the component
 export type Company = {
   id: string;
   name: string;
@@ -42,8 +42,8 @@ export type Company = {
 
 export type Truck = {
   id: string;
-  name: string;
-  status: "Company Own" | "Outsource";
+  number: string;
+  sourcingType: string;
 };
 
 export type Driver = {
@@ -54,32 +54,15 @@ export type Driver = {
 export type Route = {
   id: string;
   name: string;
-  companyFreight: number;
-  truckFreight: number;
 };
 
 export type Brand = {
   id: string;
   name: string;
-  companyId: string;
-  weightPerBagKg: number;
-  commissionPerBag: number;
-};
-
-export type PurchaseItem = {
-  id: string;
-  brandId: string;
-  brandName: string;
-  routeId: string;
-  routeName: string;
-  qtyInTon: number;
-  bags: number;
-  freightPerBag: number;
-  totalFreight: number;
-  ratePerTon: number;
-  ratePerBag: number;
-  unitPrice: number;
-  totalPrice: number;
-  commissionPerBag: number;
-  whtTax: number;
+  company: { id: string };
+  freights: {
+    route: Route;
+    amountPerBag: number;
+    truckSharePerBag: number;
+  }[];
 };
