@@ -11,6 +11,7 @@ import {
   fetchAllEmployees,
   updateEmployee,
   deleteEmployee,
+  updateRole,
 } from "./employee.service";
 import { logger } from "@/lib/logger";
 import { useService } from "@/common/hooks/custom/useService";
@@ -52,7 +53,7 @@ const EmployeeManagement = () => {
   );
 
   // Available roles
-  const availableRoles = ["Admin", "Data Entry Operator", "Accountant"];
+  const availableRoles = ["ADMIN", "DEO", "ACCOUNTANT"];
 
   const { error, data, isLoading } = useService(() => fetchAllEmployees());
 
@@ -244,47 +245,63 @@ const EmployeeManagement = () => {
   };
 
   // Handle Role Assignment
-  const handleRoleAssignment = () => {
+  const handleRoleAssignment = async () => {
     if (roleEmployeeIndex === null) return;
 
-    const updatedEmployees = [...employees];
-    const currentEmployee = updatedEmployees[roleEmployeeIndex];
+    const currentEmployee = employees[roleEmployeeIndex];
+    if (!currentEmployee?.id) return;
 
-    if (currentEmployee) {
+    try {
+      // Call the updateRole service
+      await updateRole(currentEmployee.id, { role: selectedRole });
+
+      // Update local state
+      const updatedEmployees = [...employees];
       updatedEmployees[roleEmployeeIndex] = {
         ...currentEmployee,
         role: selectedRole || null,
       } as Employees;
+
+      setEmployees(updatedEmployees);
+
+      if (selectedRole) {
+        notify.success(`Role "${selectedRole}" assigned successfully!`);
+      } else {
+        notify.success("Role revoked successfully!");
+      }
+
+      closeRoleModal();
+    } catch (error) {
+      logger.error("Failed to update role:", error);
+      notify.error("Failed to update employee role. Please try again.");
     }
-
-    setEmployees(updatedEmployees);
-
-    if (selectedRole) {
-      notify.success(`Role "${selectedRole}" assigned successfully!`);
-    } else {
-      notify.success("Role revoked successfully!");
-    }
-
-    closeRoleModal();
   };
 
   // Handle Role Revocation
-  const handleRevokeRole = () => {
+  const handleRevokeRole = async () => {
     if (roleEmployeeIndex === null) return;
 
-    const updatedEmployees = [...employees];
-    const currentEmployee = updatedEmployees[roleEmployeeIndex];
+    const currentEmployee = employees[roleEmployeeIndex];
+    if (!currentEmployee?.id) return;
 
-    if (currentEmployee) {
+    try {
+      // Call the updateRole service with empty role to revoke
+      await updateRole(currentEmployee.id, { role: "EMPLOYEE" });
+
+      // Update local state
+      const updatedEmployees = [...employees];
       updatedEmployees[roleEmployeeIndex] = {
         ...currentEmployee,
         role: null,
       } as Employees;
-    }
 
-    setEmployees(updatedEmployees);
-    notify.success("Role revoked successfully!");
-    closeRoleModal();
+      setEmployees(updatedEmployees);
+      notify.success("Role revoked successfully!");
+      closeRoleModal();
+    } catch (error) {
+      logger.error("Failed to revoke role:", error);
+      notify.error("Failed to revoke employee role. Please try again.");
+    }
   };
 
   useEffect(() => {

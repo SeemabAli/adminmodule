@@ -34,3 +34,14 @@ export const deleteEmployee = async (id: string) => {
   });
   return response;
 };
+
+export const updateRole = async (id: string, data: { role: string }) => {
+  const response = await sendApiRequest<Employee>(`/employees/${id}/roles`, {
+    method: "PATCH",
+    withAuthorization: true,
+    data: {
+      newRole: data.role,
+    },
+  });
+  return response;
+};
