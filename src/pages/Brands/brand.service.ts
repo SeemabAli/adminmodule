@@ -4,6 +4,8 @@ import { type BrandFormData } from "./brand.schema";
 import type { Tax } from "@/pages/Accounts/TaxAccounts/tax.schema";
 
 type Freights = {
+  route: any;
+  route: any;
   routeName: string;
   routeCode: string;
   truckSharePerBag: number;

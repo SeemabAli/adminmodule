@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
@@ -22,12 +23,11 @@ import {
   fetchAllPurchases,
   updatePurchase,
   deletePurchase,
-  fetchAllCompanies,
-  fetchAllTrucks,
   fetchAllDrivers,
-  fetchAllRoutes,
-  fetchAllBrands,
 } from "./purchase.service";
+import { fetchAllCompanies } from "../CompanyAccounts/company.service";
+import { fetchAllTruckInformation } from "@/pages/Accounts/TruckInformation/truckinformation.service";
+import { fetchAllBrands } from "@/pages/Brands/brand.service";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
 
 const Purchase = () => {
@@ -56,14 +56,18 @@ const Purchase = () => {
   const [transactionDate, setTransactionDate] = useState(today);
   const [purchaseItems, setPurchaseItems] = useState<PurchaseItem[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [routeFreight, setRouteFreight] = useState({ company: 0, truck: 0 });
+  const [routeFreight, setRouteFreight] = useState({
+    amountPerBag: 0,
+    truckSharePerBag: 0,
+  });
+  const [brandRoutes, setBrandRoutes] = useState<any[]>([]);
 
   // Form values being watched
   const selectedCompany = watch("companyId");
   const selectedTruck = watch("truckId");
   const selectedDriver = watch("driverId");
-  const selectedBrand = watch("items.0.brandId"); // For the current item being added
-  const selectedRoute = watch("items.0.routeId"); // For the current item being added
+  const selectedBrand = watch("items.0.brandId");
+  const selectedRoute = watch("items.0.routeId");
   const qtyInTon = watch("items.0.qtyInTon");
   const ratePerTon = watch("items.0.ratePerTon");
   const commissionPerBag = watch("items.0.commissionPerBag");
@@ -86,19 +90,13 @@ const Purchase = () => {
     data: trucksData,
     isLoading: isTrucksLoading,
     error: trucksError,
-  } = useService(fetchAllTrucks);
+  } = useService(fetchAllTruckInformation);
 
   const {
     data: driversData,
     isLoading: isDriversLoading,
     error: driversError,
   } = useService(fetchAllDrivers);
-
-  const {
-    data: routesData,
-    isLoading: isRoutesLoading,
-    error: routesError,
-  } = useService(fetchAllRoutes);
 
   const {
     data: brandsData,
@@ -110,39 +108,49 @@ const Purchase = () => {
   const companies = companiesData ?? [];
   const trucks = trucksData ?? [];
   const drivers = driversData ?? [];
-  const routes = routesData ?? [];
   const brands = brandsData ?? [];
-
-  // Auto-generate purchase order ID when company is selected
-  useEffect(() => {
-    if (selectedCompany) {
-      const randomId = Math.floor(100 + Math.random() * 900);
-      setValue("purchaseOrderId", randomId.toString());
-    }
-  }, [selectedCompany, setValue]);
 
   // Handle truck selection
   useEffect(() => {
     if (selectedTruck) {
       const truck = trucks.find((t) => t.id === selectedTruck);
       if (truck) {
-        setValue("truckStatus", truck.status);
+        setValue("truckStatus", truck.sourcingType);
       }
     }
   }, [selectedTruck, trucks, setValue]);
 
+  // Handle brand selection
+  useEffect(() => {
+    if (selectedBrand && brands) {
+      const brand = brands.find((b) => b.id === selectedBrand);
+      if (brand?.freights) {
+        setBrandRoutes(brand.freights);
+      } else {
+        setBrandRoutes([]);
+      }
+    } else {
+      setBrandRoutes([]);
+    }
+  }, [selectedBrand, brands]);
+
   // Handle route selection
   useEffect(() => {
-    if (selectedRoute) {
-      const route = routes.find((r) => r.id === selectedRoute);
-      if (route) {
+    if (selectedRoute && brandRoutes.length > 0) {
+      const routeFreight = brandRoutes.find(
+        (freight) => freight.route.id === selectedRoute,
+      );
+
+      if (routeFreight) {
         setRouteFreight({
-          company: route.companyFreight,
-          truck: route.truckFreight,
+          amountPerBag: routeFreight.amountPerBag,
+          truckSharePerBag: routeFreight.truckSharePerBag,
         });
+      } else {
+        setRouteFreight({ amountPerBag: 0, truckSharePerBag: 0 });
       }
     }
-  }, [selectedRoute, routes]);
+  }, [selectedRoute, brandRoutes]);
 
   // Calculate derived values whenever inputs change
   useEffect(() => {
@@ -150,10 +158,10 @@ const Purchase = () => {
       const calculatedBags = qtyInTon * 20;
       setValue("items.0.bags", calculatedBags);
 
-      if (routeFreight.truck) {
-        const freightPerBag = routeFreight.truck / calculatedBags;
+      if (routeFreight.truckSharePerBag) {
+        const freightPerBag = routeFreight.truckSharePerBag;
         setValue("items.0.freightPerBag", freightPerBag);
-        setValue("items.0.totalFreight", routeFreight.truck);
+        setValue("items.0.totalFreight", freightPerBag * calculatedBags);
       }
 
       if (ratePerTon) {
@@ -178,7 +186,6 @@ const Purchase = () => {
     companiesError ||
     trucksError ||
     driversError ||
-    routesError ||
     brandsError
   ) {
     const errorMessage =
@@ -186,7 +193,6 @@ const Purchase = () => {
       (companiesError as { message?: string })?.message ??
       (trucksError as { message?: string })?.message ??
       (driversError as { message?: string })?.message ??
-      (routesError as { message?: string })?.message ??
       (brandsError as { message?: string })?.message ??
       "Failed to fetch data";
     return <ErrorModal message={errorMessage} />;
@@ -199,9 +205,19 @@ const Purchase = () => {
 
     const currentItem = getValues("items.0");
     const brandItem = brands.find((b) => b.id === currentItem.brandId);
-    const routeItem = routes.find((r) => r.id === currentItem.routeId);
 
-    if (!brandItem || !routeItem) return;
+    // Find route name from brand freights
+    let routeName = "";
+    if (brandItem?.freights) {
+      const routeFreight = brandItem.freights.find(
+        (f) => f.route.id === currentItem.routeId,
+      );
+      if (routeFreight) {
+        routeName = routeFreight.route.name;
+      }
+    }
+
+    if (!brandItem || !routeName) return;
 
     const purchaseItem: PurchaseItem = {
       id:
@@ -211,7 +227,7 @@ const Purchase = () => {
       brandId: currentItem.brandId,
       brandName: brandItem.name,
       routeId: currentItem.routeId,
-      routeName: routeItem.name,
+      routeName: routeName,
       qtyInTon: currentItem.qtyInTon,
       bags: currentItem.bags,
       freightPerBag: currentItem.freightPerBag,
@@ -314,7 +330,7 @@ const Purchase = () => {
 
       {/* Header Section */}
       <div className="bg-base-200 p-4 rounded-lg shadow-md mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Transaction Date */}
           <label className="block mb-1 font-medium">
             Transaction Date
@@ -347,19 +363,9 @@ const Purchase = () => {
               <p className="text-red-500 text-sm">{errors.companyId.message}</p>
             )}
           </label>
-
-          {/* Purchase Order ID */}
-          <label className="block mb-1 font-medium">
-            Purchase Order ID
-            <input
-              {...register("purchaseOrderId")}
-              readOnly
-              className="input input-bordered w-full"
-            />
-          </label>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
           {/* Truck */}
           <div>
             <label className="block mb-1 font-medium">
@@ -371,7 +377,7 @@ const Purchase = () => {
                 <option value="">Select Truck</option>
                 {trucks.map((truck) => (
                   <option key={truck.id} value={truck.id}>
-                    {truck.name}
+                    {truck.number}
                   </option>
                 ))}
               </select>
@@ -386,7 +392,7 @@ const Purchase = () => {
             </label>
           </div>
 
-          {/* Driver Name */}
+          {/* Driver Section */}
           <div>
             <label className="block mb-1 font-medium">
               Driver Name
@@ -407,30 +413,18 @@ const Purchase = () => {
                 </p>
               )}
             </label>
-            {/* Custom driver input for substitutes */}
-            <input
-              {...register("driverName")}
-              placeholder="Or enter substitute driver"
-              className="input input-bordered w-full mt-2 text-sm"
-            />
-          </div>
 
-          {/* Sale Route Name */}
-          <div>
-            <label className="block mb-1 font-medium">
-              Sale Route Name
-              <select
-                {...register("saleRouteId")}
-                className="select select-bordered w-full"
-              >
-                <option value="">Select Sale Route</option>
-                {routes.map((route) => (
-                  <option key={route.id} value={route.id}>
-                    {route.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {/* Improved substitute driver input */}
+            <div className="mt-2 relative">
+              <input
+                {...register("driverName")}
+                placeholder="Or enter substitute driver name"
+                className="input input-bordered w-full pl-8 text-sm bg-base-100"
+              />
+              <span className="absolute left-2 top-1/2 transform -translate-y-1/2 text-sm text-gray-500">
+                ➤
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -450,7 +444,7 @@ const Purchase = () => {
                 {brands
                   .filter(
                     (brand) =>
-                      !selectedCompany || brand.companyId === selectedCompany,
+                      !selectedCompany || brand.company.id === selectedCompany,
                   )
                   .map((brand) => (
                     <option key={brand.id} value={brand.id}>
@@ -466,18 +460,19 @@ const Purchase = () => {
             </label>
           </div>
 
-          {/* Route */}
+          {/* Route - Now using brand routes */}
           <div>
             <label className="block mb-1 font-medium">
               Route
               <select
                 {...register("items.0.routeId")}
                 className="select select-bordered w-full"
+                disabled={!selectedBrand || brandRoutes.length === 0}
               >
                 <option value="">Select Route</option>
-                {routes.map((route) => (
-                  <option key={route.id} value={route.id}>
-                    {route.name}
+                {brandRoutes.map((freight) => (
+                  <option key={freight.route.id} value={freight.route.id}>
+                    {freight.route.name}
                   </option>
                 ))}
               </select>
@@ -486,10 +481,10 @@ const Purchase = () => {
                   {errors.items[0].routeId.message}
                 </p>
               )}
-              {selectedRoute && (
+              {selectedRoute && routeFreight.amountPerBag > 0 && (
                 <div className="text-sm text-gray-600 mt-1">
-                  Company: {routeFreight.company.toFixed(2)}/ Truck:{" "}
-                  {routeFreight.truck.toFixed(2)}
+                  Amount Per Bag: {routeFreight.amountPerBag.toFixed(2)} / Truck
+                  Share: {routeFreight.truckSharePerBag.toFixed(2)}
                 </div>
               )}
             </label>

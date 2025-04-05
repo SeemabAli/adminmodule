@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { sendApiRequest } from "@/common/services/api.service";
 import {
   type Brand,
@@ -42,41 +44,9 @@ export const deletePurchase = async (id: string) => {
   return response;
 };
 
-// Related data services
-export const fetchAllCompanies = async () => {
-  const response = await sendApiRequest<Company[]>("/companies", {
-    method: "GET",
-    withAuthorization: true,
-  });
-  return response;
-};
-
-export const fetchAllTrucks = async () => {
-  const response = await sendApiRequest<Truck[]>("/trucks", {
-    method: "GET",
-    withAuthorization: true,
-  });
-  return response;
-};
-
+// Updated to fetch employees with department "DRIVER"
 export const fetchAllDrivers = async () => {
-  const response = await sendApiRequest<Driver[]>("/drivers", {
-    method: "GET",
-    withAuthorization: true,
-  });
-  return response;
-};
-
-export const fetchAllRoutes = async () => {
-  const response = await sendApiRequest<Route[]>("/routes", {
-    method: "GET",
-    withAuthorization: true,
-  });
-  return response;
-};
-
-export const fetchAllBrands = async () => {
-  const response = await sendApiRequest<Brand[]>("/brands", {
+  const response = await sendApiRequest<any[]>("/employees?department=DRIVER", {
     method: "GET",
     withAuthorization: true,
   });
