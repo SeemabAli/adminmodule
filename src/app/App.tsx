@@ -60,7 +60,11 @@ const router = createBrowserRouter(
 
         {/* Home Access */}
         <Route
-          element={<RequireAuth allowedRoles={[ROLES.OWNER, ROLES.ADMIN]} />}
+          element={
+            <RequireAuth
+              allowedRoles={[ROLES.OWNER, ROLES.ADMIN, ROLES.EMPLOYEE]}
+            />
+          }
         >
           <Route index element={<Home />} />
         </Route>
