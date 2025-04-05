@@ -15,7 +15,11 @@ import {
 import { logger } from "@/lib/logger";
 import { useService } from "@/common/hooks/custom/useService";
 import { ErrorModal } from "@/common/components/Error";
-import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
+import {
+  PencilSquareIcon,
+  TrashIcon,
+  UserPlusIcon,
+} from "@heroicons/react/24/solid";
 import { ApiException } from "@/utils/exceptions";
 import { uploadPDF } from "@/common/services/upload.service";
 
@@ -485,7 +489,17 @@ const EmployeeManagement = () => {
                       <span className="text-gray-500">No document</span>
                     )}
                   </td>
-                  <td className="p-3 flex gap-2 justify-center">
+                  <td className="p-3 pt-5 flex gap-2 justify-center">
+                    {employee.role && (
+                      <button
+                        onClick={() => {
+                          openRoleModal(index);
+                        }}
+                        className="flex items-center justify-center"
+                      >
+                        <UserPlusIcon className="w-5 h-5 text-success" />
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         handleEdit(employee.id ?? "");
@@ -503,16 +517,6 @@ const EmployeeManagement = () => {
                     >
                       <TrashIcon className="w-5 h-5 text-red-500" />
                     </button>
-                    {employee.role && (
-                      <button
-                        onClick={() => {
-                          openRoleModal(index);
-                        }}
-                        className="btn btn-sm btn-warning"
-                      >
-                        Update Role
-                      </button>
-                    )}
                   </td>
                 </tr>
               ))}
