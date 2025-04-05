@@ -42,38 +42,109 @@ const router = createBrowserRouter(
         <Route path="set-password" element={<SetPasswordPage />} />
       </Route>
       <Route element={<PersistentLogin />}>
-        {/* ADMIN ROUTES */}
-        <Route element={<RequireAuth allowedRoles={[ROLES.ADMIN]} />}>
-          <Route path="brands" element={<Brands />} />
-          <Route path="company-accounts" element={<CompanyAccounts />} />
-          <Route path="delivery-routes" element={<DeliveryRoutes />} />
-          <Route path="tax-accounts" element={<TaxAccounts />} />
-          <Route path="employees" element={<Employees />} />
-          <Route path="bank-accounts" element={<BankAccounts />} />
-          <Route path="truck-information" element={<TruckInformation />} />
-          <Route path="factory-expenses" element={<FactoryExpenses />} />
-          <Route path="truck-other-expenses" element={<TruckOtherExpenses />} />
-          <Route path="purchase" element={<Purchase />} />
-          <Route path="customer" element={<Customer />} />
-          <Route path="truck-route" element={<TruckRoute />} />
-        </Route>
-
         {/* Home Access */}
         <Route
           element={
             <RequireAuth
-              allowedRoles={[ROLES.OWNER, ROLES.ADMIN, ROLES.EMPLOYEE]}
+              allowedRoles={[
+                ROLES.OWNER,
+                ROLES.ADMIN,
+                ROLES.EMPLOYEE,
+                ROLES.ACCOUNTANT,
+              ]}
             />
           }
         >
           <Route index element={<Home />} />
         </Route>
 
+        {/* Company Access */}
+        <Route
+          element={<RequireAuth allowedRoles={[ROLES.OWNER, ROLES.ADMIN]} />}
+        >
+          <Route path="company-accounts" element={<CompanyAccounts />} />
+        </Route>
+        {/* Bank Access */}
+        <Route
+          element={<RequireAuth allowedRoles={[ROLES.OWNER, ROLES.ADMIN]} />}
+        >
+          <Route path="bank-accounts" element={<BankAccounts />} />
+        </Route>
+        {/* Delivery Routes Access */}
+        <Route
+          element={
+            <RequireAuth
+              allowedRoles={[ROLES.OWNER, ROLES.ADMIN, ROLES.ACCOUNTANT]}
+            />
+          }
+        >
+          <Route path="delivery-routes" element={<DeliveryRoutes />} />
+        </Route>
+        {/* Tax Access */}
+        <Route
+          element={
+            <RequireAuth
+              allowedRoles={[ROLES.OWNER, ROLES.ADMIN, ROLES.ACCOUNTANT]}
+            />
+          }
+        >
+          <Route path="tax-accounts" element={<TaxAccounts />} />
+        </Route>
+        {/* Truck Other Expenses Access */}
+        <Route
+          element={
+            <RequireAuth
+              allowedRoles={[ROLES.OWNER, ROLES.ADMIN, ROLES.ACCOUNTANT]}
+            />
+          }
+        >
+          <Route path="truck-other-expenses" element={<TruckOtherExpenses />} />
+        </Route>
+        {/* Truck Information Access */}
+        <Route
+          element={
+            <RequireAuth
+              allowedRoles={[ROLES.OWNER, ROLES.ADMIN, ROLES.ACCOUNTANT]}
+            />
+          }
+        >
+          <Route path="truck-information" element={<TruckInformation />} />
+        </Route>
+        {/* Factory Expenses Access */}
+        <Route
+          element={<RequireAuth allowedRoles={[ROLES.OWNER, ROLES.ADMIN]} />}
+        >
+          <Route path="factory-expenses" element={<FactoryExpenses />} />
+        </Route>
+        {/* Purchase Access */}
+        <Route
+          element={<RequireAuth allowedRoles={[ROLES.OWNER, ROLES.ADMIN]} />}
+        >
+          <Route path="purchase" element={<Purchase />} />
+        </Route>
+        {/* Brands Access */}
+        <Route
+          element={<RequireAuth allowedRoles={[ROLES.OWNER, ROLES.ADMIN]} />}
+        >
+          <Route path="brands" element={<Brands />} />
+        </Route>
         {/* Customer Access */}
-        {/* <Route element={<RequireAuth allowedRoles={[ROLES.OWNER]} />}>
+        <Route
+          element={<RequireAuth allowedRoles={[ROLES.OWNER, ROLES.ADMIN]} />}
+        >
           <Route path="customer" element={<Customer />} />
+        </Route>
+        {/* Truck Route Access */}
+        <Route
+          element={<RequireAuth allowedRoles={[ROLES.OWNER, ROLES.ADMIN]} />}
+        >
           <Route path="truck-route" element={<TruckRoute />} />
-        </Route> */}
+        </Route>
+
+        {/* Employee Access */}
+        <Route element={<RequireAuth allowedRoles={[ROLES.OWNER]} />}>
+          <Route path="employees" element={<Employees />} />
+        </Route>
       </Route>
     </Route>,
   ]),
