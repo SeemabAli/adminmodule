@@ -129,7 +129,7 @@ const DeliveryRoutes = () => {
       setValue("toll", targetRoute.toll);
     } else {
       setHasToll(false);
-      setValue("toll", { type: "oneway", amount: null });
+      setValue("toll", { type: "ONEWAY", amount: null });
     }
 
     setFocus("name");
@@ -157,7 +157,7 @@ const DeliveryRoutes = () => {
   const toggleToll = (hasT: boolean) => {
     setHasToll(hasT);
     if (hasT) {
-      setValue("toll", { type: "oneway", amount: null });
+      setValue("toll", { type: "ONEWAY", amount: null });
     } else {
       setValue("toll", undefined);
     }
@@ -276,10 +276,10 @@ const DeliveryRoutes = () => {
                 <label className="flex items-center space-x-2">
                   <input
                     type="radio"
-                    value="oneway"
-                    checked={watchToll?.type === "oneway"}
+                    value="ONEWAY"
+                    checked={watchToll?.type === "ONEWAY"}
                     onChange={() => {
-                      setValue("toll.type", "oneway");
+                      setValue("toll.type", "ONEWAY");
                     }}
                     className="radio-info"
                   />
@@ -288,10 +288,10 @@ const DeliveryRoutes = () => {
                 <label className="flex items-center space-x-2">
                   <input
                     type="radio"
-                    value="twoway"
-                    checked={watchToll?.type === "twoway"}
+                    value="TWOWAY"
+                    checked={watchToll?.type === "TWOWAY"}
                     onChange={() => {
-                      setValue("toll.type", "twoway");
+                      setValue("toll.type", "TWOWAY");
                     }}
                     className="radio-info"
                   />
