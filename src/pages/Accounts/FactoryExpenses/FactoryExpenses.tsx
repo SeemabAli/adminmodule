@@ -337,15 +337,34 @@ export const FactoryExpenses: React.FC = () => {
   const getTieredPricesDisplay = (tieredPrices?: TieredPrice[]) => {
     if (!tieredPrices || tieredPrices.length === 0) return "N/A";
 
-    return tieredPrices
-      .map((tp) => {
-        const range = rangeOptions.find((r) => r.id === tp.rangeId);
-        return range
-          ? `${range.rangeFrom}-${range.rangeTo}: ${tp.price.toFixed(2)}`
-          : "";
-      })
-      .filter(Boolean)
-      .join(", ");
+    return (
+      <>
+        {tieredPrices
+          .map((tp, index) => {
+            const range = rangeOptions.find((r) => r.id === tp.rangeId);
+            if (!range) return null;
+
+            // Convert price to integer by removing decimal places
+            const priceValue = Math.round(tp.price);
+
+            // Check if this is the last item in the array
+            const isLastItem = index === tieredPrices.length - 1;
+
+            // Format range display: show "+" for the last item, normal range otherwise
+            const rangeDisplay = isLastItem
+              ? `${range.rangeFrom}+`
+              : `${range.rangeFrom}-${range.rangeTo}`;
+
+            return (
+              <React.Fragment key={index}>
+                {index > 0 && ", "}
+                <strong>{rangeDisplay}</strong>: {priceValue}
+              </React.Fragment>
+            );
+          })
+          .filter(Boolean)}
+      </>
+    );
   };
 
   // Handle tiered price input
@@ -547,7 +566,7 @@ export const FactoryExpenses: React.FC = () => {
                                 const numValue =
                                   e.target.value.trim() === ""
                                     ? 0
-                                    : parseFloat(
+                                    : parseInt(
                                         e.target.value.replace(/,/g, ""),
                                       );
                                 if (!isNaN(numValue)) {
@@ -612,15 +631,15 @@ export const FactoryExpenses: React.FC = () => {
                   <td className="flex justify-center gap-2">
                     <button
                       onClick={() => expense.id && handleEdit(expense.id)}
-                      className="flex items-center justify-center hover:bg-gray-200 p-1 rounded"
+                      className="flex items-center mt-1 justify-center"
                     >
                       <PencilSquareIcon className="w-5 h-5 text-info" />
                     </button>
                     <button
                       onClick={() => expense.id && handleDelete(expense.id)}
-                      className="flex items-center justify-center hover:bg-red-100 p-1 rounded"
+                      className="flex items-center mt-1 justify-center"
                     >
-                      <TrashIcon className="w-5 h-5 text-red-600" />
+                      <TrashIcon className="w-5 h-5 text-red-500" />
                     </button>
                   </td>
                 </tr>
