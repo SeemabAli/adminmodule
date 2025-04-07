@@ -316,6 +316,11 @@ export const FactoryExpenses: React.FC = () => {
     setEditingId(expenseId);
   };
 
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    reset();
+  };
+
   // Handle delete button click
   const handleDelete = (expenseId: string) => {
     notify.confirmDelete(async () => {
@@ -446,7 +451,7 @@ export const FactoryExpenses: React.FC = () => {
             </div>
             <div className="w-full">
               <FormField
-                type="text"
+                type="number"
                 name="extraCharge"
                 label="Extra Charge if Brand Changes"
                 valueAsNumber
@@ -487,7 +492,7 @@ export const FactoryExpenses: React.FC = () => {
             {expenseType === "Fixed Amount" && (
               <div className="w-full">
                 <FormField
-                  type="text"
+                  type="number"
                   name="fixedAmountRate"
                   label="Fixed Amount"
                   placeholder="Fixed Amount"
@@ -505,7 +510,7 @@ export const FactoryExpenses: React.FC = () => {
             {expenseType === "Fixed/Ton" && (
               <div className="w-full">
                 <FormField
-                  type="text"
+                  type="number"
                   name="fixedPerTonRate"
                   label="Fixed/Ton"
                   valueAsNumber
@@ -523,7 +528,7 @@ export const FactoryExpenses: React.FC = () => {
             {expenseType === "Percent/Ton" && (
               <div className="w-full">
                 <FormField
-                  type="text"
+                  type="number"
                   name="percentagePerTonRate"
                   label="Percent/Ton"
                   placeholder="Percent/Ton"
@@ -567,7 +572,7 @@ export const FactoryExpenses: React.FC = () => {
                           <td>{rangeDisplay}</td>
                           <td>
                             <input
-                              type="text"
+                              type="number"
                               placeholder="Enter Price"
                               value={existingPrice}
                               onChange={(e) => {
@@ -604,6 +609,15 @@ export const FactoryExpenses: React.FC = () => {
           >
             {editingId ? "Update Expense" : "Save Expense"}
           </Button>
+          {editingId !== null && (
+            <Button
+              onClick={handleCancelEdit}
+              shape="neutral"
+              className="mt-4 ml-2"
+            >
+              Cancel
+            </Button>
+          )}
         </form>
       </div>
 
