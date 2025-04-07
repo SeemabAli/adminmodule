@@ -14,9 +14,8 @@ export const taxSchema = z.object({
 
   rateValue: z
     .number()
-    .positive("Tax rate must be a positive number")
-    .or(z.string().regex(/^\d+$/).transform(Number))
-    .refine((val) => val > 0, "Tax rate must be greater than 0"),
+    .gte(0, "Rate value must be greater than 0")
+    .lte(100000, "Rate value must be less than or equal to 100000"),
   applications: z.array(
     z.object({
       id: z.string(),

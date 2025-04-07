@@ -56,19 +56,9 @@ const TaxAccounts = () => {
 
   const handleTaxChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedValue = e.target.value;
-    if (selectedValue && !selectedApplicationIds.has(selectedValue)) {
-      setSelectedApplicationIds(
-        new Set([...selectedApplicationIds, selectedValue]),
-      );
+    if (selectedValue) {
+      setSelectedApplicationIds(new Set([selectedValue])); // Only one selected at a time
     }
-  };
-
-  const removeSelectedTax = (tax: string) => {
-    setSelectedApplicationIds((prev) => {
-      const newSet = new Set(prev);
-      newSet.delete(tax);
-      return newSet;
-    });
   };
 
   const validateTaxRate = (
@@ -233,6 +223,11 @@ const TaxAccounts = () => {
     setEditingTaxId(tax.id);
   };
 
+  const handleCancelEdit = () => {
+    setEditingTaxId(null);
+    reset();
+  };
+
   const handleDelete = (tax: Tax) => {
     // Validate the tax object has an ID
     if (!tax.id || tax.id === "") {
@@ -318,7 +313,7 @@ const TaxAccounts = () => {
             <select
               onChange={handleTaxChange}
               className="select select-bordered w-full mb-1"
-              value=""
+              value={[...selectedApplicationIds][0] ?? ""}
             >
               <option value="" disabled>
                 Select tax type
@@ -336,34 +331,6 @@ const TaxAccounts = () => {
             </select>
           </div>
         </div>
-
-        {selectedApplicationIds.size > 0 && (
-          <div className="mb-4">
-            <p className="font-medium">Selected Taxes:</p>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {taxApplications
-                .filter((application) =>
-                  selectedApplicationIds.has(application.id),
-                )
-                .map((application) => (
-                  <span
-                    key={application.id}
-                    className="badge badge-primary flex items-center gap-2"
-                  >
-                    {application.name}
-                    <button
-                      onClick={() => {
-                        removeSelectedTax(application.id);
-                      }}
-                      className="text-xs text-red-500 hover:text-red-700"
-                    >
-                      ✕
-                    </button>
-                  </span>
-                ))}
-            </div>
-          </div>
-        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           <div>
@@ -404,6 +371,7 @@ const TaxAccounts = () => {
               name="rateValue"
               label={`Tax Rate ${selectedOption === "PERCENTAGE" ? "(0-100%)" : ""}`}
               register={register}
+              valueAsNumber
               errorMessage={errors.rateValue?.message}
             />
             {selectedOption === "PERCENTAGE" && rateValue > 100 && (
@@ -426,6 +394,15 @@ const TaxAccounts = () => {
         >
           {editingTaxId !== null ? "Update Tax" : "Add Tax"}
         </Button>
+        {editingTaxId !== null && (
+          <Button
+            onClick={handleCancelEdit}
+            shape="neutral"
+            className="mt-4 ml-2"
+          >
+            Cancel
+          </Button>
+        )}
       </div>
 
       {isLoading && <div className="skeleton h-28 w-full"></div>}
