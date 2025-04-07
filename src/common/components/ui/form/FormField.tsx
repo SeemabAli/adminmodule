@@ -24,6 +24,7 @@ export function FormField<T extends FieldValues>({
   children,
   valueAsNumber,
   className = "relative left-0.5",
+  type,
   ...rest
 }: Props<T>) {
   return (
@@ -35,7 +36,8 @@ export function FormField<T extends FieldValues>({
       <div className="relative">
         <input
           {...register(name, { valueAsNumber: valueAsNumber })}
-          className="input input-bordered w-full bg-base-100 text-base-content focus:outline-none focus:ring-2 focus:ring-info"
+          className={`input input-bordered w-full bg-base-100 text-base-content focus:outline-none focus:ring-2 focus:ring-info ${type === "number" ? "text-right" : ""}`}
+          type={type}
           {...rest}
         />
         {children && (
