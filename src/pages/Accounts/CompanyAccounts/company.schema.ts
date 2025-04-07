@@ -6,14 +6,14 @@ export const companySchema = z.object({
   name: z
     .string()
     .nonempty("Company name is required")
-    .min(3, "Company name must be at least 2 characters")
-    .max(30, "Company name must not exceed 30 characters"),
+    .min(2, "Company name must be at least 2 characters")
+    .max(70, "Company name must not exceed 70 characters"),
 
   address: z
     .string()
     .nonempty("Address is required")
-    .min(3, "Address must be at least 2 characters")
-    .max(50, "Address must not exceed 50 characters"),
+    .min(2, "Address must be at least 2 characters")
+    .max(250, "Address must not exceed 250 characters"),
 });
 
 // Type definition
