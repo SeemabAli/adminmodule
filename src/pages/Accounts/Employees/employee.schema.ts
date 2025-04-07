@@ -12,8 +12,8 @@ export const employeeSchema = z.object({
   phone: z
     .string()
     .nonempty("Phone number is required")
-    .min(10, "Phone number must be at least 10 characters")
-    .max(15, "Phone number must not exceed 15 characters"),
+    .min(10, "Invalid phone number")
+    .max(15, "Invalid phone number"),
 
   email: z
     .string()
