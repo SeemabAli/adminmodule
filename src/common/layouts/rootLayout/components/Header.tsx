@@ -127,7 +127,7 @@ export const Header = ({ handleLogout }: NavbarProps) => {
     {
       path: "/delivery-routes",
       allowedRoles: [ROLES.ADMIN, ROLES.OWNER],
-      title: "Delivery Routes",
+      title: "Delivery Routes (Sales)",
       inDropdown: true,
     },
     {

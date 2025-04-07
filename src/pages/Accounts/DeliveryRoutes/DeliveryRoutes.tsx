@@ -136,6 +136,11 @@ const DeliveryRoutes = () => {
     setEditingIndex(index);
   };
 
+  const handleCancelEdit = () => {
+    setEditingIndex(null);
+    reset();
+  };
+
   const handleDelete = (id?: string) => {
     notify.confirmDelete(async () => {
       try {
@@ -312,7 +317,9 @@ const DeliveryRoutes = () => {
                     : null;
                   setValue("toll.amount", value);
                 }}
-                className={`input input-bordered w-full ${errors.toll?.amount ? "input-error" : ""}`}
+                className={`input input-bordered w-1/2 text-right ${
+                  errors.toll?.amount ? "input-error" : ""
+                }`}
               />
               {errors.toll?.amount && (
                 <p className="text-error text-sm mt-1">
@@ -337,6 +344,15 @@ const DeliveryRoutes = () => {
         >
           {editingIndex !== null ? "Update Route" : "Save Route"}
         </Button>
+        {editingIndex !== null && (
+          <Button
+            onClick={handleCancelEdit}
+            shape="neutral"
+            className="mt-4 ml-2"
+          >
+            Cancel
+          </Button>
+        )}
       </div>
 
       {/* Routes Table */}
