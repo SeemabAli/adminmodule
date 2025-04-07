@@ -40,8 +40,16 @@ const smsPatternSchema = z.object({
 // Define the main customer schema
 export const customerSchema = z.object({
   id: z.string().optional(),
-  fullName: z.string().nonempty("Full name is required"),
-  accountTitle: z.string().nonempty("Account title is required"),
+  fullName: z
+    .string()
+    .min(2, "Full name must be at least 2 characters")
+    .max(50, "Full name must be at most 50 characters")
+    .nonempty("Full name is required"),
+  accountTitle: z
+    .string()
+    .nonempty("Account title is required")
+    .min(2, "Account title must be at least 2 characters")
+    .max(20, "Account title must be at most 100 characters"),
   deliveryRouteId: z.string().nonempty("Route is required"),
   dealingPerson: z.string().optional(),
   reference: z.string().optional(),

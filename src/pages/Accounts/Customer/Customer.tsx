@@ -1012,17 +1012,6 @@ export const Customer: React.FC = () => {
               </div>
             </div>
           </div>
-
-          <div className="sticky bottom-0 bg-base-100 p-4 border-t flex justify-end">
-            <button
-              onClick={() => {
-                setShowDetailModal(false);
-              }}
-              className="btn btn-primary"
-            >
-              Close
-            </button>
-          </div>
         </div>
       </div>
     );
@@ -1686,7 +1675,7 @@ export const Customer: React.FC = () => {
             </div>
 
             {/* Other Images */}
-            <div className="mb-8 p-4 bg-base-100 rounded-md shadow-sm border-l-4 border-accent">
+            <div className="mb-8 p-4 bg-base-100 rounded-md shadow-sm">
               <h3 className="text-xl font-semibold mb-4">Other Images</h3>
               <div className="flex flex-col space-y-2">
                 <div className="flex items-center space-x-2">
@@ -1928,10 +1917,7 @@ export const Customer: React.FC = () => {
         {/* Navigation Buttons */}
         <div className="flex justify-between mt-6">
           {currentStep === 2 ? (
-            <button
-              className="btn btn-outline btn-primary"
-              onClick={handlePrevStep}
-            >
+            <button className="btn btn-primary" onClick={handlePrevStep}>
               Previous
             </button>
           ) : (
@@ -1985,7 +1971,7 @@ export const Customer: React.FC = () => {
                           }}
                           className="btn-sm btn-ghost text-info"
                         >
-                          <Eye size={16} />
+                          <Eye size={21} />
                         </button>
                         <button
                           onClick={() => {
@@ -1993,7 +1979,7 @@ export const Customer: React.FC = () => {
                           }}
                           className="btn-sm btn-ghost text-success"
                         >
-                          <PencilSquareIcon className="h-4 w-4" />
+                          <PencilSquareIcon className="h-5 w-5" />
                         </button>
                         <button
                           onClick={() => {
@@ -2001,7 +1987,7 @@ export const Customer: React.FC = () => {
                           }}
                           className="btn-sm btn-ghost text-error"
                         >
-                          <TrashIcon className="h-4 w-4" />
+                          <TrashIcon className="h-5 w-5" />
                         </button>
                       </div>
                     </td>
