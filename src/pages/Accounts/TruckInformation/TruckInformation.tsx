@@ -47,7 +47,7 @@ export const TruckInformation = () => {
       number: "",
       driverName: "",
       routeId: "",
-      sourcingType: "insource", // Set default to Insource
+      sourcingType: "INSOURCE", // Set default to Insource
     },
   });
 
@@ -194,7 +194,7 @@ export const TruckInformation = () => {
               <label className="flex items-center gap-2">
                 <input
                   type="radio"
-                  value="insource"
+                  value="INSOURCE"
                   {...register("sourcingType")}
                   className="radio-info"
                 />
@@ -203,7 +203,7 @@ export const TruckInformation = () => {
               <label className="flex items-center gap-2">
                 <input
                   type="radio"
-                  value="outsource"
+                  value="OUTSOURCE"
                   {...register("sourcingType")}
                   className="radio-info"
                 />

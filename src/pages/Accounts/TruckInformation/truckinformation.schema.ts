@@ -16,7 +16,7 @@ export const truckInformationSchema = z.object({
 
   routeId: z.string().nonempty("Default route is required"),
 
-  sourcingType: z.enum(["insource", "outsource"], {
+  sourcingType: z.enum(["INSOURCE", "OUTSOURCE"], {
     required_error: "Truck type is required",
     invalid_type_error: "Truck type must be either 'Insource' or 'Outsource'",
   }),
