@@ -27,8 +27,8 @@ const TaxAccounts = () => {
     Set<string>
   >(new Set());
   const [taxApplications, setTaxApplications] = useState<TaxApplication[]>([]);
-  const [selectedOption, setSelectedOption] = useState<"percentage" | "fixed">(
-    "percentage",
+  const [selectedOption, setSelectedOption] = useState<"PERCENTAGE" | "FIXED">(
+    "PERCENTAGE",
   );
   const { error, data, isLoading } = useService(fetchAllTaxes);
 
@@ -46,7 +46,7 @@ const TaxAccounts = () => {
       id: "",
       name: "",
       rateValue: 0,
-      rateType: "percentage",
+      rateType: "PERCENTAGE",
       applications: [],
     },
   });
@@ -73,9 +73,9 @@ const TaxAccounts = () => {
 
   const validateTaxRate = (
     rateValue: number,
-    rateType: "percentage" | "fixed",
+    rateType: "PERCENTAGE" | "FIXED",
   ): boolean => {
-    if (rateType === "percentage" && rateValue > 100) {
+    if (rateType === "PERCENTAGE" && rateValue > 100) {
       notify.error("Percentage rate cannot exceed 100%.");
       return false;
     }
@@ -122,14 +122,14 @@ const TaxAccounts = () => {
       setTaxes([...taxes, newTax]);
       reset();
       setSelectedApplicationIds(new Set());
-      setSelectedOption("percentage");
+      setSelectedOption("PERCENTAGE");
       notify.success("Tax added successfully!");
     } catch (error: unknown) {
       logger.error(error);
 
       if (error instanceof ApiException) {
         if (error.statusCode === 409) {
-          if (selectedOption === "percentage") {
+          if (selectedOption === "PERCENTAGE") {
             notify.error("Tax percentage should be under 100%.");
           } else {
             notify.error("Tax already exists.");
@@ -186,7 +186,7 @@ const TaxAccounts = () => {
       setEditingTaxId(null);
       reset();
       setSelectedApplicationIds(new Set());
-      setSelectedOption("percentage");
+      setSelectedOption("PERCENTAGE");
       notify.success("Tax updated successfully!");
       await Promise.resolve();
       return;
@@ -195,7 +195,7 @@ const TaxAccounts = () => {
 
       if (error instanceof ApiException) {
         if (error.statusCode === 409) {
-          if (selectedOption === "percentage") {
+          if (selectedOption === "PERCENTAGE") {
             notify.error("Tax percentage should be under 100%.");
           } else {
             notify.error("Failed to update tax. It may already exist.");
@@ -210,7 +210,7 @@ const TaxAccounts = () => {
     }
   };
 
-  const handleRadioChange = (value: "percentage" | "fixed") => {
+  const handleRadioChange = (value: "PERCENTAGE" | "FIXED") => {
     setSelectedOption(value);
   };
 
@@ -280,7 +280,7 @@ const TaxAccounts = () => {
           id: tax.id ?? "",
           name: tax.name ?? "",
           rateValue: tax.rateValue ?? 0,
-          rateType: tax.rateType ?? "percentage",
+          rateType: tax.rateType ?? "PERCENTAGE",
           applications: tax.applications ?? [],
         })),
       );
@@ -373,9 +373,9 @@ const TaxAccounts = () => {
                 <input
                   type="radio"
                   value="percentage"
-                  checked={selectedOption === "percentage"}
+                  checked={selectedOption === "PERCENTAGE"}
                   onChange={() => {
-                    handleRadioChange("percentage");
+                    handleRadioChange("PERCENTAGE");
                   }}
                   className="radio-info"
                 />
@@ -385,9 +385,9 @@ const TaxAccounts = () => {
                 <input
                   type="radio"
                   value="fixed"
-                  checked={selectedOption === "fixed"}
+                  checked={selectedOption === "FIXED"}
                   onChange={() => {
-                    handleRadioChange("fixed");
+                    handleRadioChange("FIXED");
                   }}
                   className="radio-info"
                 />
@@ -397,16 +397,16 @@ const TaxAccounts = () => {
             <FormField
               type="number"
               placeholder={
-                selectedOption === "percentage"
+                selectedOption === "PERCENTAGE"
                   ? "Enter Tax Rate (0-100%)"
                   : "Enter Fixed Rate"
               }
               name="rateValue"
-              label={`Tax Rate ${selectedOption === "percentage" ? "(0-100%)" : ""}`}
+              label={`Tax Rate ${selectedOption === "PERCENTAGE" ? "(0-100%)" : ""}`}
               register={register}
               errorMessage={errors.rateValue?.message}
             />
-            {selectedOption === "percentage" && rateValue > 100 && (
+            {selectedOption === "PERCENTAGE" && rateValue > 100 && (
               <p className="text-red-500 text-sm mt-1">
                 Percentage rate cannot exceed 100%
               </p>

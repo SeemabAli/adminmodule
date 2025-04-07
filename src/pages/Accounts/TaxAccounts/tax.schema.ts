@@ -23,7 +23,7 @@ export const taxSchema = z.object({
       name: z.string(),
     }),
   ),
-  rateType: z.enum(["percentage", "fixed"]), // Fixed: Changed to array of strings, not nested arrays
+  rateType: z.enum(["PERCENTAGE", "FIXED"]), // Fixed: Changed to array of strings, not nested arrays
 });
 
 export type Tax = z.infer<typeof taxSchema>;
