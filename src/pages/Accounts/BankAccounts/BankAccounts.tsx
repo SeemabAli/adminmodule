@@ -213,6 +213,11 @@ const BankAccounts = () => {
     setEditingAccountId(accountId);
   };
 
+  const handleCancelEdit = () => {
+    setEditingAccountId(null);
+    resetBankForm();
+  };
+
   const handleDeleteBankAccount = (accountId: string) => {
     notify.confirmDelete(async () => {
       try {
@@ -410,7 +415,7 @@ const BankAccounts = () => {
                 setEditingAccountId(null);
                 resetBankForm();
               }}
-              shape="info"
+              shape="neutral"
               className="ml-2"
             >
               Cancel

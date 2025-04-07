@@ -22,21 +22,15 @@ export const bankAccountSchema = z.object({
     .string()
     .nonempty("Account title is required")
     .min(3, "Account title must be at least 3 characters")
-    .max(50, "Account title must not exceed 50 characters"),
+    .max(50, "Account title must not exceed 50 characters")
+    .regex(/^[^0-9]*$/, "Account title must not contain numbers"),
   accountNumber: z
     .string()
     .nonempty("Account number/IBAN# is required")
     .min(5, "Account number/IBAN# must be at least 5 characters")
     .max(30, "Account number/IBAN# must not exceed 30 characters")
     .refine((val) => val.length > 0, "Account number/IBAN# is invalid"),
-  openingBalance: z
-    .number()
-    .min(1, "Opening balance must be greater than 0")
-    .refine((val: number) => !isNaN(val), "Opening balance must be a number")
-    .refine(
-      (val: number) => val >= 0,
-      "Opening balance must be greater than or equal to 0",
-    ),
+  openingBalance: z.number(),
   chequeCount: z.array(chequeSchema).optional(),
 });
 
