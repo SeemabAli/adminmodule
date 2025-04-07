@@ -548,15 +548,23 @@ export const FactoryExpenses: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {rangeOptions.map((range) => {
+                    {rangeOptions.map((range, index) => {
                       const rangeId = range.id;
                       const existingPrice =
                         tieredPrices.find((tp) => tp.rangeId === rangeId)
                           ?.price ?? 0;
 
+                      // Check if this is the last item in the array
+                      const isLastItem = index === rangeOptions.length - 1;
+
+                      // Format range display: show "+" for the last item, normal range otherwise
+                      const rangeDisplay = isLastItem
+                        ? `${range.rangeFrom}+`
+                        : `${range.rangeFrom} - ${range.rangeTo}`;
+
                       return (
                         <tr key={rangeId} className="hover:bg-gray-50">
-                          <td>{`${range.rangeFrom} - ${range.rangeTo}`}</td>
+                          <td>{rangeDisplay}</td>
                           <td>
                             <input
                               type="text"
