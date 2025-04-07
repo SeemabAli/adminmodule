@@ -20,12 +20,12 @@ import {
 } from "./brand.service";
 import type { Company } from "../Accounts/CompanyAccounts/company.schema";
 import { fetchAllCompanies } from "../Accounts/CompanyAccounts/company.service";
-import type { DeliveryRoute } from "../Accounts/DeliveryRoutes/deliveryRoute.schema";
-import { fetchAllRoutes } from "../Accounts/DeliveryRoutes/route.service";
+import { fetchAllTruckRoute } from "../TruckRoute/truckroute.service";
 import { fetchAllTaxes } from "../Accounts/TaxAccounts/tax.service";
 import TrashIcon from "@heroicons/react/24/solid/TrashIcon";
 import PencilSquareIcon from "@heroicons/react/24/solid/PencilSquareIcon";
 import { ApiException } from "@/utils/exceptions";
+import type { ITruckRoute } from "../TruckRoute/truckroute.schema";
 
 type BrandExtended = BrandFormData & {
   id: string;
@@ -68,7 +68,7 @@ const Brands = () => {
   const [taxIds, setTaxIds] = useState<string[]>([]);
   const [availableTaxes, setAvailableTaxes] = useState<Tax[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [routes, setRoutes] = useState<DeliveryRoute[]>([]);
+  const [routes, setRoutes] = useState<ITruckRoute[]>([]);
   const [routeInputs, setRouteInputs] = useState<RouteInput[]>([]);
   const [step, setStep] = useState(1);
   const [editingBrandId, setEditingBrandId] = useState<string | null>(null);
@@ -105,7 +105,7 @@ const Brands = () => {
       try {
         const [companiesData, routesData, taxesData] = await Promise.all([
           fetchAllCompanies(),
-          fetchAllRoutes(),
+          fetchAllTruckRoute(),
           fetchAllTaxes(),
         ]);
 
@@ -254,11 +254,6 @@ const Brands = () => {
     const isValid = await trigger(["weightPerBagKg", "commissionPerBag"]);
     if (!isValid) return;
 
-    if (taxIds.length === 0) {
-      notify.error("Please select at least one tax");
-      return;
-    }
-
     const validFreights = routeInputs.filter(
       (route) => route.amountPerBag !== null && route.truckSharePerBag !== null,
     );
@@ -372,6 +367,13 @@ const Brands = () => {
     setValue("code", brand.code);
     setValue("weightPerBagKg", brand.weightPerBagKg);
     setValue("commissionPerBag", brand.commissionPerBag);
+    setRouteInputs(
+      brand.freights.map((freight) => ({
+        routeId: freight.routeId,
+        amountPerBag: freight.amountPerBag,
+        truckSharePerBag: freight.truckSharePerBag,
+      })),
+    );
 
     // Set route inputs when editing, but don't rely on the useEffect to initialize them
     const existingRouteInputs = routes.map((route) => {
@@ -388,6 +390,10 @@ const Brands = () => {
     });
     setRouteInputs(existingRouteInputs);
     setStep(1);
+  };
+
+  const handleCancelEdit = () => {
+    resetFormState();
   };
 
   const handleDeleteBrand = async (brandId: string) => {
@@ -443,7 +449,7 @@ const Brands = () => {
               <div className="col-span-2">
                 <label className="block mb-1 font-medium">Company Name</label>
                 <select
-                  className="select select-bordered w-full mb-2"
+                  className="select select-bordered lg:w-1/2 mb-2"
                   value={selectedCompanyId}
                   onChange={(e) => setSelectedCompanyId(e.target.value)}
                 >
@@ -478,6 +484,15 @@ const Brands = () => {
             <Button onClick={handleNextStep} shape="info" className="mt-4">
               Next
             </Button>
+            {isEditMode && (
+              <Button
+                onClick={handleCancelEdit}
+                shape="neutral"
+                className="mt-4 ml-2"
+              >
+                Cancel
+              </Button>
+            )}
           </>
         ) : (
           <>
@@ -516,7 +531,7 @@ const Brands = () => {
             <div className="mt-2">
               <label className="block mb-1 font-medium">Taxes</label>
               <select
-                className="select select-bordered w-full mb-2"
+                className="select select-bordered lg:w-1/2 mb-2"
                 value=""
                 onChange={(e) =>
                   e.target.value && handleTaxToggle(e.target.value)
@@ -584,7 +599,9 @@ const Brands = () => {
 
                       return (
                         <tr key={route.id}>
-                          <td>{route.code}</td>
+                          <td>
+                            {route.code} - {route.name}
+                          </td>
                           <td>
                             <input
                               type="number"
@@ -628,9 +645,20 @@ const Brands = () => {
             </div>
 
             <div className="flex justify-between mt-4">
-              <Button onClick={handlePreviousStep} shape="secondary">
-                Back
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={handlePreviousStep} shape="secondary">
+                  Back
+                </Button>
+                {isEditMode && (
+                  <Button
+                    onClick={handleCancelEdit}
+                    shape="neutral"
+                    className="ml-2"
+                  >
+                    Cancel
+                  </Button>
+                )}
+              </div>
               <Button
                 onClick={handleSubmit(handleSaveBrand)}
                 shape="info"
