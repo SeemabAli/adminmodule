@@ -22,13 +22,15 @@ import { ErrorModal } from "@/common/components/Error";
 import { TrashIcon } from "@heroicons/react/24/solid";
 import { PencilSquareIcon } from "@heroicons/react/24/solid";
 import { ApiException } from "@/utils/exceptions";
-import type { DeliveryRoute } from "../DeliveryRoutes/deliveryRoute.schema";
-import { fetchAllRoutes } from "../DeliveryRoutes/route.service";
+import { fetchAllTruckRoute } from "@/pages/TruckRoute/truckroute.service";
+import { fetchAllDrivers } from "../Purchase/purchase.service";
+import type { ITruckRoute } from "@/pages/TruckRoute/truckroute.schema";
 
 export const TruckInformation = () => {
   const [trucks, setTrucks] = useState<ITruckInformation[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [routes, setRoutes] = useState<DeliveryRoute[]>([]);
+  const [routes, setRoutes] = useState<ITruckRoute[]>([]);
+  const [drivers, setDrivers] = useState<{ id: string; name: string }[]>([]); // State for drivers
 
   const { error, data, isLoading } = useService(fetchAllTruckInformation);
 
@@ -123,10 +125,15 @@ export const TruckInformation = () => {
     });
   };
 
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    reset();
+  };
+
   useEffect(() => {
     const fetchRoutesData = async () => {
       try {
-        const routesData = await fetchAllRoutes();
+        const routesData = await fetchAllTruckRoute();
         setRoutes(routesData);
       } catch (error) {
         logger.error("Failed to fetch routes", error);
@@ -134,10 +141,21 @@ export const TruckInformation = () => {
       }
     };
 
+    const fetchDriversData = async () => {
+      try {
+        const driversData = await fetchAllDrivers();
+        setDrivers(driversData);
+      } catch (error) {
+        logger.error("Failed to fetch drivers", error);
+        notify.error("Could not load drivers data");
+      }
+    };
+
     if (data) {
       setTrucks(data);
     }
     void fetchRoutesData();
+    void fetchDriversData(); // Fetch all drivers when component mounts
   }, [data]);
 
   if (error) {
@@ -162,13 +180,26 @@ export const TruckInformation = () => {
             register={register}
             errorMessage={errors.number?.message}
           />
-          <FormField
-            placeholder="Enter Driver Name"
-            name={"driverName"}
-            label={"Driver Name"}
-            register={register}
-            errorMessage={errors.driverName?.message}
-          />
+          {/* Driver Name field changed to dropdown */}
+          <label className="block mb-1 font-medium">
+            Driver Name
+            <select
+              {...register("driverName")}
+              className="select select-bordered w-full"
+            >
+              <option value="">Select Driver</option>
+              {drivers.map((driver) => (
+                <option key={driver.id} value={driver.name}>
+                  {driver.name}
+                </option>
+              ))}
+            </select>
+            {errors.driverName && (
+              <span className="text-red-500 text-xs font-light">
+                {errors.driverName.message}
+              </span>
+            )}
+          </label>
           <label className="block mb-1 font-medium">
             Route
             <select
@@ -178,7 +209,7 @@ export const TruckInformation = () => {
               <option value="">Select Route</option>
               {routes.map((route) => (
                 <option key={route.id} value={route.id}>
-                  {route.name}
+                  {route.code} - {route.name}
                 </option>
               ))}
             </select>
@@ -231,6 +262,15 @@ export const TruckInformation = () => {
         >
           {editingId !== null ? "Update Truck" : "Add Truck"}
         </Button>
+        {editingId !== null && (
+          <Button
+            onClick={handleCancelEdit}
+            shape="neutral"
+            className="ml-2 mt-4"
+          >
+            Cancel
+          </Button>
+        )}
       </div>
       {isLoading && <div className="skeleton h-28 w-full"></div>}
       {trucks.length > 0 ? (
