@@ -458,7 +458,7 @@ const BankAccounts = () => {
                         }}
                         className="flex items-center justify-center shrink-0"
                       >
-                        <PencilSquareIcon className="w-6 h-6 text-info" />
+                        <PencilSquareIcon className="w-5 h-5 text-info" />
                       </button>
                       <button
                         onClick={() => {
@@ -467,7 +467,7 @@ const BankAccounts = () => {
                         className="flex items-center justify-center shrink-0 tooltip"
                         data-tip="Manage Cheques"
                       >
-                        <BanknotesIcon className="w-6 h-6 text-success" />
+                        <BanknotesIcon className="w-5 h-5 text-success" />
                       </button>
                       <button
                         onClick={() => {
@@ -475,7 +475,7 @@ const BankAccounts = () => {
                         }}
                         className="flex items-center justify-center shrink-0"
                       >
-                        <TrashIcon className="w-6 h-6 text-red-500" />
+                        <TrashIcon className="w-5 h-5 text-red-500" />
                       </button>
                     </div>
                   </td>
@@ -504,7 +504,7 @@ const BankAccounts = () => {
               }}
               shape="info"
             >
-              Back to Accounts
+              Close
             </Button>
           </div>
 

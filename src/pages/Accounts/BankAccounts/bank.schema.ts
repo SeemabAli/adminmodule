@@ -25,9 +25,10 @@ export const bankAccountSchema = z.object({
     .max(50, "Account title must not exceed 50 characters"),
   accountNumber: z
     .string()
-    .nonempty("Account number is required")
-    .min(5, "Account number must be at least 5 characters")
-    .max(30, "Account number must not exceed 30 characters"),
+    .nonempty("Account number/IBAN# is required")
+    .min(5, "Account number/IBAN# must be at least 5 characters")
+    .max(30, "Account number/IBAN# must not exceed 30 characters")
+    .refine((val) => val.length > 0, "Account number/IBAN# is invalid"),
   openingBalance: z
     .number()
     .min(1, "Opening balance must be greater than 0")
