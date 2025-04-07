@@ -29,51 +29,7 @@ import type { DeliveryRoute } from "../DeliveryRoutes/deliveryRoute.schema";
 import ImageUploader from "@/common/components/ImageUploader";
 import { uploadImage } from "@/common/services/upload.service";
 import { X, Eye } from "lucide-react";
-
-// // Define proper types based on the schema
-// interface Phone {
-//   number: string;
-//   status: "Ptcl" | "Mobile" | "Whatsapp";
-// }
-
-// interface PostDatedCheque {
-//   dueDate: string;
-//   details: string;
-//   image: string;
-// }
-
-// interface Signature {
-//   image: string;
-// }
-
-// interface CustomerFormData {
-//   id?: string;
-//   customerName: string;
-//   acTitle: string;
-//   dealingPerson: string;
-//   reference: string;
-//   cnicFront: string;
-//   cnicBack: string;
-//   ntn: string;
-//   phones: Phone[];
-//   addresses: { text: string; map: string }[];
-//   route: string;
-//   creditLimit: number;
-//   postDatedCheques: PostDatedCheque[];
-//   ledgerDetails: string;
-//   ledgerNumber: number;
-//   signatures: Signature[];
-//   otherImages: string[];
-//   smsPattern?: {
-//     enabled: boolean;
-//     frequency: "Daily" | "Weekly" | "Monthly" | "Yearly";
-//     via: string;
-//   };
-// }
-
-// SMS Via options
-const smsViaOptions = ["SMS", "WhatsApp", "Email", "Push Notification"];
-const smsFrequencyOptions = ["Daily", "Weekly", "Monthly", "Yearly"];
+import { removeEmptyFields } from "@/utils/Form_Utils";
 
 export const Customer: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -249,12 +205,11 @@ export const Customer: React.FC = () => {
       defaultValues: {
         fullName: "",
         accountTitle: "",
-        dealingPerson: "",
         reference: "",
         ntnNumber: "",
         creditLimit: 1,
         ledgerDetails: "",
-        ledgerNumber: 0,
+        ledgerNumber: "",
         phoneNumbers: [],
         cnicBackImage: "",
         cnicFrontImage: "",
@@ -600,12 +555,11 @@ export const Customer: React.FC = () => {
     // Set all form fields
     setValue("fullName", customer.fullName);
     setValue("accountTitle", customer.accountTitle);
-    setValue("dealingPerson", customer.dealingPerson || "");
     setValue("reference", customer.reference || "");
     setValue("ntnNumber", customer.ntnNumber || "");
     setValue("creditLimit", customer.creditLimit || 0);
     setValue("ledgerDetails", customer.ledgerDetails || "");
-    setValue("ledgerNumber", customer.ledgerNumber || 0);
+    setValue("ledgerNumber", customer.ledgerNumber || "");
     setValue("phoneNumbers", customer.phoneNumbers || []);
     setValue("cnicFrontImage", customer.cnicFrontImage || "");
     setValue("cnicBackImage", customer.cnicBackImage || "");
@@ -627,6 +581,14 @@ export const Customer: React.FC = () => {
     setCurrentStep(1);
     setFocus("fullName");
     notify.success("Customer loaded for editing.");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingIndex(null);
+    reset(); // Reset form fields
+    if (currentStep !== 1) {
+      setCurrentStep(1); // Optionally return to first step
+    }
   };
 
   const handleDelete = (index: number) => {
@@ -738,8 +700,8 @@ export const Customer: React.FC = () => {
                         <span>{selectedCustomer.accountTitle}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="font-medium">Dealing Person:</span>
-                        <span>{selectedCustomer.dealingPerson || "-"}</span>
+                        <span className="font-medium">Reference</span>
+                        <span>{selectedCustomer.reference || "-"}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="font-medium">Reference:</span>
@@ -1076,7 +1038,7 @@ export const Customer: React.FC = () => {
                 <option value="">Select Route</option>
                 {routes.map((route: DeliveryRoute) => (
                   <option key={route.id} value={route.id}>
-                    {route.code}
+                    {route.code} - {route.name}
                   </option>
                 ))}
               </select>
@@ -1084,11 +1046,11 @@ export const Customer: React.FC = () => {
 
             {/* Optional Fields */}
             <div className="pt-2">
-              <label className="block font-medium mb-1">Dealing Person</label>
+              <label className="block font-medium mb-1">Reference</label>
               <input
                 type="text"
                 placeholder="Enter Name"
-                {...register("dealingPerson")}
+                {...register("reference")}
                 className="input input-bordered w-full"
               />
             </div>
@@ -1126,33 +1088,24 @@ export const Customer: React.FC = () => {
                         </div>
                       </div>
                       {cnicFrontPreview && (
-                        <div className="mt-2 bg-gray-50 p-2 rounded-md">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <img
-                                src={cnicFrontPreview}
-                                alt="CNIC Front Preview"
-                                className="w-24 h-16 object-cover rounded"
-                              />
-                              <span className="text-xs text-gray-500 ml-2">
-                                Selected image
-                              </span>
-                            </div>
-                            <button
-                              className="btn btn-circle btn-xs btn-ghost text-error hover:bg-error hover:text-white transition-colors duration-200 flex items-center justify-center"
-                              onClick={() => {
-                                if (cnicFrontPreview?.startsWith("blob:")) {
-                                  URL.revokeObjectURL(cnicFrontPreview);
-                                }
-                                setCnicFrontPreview("");
-                                setCnicFrontFile(null);
-                              }}
-                            >
-                              <span className="text-lg font-bold leading-none pb-1">
-                                ×
-                              </span>
-                            </button>
-                          </div>
+                        <div className="relative inline-block mt-2">
+                          <img
+                            src={cnicFrontPreview}
+                            alt="CNIC Front Preview"
+                            className="w-24 h-16 object-cover rounded"
+                          />
+                          <button
+                            className="absolute top-0 right-0 bg-gray-200 rounded-full w-5 h-5 flex items-center justify-center text-gray-700 hover:bg-gray-300"
+                            onClick={() => {
+                              if (cnicFrontPreview?.startsWith("blob:")) {
+                                URL.revokeObjectURL(cnicFrontPreview);
+                              }
+                              setCnicFrontPreview("");
+                              setCnicFrontFile(null);
+                            }}
+                          >
+                            ×
+                          </button>
                         </div>
                       )}
                       <div className="flex justify-end mt-1">
@@ -1257,33 +1210,24 @@ export const Customer: React.FC = () => {
                         </div>
                       </div>
                       {cnicBackPreview && (
-                        <div className="mt-2 bg-gray-50 p-2 rounded-md">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <img
-                                src={cnicBackPreview}
-                                alt="CNIC Back Preview"
-                                className="w-24 h-16 object-cover rounded"
-                              />
-                              <span className="text-xs text-gray-500 ml-2">
-                                Selected image
-                              </span>
-                            </div>
-                            <button
-                              className="btn btn-circle btn-xs btn-ghost text-error hover:bg-error hover:text-white transition-colors duration-200 flex items-center justify-center"
-                              onClick={() => {
-                                if (cnicBackPreview?.startsWith("blob:")) {
-                                  URL.revokeObjectURL(cnicBackPreview);
-                                }
-                                setCnicBackPreview("");
-                                setCnicBackFile(null);
-                              }}
-                            >
-                              <span className="text-lg font-bold leading-none pb-1">
-                                ×
-                              </span>
-                            </button>
-                          </div>
+                        <div className="relative inline-block mt-2">
+                          <img
+                            src={cnicBackPreview}
+                            alt="CNIC Back Preview"
+                            className="w-24 h-16 object-cover rounded"
+                          />
+                          <button
+                            className="absolute top-0 right-0 bg-gray-200 rounded-full w-5 h-5 flex items-center justify-center text-gray-700 hover:bg-gray-300"
+                            onClick={() => {
+                              if (cnicBackPreview?.startsWith("blob:")) {
+                                URL.revokeObjectURL(cnicBackPreview);
+                              }
+                              setCnicBackPreview("");
+                              setCnicBackFile(null);
+                            }}
+                          >
+                            ×
+                          </button>
                         </div>
                       )}
                       <div className="flex justify-end mt-1">
@@ -1386,7 +1330,7 @@ export const Customer: React.FC = () => {
               <input
                 type="number"
                 placeholder="Enter Ledger Number"
-                {...register("ledgerNumber", { valueAsNumber: true })}
+                {...register("ledgerNumber")}
                 className="input input-bordered w-full"
               />
             </div>
@@ -1484,79 +1428,93 @@ export const Customer: React.FC = () => {
         {currentStep === 2 && (
           <div className="w-full">
             {/* Phone Numbers Section */}
-            <div className="mb-8 border-l-4 border-accent p-4 bg-base-100 rounded-md shadow-sm">
-              <h3 className="text-xl font-semibold mb-4">Phone Numbers</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <input
-                  type="text"
-                  placeholder="Phone Number"
-                  value={phoneNumber}
-                  onChange={(e) => {
-                    setPhoneNumber(e.target.value);
-                  }}
-                  className="input input-bordered w-full"
-                />
-                <select
-                  value={phoneType}
-                  onChange={(e) => {
-                    setPhoneType(
-                      e.target.value as "MOBILE" | "PTCL" | "WHATSAPP",
-                    );
-                  }}
-                  className="select select-bordered w-full"
-                >
-                  <option value="MOBILE">Mobile</option>
-                  <option value="PTCL">PTCL</option>
-                  <option value="WHATSAPP">WhatsApp</option>
-                </select>
-                <button
-                  onClick={handleAddPhone}
-                  className="btn btn-info w-full"
-                  disabled={!phoneNumber}
-                >
-                  Add
-                </button>
-              </div>
-              {(watchedValues.phoneNumbers ?? []).length > 0 && (
-                <div className="overflow-x-auto">
-                  <table className="table w-full">
-                    <thead>
-                      <tr>
-                        <th>Phone Number</th>
-                        <th>Type</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(watchedValues.phoneNumbers ?? []).map(
-                        (phone, index) => (
-                          <tr key={index}>
-                            <td>{phone.number}</td>
-                            <td>{phone.type}</td>
-                            <td>
-                              <button
-                                onClick={() => {
-                                  handleRemovePhone(index);
-                                }}
-                                className="justify-center"
-                              >
-                                <TrashIcon className="w-5 h-5 text-red-500" />
-                              </button>
-                            </td>
-                          </tr>
-                        ),
-                      )}
-                    </tbody>
-                  </table>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8">
+              {/* Phone Numbers Section */}
+              <div className="border-l-4 border-accent p-4 bg-base-100 rounded-md shadow-sm">
+                <h3 className="text-xl font-semibold mb-4">Phone Numbers</h3>
+                <div className="flex flex-col md:flex-row gap-2 mb-4">
+                  <input
+                    type="text"
+                    placeholder="Phone Number"
+                    value={phoneNumber}
+                    onChange={(e) => {
+                      setPhoneNumber(e.target.value);
+                    }}
+                    className="px-3 py-2 border border-gray-300 rounded text-sm flex-grow"
+                  />
+                  <select
+                    value={phoneType}
+                    onChange={(e) => {
+                      setPhoneType(
+                        e.target.value as "MOBILE" | "PTCL" | "WHATSAPP",
+                      );
+                    }}
+                    className="px-3 py-2 border border-gray-300 rounded text-sm w-36"
+                  >
+                    <option value="MOBILE">Mobile</option>
+                    <option value="PTCL">PTCL</option>
+                    <option value="WHATSAPP">WhatsApp</option>
+                  </select>
+                  <button
+                    onClick={handleAddPhone}
+                    className="px-4 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed whitespace-nowrap"
+                    disabled={!phoneNumber}
+                  >
+                    Add
+                  </button>
                 </div>
-              )}
-            </div>
+                {(watchedValues.phoneNumbers ?? []).length > 0 && (
+                  <div className="inline-block w-full rounded border border-gray-200 shadow-sm">
+                    <table className="border-collapse text-sm w-full">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="px-3 py-2 text-left font-medium text-gray-700 border-b">
+                            Phone Number
+                          </th>
+                          <th className="px-3 py-2 text-left font-medium text-gray-700 border-b">
+                            Type
+                          </th>
+                          <th className="px-2 py-2 text-center font-medium text-gray-700 border-b w-12">
+                            Action
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(watchedValues.phoneNumbers ?? []).map(
+                          (phone, index) => (
+                            <tr
+                              key={index}
+                              className="border-b border-gray-100 last:border-b-0"
+                            >
+                              <td className="px-3 py-1.5 whitespace-nowrap">
+                                {phone.number}
+                              </td>
+                              <td className="px-3 py-1.5 whitespace-nowrap">
+                                {phone.type}
+                              </td>
+                              <td className="px-2 py-1.5 text-center">
+                                <button
+                                  onClick={() => {
+                                    handleRemovePhone(index);
+                                  }}
+                                  className="inline-flex items-center justify-center p-1 rounded-full hover:bg-red-50"
+                                >
+                                  <TrashIcon className="w-4 h-4 text-red-500" />
+                                </button>
+                              </td>
+                            </tr>
+                          ),
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
 
-            {/* Addresses Section */}
-            <div className="mb-8 border-l-4 border-accent p-4 bg-base-100 rounded-md shadow-sm">
-              <h3 className="text-xl font-semibold mb-4">Address</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div className="md:col-span-2">
+              {/* Addresses Section */}
+              <div className="border-l-4 border-accent p-4 bg-base-100 rounded-md shadow-sm">
+                <h3 className="text-xl font-semibold mb-4">Address</h3>
+                <div className="flex flex-col md:flex-row gap-2 mb-4">
                   <input
                     type="text"
                     placeholder="Current Address"
@@ -1564,46 +1522,57 @@ export const Customer: React.FC = () => {
                     onChange={(e) => {
                       setCurrentAddress(e.target.value);
                     }}
-                    className="input input-bordered w-full"
+                    className="px-3 py-2 border border-gray-300 rounded text-sm flex-grow"
                   />
+                  <button
+                    onClick={handleAddAddress}
+                    className="px-4 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed whitespace-nowrap"
+                    disabled={!currentAddress}
+                  >
+                    Add
+                  </button>
                 </div>
-                <button
-                  onClick={handleAddAddress}
-                  className="btn btn-info w-full"
-                  disabled={!currentAddress}
-                >
-                  Add
-                </button>
-              </div>
-              {(watchedValues.addresses ?? []).length > 0 && (
-                <div className="overflow-x-auto">
-                  <table className="table w-full">
-                    <thead>
-                      <tr>
-                        <th>Address</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(watchedValues.addresses ?? []).map((address, index) => (
-                        <tr key={index}>
-                          <td>{address.currentAddress}</td>
-                          <td>
-                            <button
-                              onClick={() => {
-                                handleRemoveAddress(index);
-                              }}
-                              className="justify-center"
-                            >
-                              <TrashIcon className="w-5 h-5 text-red-500" />
-                            </button>
-                          </td>
+                {(watchedValues.addresses ?? []).length > 0 && (
+                  <div className="inline-block w-full rounded border border-gray-200 shadow-sm">
+                    <table className="border-collapse text-sm w-full">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="px-3 py-2 text-left font-medium text-gray-700 border-b">
+                            Address
+                          </th>
+                          <th className="px-2 py-2 text-center font-medium text-gray-700 border-b w-12">
+                            Action
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                      </thead>
+                      <tbody>
+                        {(watchedValues.addresses ?? []).map(
+                          (address, index) => (
+                            <tr
+                              key={index}
+                              className="border-b border-gray-100 last:border-b-0"
+                            >
+                              <td className="px-3 py-1.5 whitespace-nowrap">
+                                {address.currentAddress}
+                              </td>
+                              <td className="px-2 py-1.5 text-center">
+                                <button
+                                  onClick={() => {
+                                    handleRemoveAddress(index);
+                                  }}
+                                  className="inline-flex items-center justify-center p-1 rounded-full hover:bg-red-50"
+                                >
+                                  <TrashIcon className="w-4 h-4 text-red-500" />
+                                </button>
+                              </td>
+                            </tr>
+                          ),
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Notification Preference */}
@@ -1688,7 +1657,7 @@ export const Customer: React.FC = () => {
                           handleOtherImageSelected(e.target.files[0]);
                         }
                       }}
-                      className="file-input file-input-bordered w-full"
+                      className="file-input file-input-bordered lg:w-1/2"
                     />
                   </div>
                 </div>
@@ -1916,25 +1885,34 @@ export const Customer: React.FC = () => {
 
         {/* Navigation Buttons */}
         <div className="flex justify-between mt-6">
-          {currentStep === 2 ? (
-            <button className="btn btn-primary" onClick={handlePrevStep}>
-              Previous
-            </button>
-          ) : (
-            <div></div>
-          )}
-          {currentStep === 1 ? (
-            <button className="btn btn-primary" onClick={handleNextStep}>
-              Next
-            </button>
-          ) : (
-            <button
-              className="btn btn-success"
-              onClick={() => handleSave(getValues())}
-            >
-              {editingIndex !== null ? "Update" : "Save"}
-            </button>
-          )}
+          <div className="flex gap-2">
+            {currentStep === 2 ? (
+              <button className="btn btn-primary" onClick={handlePrevStep}>
+                Previous
+              </button>
+            ) : (
+              <div></div>
+            )}
+            {editingIndex !== null && (
+              <button className="btn btn-neutral" onClick={handleCancelEdit}>
+                Cancel
+              </button>
+            )}
+          </div>
+          <div>
+            {currentStep === 1 ? (
+              <button className="btn btn-primary" onClick={handleNextStep}>
+                Next
+              </button>
+            ) : (
+              <button
+                className="btn btn-success"
+                onClick={() => handleSave(getValues())}
+              >
+                {editingIndex !== null ? "Update" : "Save"}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

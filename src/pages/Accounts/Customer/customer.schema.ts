@@ -56,7 +56,7 @@ export const customerSchema = z.object({
   ntnNumber: z.string().optional(),
   creditLimit: z.number().optional(),
   ledgerDetails: z.string().optional(),
-  ledgerNumber: z.number().optional(),
+  ledgerNumber: z.string().optional(),
   phoneNumbers: z.array(phoneNumberSchema).optional(),
   cnicBackImage: z.string().optional(),
   cnicFrontImage: z.string().optional(),
