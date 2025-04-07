@@ -108,6 +108,11 @@ const CompanyAccounts = () => {
     });
   };
 
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    reset();
+  };
+
   useEffect(() => {
     if (data) {
       setCompanies(data);
@@ -146,20 +151,26 @@ const CompanyAccounts = () => {
             errorMessage={errors.address?.message}
           />
         </div>
-        <Button
-          onClick={
-            editingId !== null
-              ? handleSubmit(() => {
-                  void onCompanyUpdate(editingId);
-                })
-              : handleSubmit(handleAddCompany)
-          }
-          shape="info"
-          pending={isSubmitting}
-          className="mt-4"
-        >
-          {editingId !== null ? "Update Company" : "Add Company"}
-        </Button>
+        <div className="flex gap-2 mt-4">
+          <Button
+            onClick={
+              editingId !== null
+                ? handleSubmit(() => {
+                    void onCompanyUpdate(editingId);
+                  })
+                : handleSubmit(handleAddCompany)
+            }
+            shape="info"
+            pending={isSubmitting}
+          >
+            {editingId !== null ? "Update Company" : "Add Company"}
+          </Button>
+          {editingId !== null && (
+            <Button onClick={handleCancelEdit} shape="neutral">
+              Cancel
+            </Button>
+          )}
+        </div>
       </div>
       {isLoading && <div className="skeleton h-28 w-full"></div>}
       {companies.length > 0 ? (

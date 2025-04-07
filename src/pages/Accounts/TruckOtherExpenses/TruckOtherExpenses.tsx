@@ -103,6 +103,11 @@ const TruckOtherExpense = () => {
     setEditingId(expenseId);
   };
 
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    reset();
+  };
+
   const handleDelete = (expenseId: string) => {
     notify.confirmDelete(async () => {
       try {
@@ -188,6 +193,15 @@ const TruckOtherExpense = () => {
         >
           {editingId !== null ? "Update Expense" : "Add Expense"}
         </Button>
+        {editingId !== null && (
+          <Button
+            onClick={handleCancelEdit}
+            shape="neutral"
+            className="mt-4 ml-2"
+          >
+            Cancel
+          </Button>
+        )}
       </div>
       {isLoading && <div className="skeleton h-28 w-full"></div>}
       {expenses.length > 0 ? (

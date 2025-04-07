@@ -217,6 +217,11 @@ const EmployeeManagement = () => {
     setEditingId(id);
   };
 
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    reset();
+  };
+
   const handleDelete = (id: string) => {
     notify.confirmDelete(async () => {
       try {
@@ -365,7 +370,7 @@ const EmployeeManagement = () => {
           <FormField
             placeholder="Employee CNIC"
             name="cnic"
-            label="Employee CNIC (without dashes)"
+            label="Employee CNIC"
             register={register}
             errorMessage={errors.cnic?.message}
           />
@@ -389,6 +394,7 @@ const EmployeeManagement = () => {
             errorMessage={errors.designation?.message}
           />
           <FormField
+            type="number"
             placeholder="Salary"
             name="salary"
             label="Salary"
@@ -442,6 +448,15 @@ const EmployeeManagement = () => {
         >
           {editingId !== null ? "Update Employee" : "Add Employee"}
         </Button>
+        {editingId !== null && (
+          <Button
+            onClick={handleCancelEdit}
+            shape="neutral"
+            className="mt-4 ml-2"
+          >
+            Cancel
+          </Button>
+        )}
       </div>
 
       {/* Employee Table */}
