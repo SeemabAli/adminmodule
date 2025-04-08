@@ -664,7 +664,7 @@ export const Customer: React.FC = () => {
     if (!selectedCustomer) return null;
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] bg-opacity-60 z-50 flex items-center justify-center p-4 overflow-y-auto">
         <div className="bg-base-100 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
           <div className="sticky top-0 bg-base-100 p-4 border-b flex justify-between items-center z-10">
             <h2 className="text-2xl font-bold text-primary">
