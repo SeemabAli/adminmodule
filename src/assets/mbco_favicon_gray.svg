@@ -1,0 +1,6 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="10" fill="#e0e0e0"/>
+  <path d="M8 48 L32 16 L56 48 Z" fill="#b0bec5"/>
+  <text x="32" y="54" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#37474f" font-weight="bold">MB&amp;CO</text>
+</svg>
