@@ -470,7 +470,7 @@ export const FactoryExpenses: React.FC = () => {
 
             <div className="col-span-1 md:col-span-2 flex flex-wrap gap-2 mb-4">
               {expenseTypes.map((type) => (
-                <label key={type} className="flex items-center space-x-2">
+                <label key={type} className="flex items-center space-x-1">
                   <input
                     type="radio"
                     {...register("expenseType")}
@@ -485,7 +485,7 @@ export const FactoryExpenses: React.FC = () => {
                       setValue("fixedPerTonRate", 0);
                       setValue("percentagePerTonRate", 0);
                     }}
-                    className="radio"
+                    className="btn-radio"
                   />
                   <span>{type}</span>
                 </label>
@@ -554,23 +554,22 @@ export const FactoryExpenses: React.FC = () => {
                         tieredPrices.find((tp) => tp.rangeId === rangeId)
                           ?.price ?? 0;
 
+                      // Check if this is the last item in the array
+                      const isLastItem = index === rangeOptions.length - 1;
+
+                      // Format range display: show "+" for the last item, normal range otherwise
+                      const rangeDisplay = isLastItem
+                        ? `${range.rangeFrom}+`
+                        : `${range.rangeFrom} - ${range.rangeTo}`;
+
                       return (
                         <tr key={rangeId} className="hover:bg-gray-50">
-                          <td>{`${range.rangeFrom} - ${range.rangeTo}`}</td>
+                          <td>{rangeDisplay}</td>
                           <td>
-                            <FormattedNumberField
-                              name={`tieredPrices.${index}.price`}
-                              label={`Price for Range ${range.rangeFrom} - ${range.rangeTo}`}
+                            <input
+                              type="number"
                               placeholder="Enter Price"
                               value={existingPrice}
-                              register={register}
-                              setValue={setValue}
-                              watch={watch}
-                              errorMessage={
-                                errors[
-                                  `tieredPrice-${rangeId}` as keyof typeof errors
-                                ]?.message
-                              }
                               onChange={(e) => {
                                 const numValue =
                                   e.target.value.trim() === ""
@@ -578,8 +577,11 @@ export const FactoryExpenses: React.FC = () => {
                                     : parseInt(
                                         e.target.value.replace(/,/g, ""),
                                       );
-                                handleTieredPriceInput(rangeId, numValue);
+                                if (!isNaN(numValue)) {
+                                  handleTieredPriceInput(rangeId, numValue);
+                                }
                               }}
+                              className="input input-bordered input-sm w-full bg-white text-gray-800"
                             />
                           </td>
                         </tr>
@@ -647,7 +649,11 @@ export const FactoryExpenses: React.FC = () => {
                     {convertNumberIntoLocalString(expense.fixedAmountRate ?? 0)}
                   </td>
                   <td>{expense.percentagePerTonRate ?? 0}</td>
-                  <td>{expense.extraChargeIfBrandChanges ?? 0}</td>
+                  <td>
+                    {convertNumberIntoLocalString(
+                      expense.extraChargeIfBrandChanges ?? 0,
+                    )}
+                  </td>
                   <td>{getTieredPricesDisplay(expense.tieredPrices)}</td>
                   <td className="flex justify-center gap-2">
                     <button
