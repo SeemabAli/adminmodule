@@ -5,7 +5,11 @@
 import { useState, useEffect } from "react";
 import { logger } from "@/lib/logger";
 import { notify } from "@/lib/notify";
-import { FormField } from "@/common/components/ui/form/FormField";
+import {
+  FormField,
+  FormattedNumberField,
+} from "@/common/components/ui/form/FormField";
+import { convertNumberIntoLocalString } from "@/utils/CommaSeparator";
 import { useForm } from "react-hook-form";
 import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -482,13 +486,13 @@ const Brands = () => {
                 register={register}
                 errorMessage={errors.weightPerBagKg?.message}
               />
-
-              <FormField
-                type="number"
+              <FormattedNumberField
                 placeholder="Commission Amount"
                 name="commissionPerBag"
-                label="Commission Per Bag"
+                label="Commission Amount"
                 register={register}
+                setValue={setValue}
+                watch={getValues}
                 errorMessage={errors.commissionPerBag?.message}
               />
             </div>
@@ -680,7 +684,7 @@ const Brands = () => {
                     <td className="p-3">{brand.company?.name ?? "N/A"}</td>
                     <td className="p-3">{Math.round(brand.weightPerBagKg)}</td>
                     <td className="p-3">
-                      {Math.round(brand.commissionPerBag)}
+                      {convertNumberIntoLocalString(brand.commissionPerBag)}
                     </td>
                     <td className="p-3">
                       {brand.lessCommission ? "Yes" : "No"}

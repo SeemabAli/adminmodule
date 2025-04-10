@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { notify } from "@/lib/notify";
-import { FormField } from "@/common/components/ui/form/FormField";
+import {
+  FormField,
+  FormattedNumberField,
+} from "@/common/components/ui/form/FormField";
 import { useForm } from "react-hook-form";
 import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,6 +22,7 @@ import { ErrorModal } from "@/common/components/Error";
 import PencilSquareIcon from "@heroicons/react/24/solid/PencilSquareIcon";
 import TrashIcon from "@heroicons/react/24/solid/TrashIcon";
 import { ApiException } from "@/utils/exceptions";
+import { convertNumberIntoLocalString } from "@/utils/CommaSeparator";
 
 const TaxAccounts = () => {
   const [taxes, setTaxes] = useState<Tax[]>([]);
@@ -361,19 +365,29 @@ const TaxAccounts = () => {
                 <span>Fixed/Bag</span>
               </label>
             </div>
-            <FormField
-              type="number"
-              placeholder={
-                selectedOption === "PERCENTAGE"
-                  ? "Enter Tax Rate (0-100%)"
-                  : "Enter Fixed Rate"
-              }
-              name="rateValue"
-              label={`Tax Rate ${selectedOption === "PERCENTAGE" ? "(0-100%)" : ""}`}
-              register={register}
-              valueAsNumber
-              errorMessage={errors.rateValue?.message}
-            />
+
+            {selectedOption === "PERCENTAGE" ? (
+              <FormField
+                type="number"
+                placeholder="Enter Tax Rate (0-100%)"
+                name="rateValue"
+                label="Tax Rate (0-100%)"
+                register={register}
+                valueAsNumber
+                errorMessage={errors.rateValue?.message}
+              />
+            ) : (
+              <FormattedNumberField
+                placeholder="Enter Fixed Rate"
+                name="rateValue"
+                label="Tax Rate"
+                register={register}
+                setValue={setValue}
+                watch={watch}
+                errorMessage={errors.rateValue?.message}
+              />
+            )}
+
             {selectedOption === "PERCENTAGE" && rateValue > 100 && (
               <p className="text-red-500 text-sm mt-1">
                 Percentage rate cannot exceed 100%
@@ -433,7 +447,11 @@ const TaxAccounts = () => {
                       : "None"}
                   </td>
                   <td className="p-3">{tax.rateType}</td>
-                  <td className="p-3">{tax.rateValue}</td>
+                  <td className="p-3">
+                    {tax.rateType === "FIXED"
+                      ? convertNumberIntoLocalString(tax.rateValue)
+                      : tax.rateValue}
+                  </td>
                   <td className="p-3 flex justify-center">
                     <button
                       onClick={() => {

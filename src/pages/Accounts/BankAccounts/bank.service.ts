@@ -1,12 +1,21 @@
 import { sendApiRequest } from "@/common/services/api.service";
 import { type BankAccount, type Cheque } from "./bank.schema";
 import type { ChequeCreateInput } from "./BankAccounts";
+import { parseIndianNumber } from "@/utils/CommaSeparator";
 
 export const createBankAccount = async (data: BankAccount) => {
+  const processedData = {
+    ...data,
+    openingBalance:
+      typeof data.openingBalance === "string"
+        ? parseIndianNumber(data.openingBalance)
+        : Number(data.openingBalance ?? 0),
+  };
+
   const response = await sendApiRequest<BankAccount>("/bank-accounts", {
     method: "POST",
     withAuthorization: true,
-    data,
+    data: processedData,
   });
   return response;
 };
@@ -20,10 +29,18 @@ export const fetchAllBankAccounts = async () => {
 };
 
 export const updateBankAccount = async (id: string, data: BankAccount) => {
+  const processedData = {
+    ...data,
+    openingBalance:
+      typeof data.openingBalance === "string"
+        ? parseIndianNumber(data.openingBalance)
+        : Number(data.openingBalance ?? 0),
+  };
+
   const response = await sendApiRequest<BankAccount>(`/bank-accounts/${id}`, {
     method: "PATCH",
     withAuthorization: true,
-    data,
+    data: processedData,
   });
   return response;
 };

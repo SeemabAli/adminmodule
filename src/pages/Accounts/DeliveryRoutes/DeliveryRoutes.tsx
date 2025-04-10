@@ -7,7 +7,10 @@ import {
   deleteDeliveryRoute,
 } from "./route.service";
 import { notify } from "../../../lib/notify";
-import { FormField } from "@/common/components/ui/form/FormField";
+import {
+  FormattedNumberField,
+  FormField,
+} from "@/common/components/ui/form/FormField";
 import { useForm } from "react-hook-form";
 import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,6 +23,7 @@ import {
 import TrashIcon from "@heroicons/react/24/solid/TrashIcon";
 import PencilSquareIcon from "@heroicons/react/24/solid/PencilSquareIcon";
 import { ApiException } from "@/utils/exceptions";
+import { convertNumberIntoLocalString } from "@/utils/CommaSeparator";
 
 const DeliveryRoutes = () => {
   const [routes, setRoutes] = useState<DeliveryRoute[]>([]);
@@ -305,27 +309,19 @@ const DeliveryRoutes = () => {
               </div>
             </div>
 
-            <div className="mt-2">
+            {/* Replace the existing Toll Amount section with this */}
+            <div className="mt-2 w-1/2">
               <label className="block mb-1 font-medium">Toll Amount</label>
-              <input
-                type="number"
+              <FormattedNumberField
                 placeholder="Enter Toll Amount"
-                value={watchToll?.amount ?? ""}
-                onChange={(e) => {
-                  const value = e.target.value
-                    ? Number(e.target.value.replace(/,/g, ""))
-                    : null;
-                  setValue("toll.amount", value);
-                }}
-                className={`input input-bordered w-1/2 text-right ${
-                  errors.toll?.amount ? "input-error" : ""
-                }`}
+                name="toll.amount"
+                label=""
+                register={register}
+                setValue={setValue}
+                watch={watch}
+                errorMessage={errors.toll?.amount?.message}
+                className="w-1/2"
               />
-              {errors.toll?.amount && (
-                <p className="text-error text-sm mt-1">
-                  {errors.toll.amount.message}
-                </p>
-              )}
             </div>
           </>
         )}
@@ -383,7 +379,9 @@ const DeliveryRoutes = () => {
                   <td className="p-3">{route.toll ? "Yes" : "No"}</td>
                   <td className="p-3">{route.toll ? route.toll.type : "-"}</td>
                   <td className="p-3">
-                    {route.toll ? route.toll.amount : "-"}
+                    {route.toll
+                      ? convertNumberIntoLocalString(route.toll.amount)
+                      : "-"}
                   </td>
                   <td className="p-3 flex gap-2 justify-center">
                     <button

@@ -1,5 +1,6 @@
 import { sendApiRequest } from "@/common/services/api.service";
 import type { Tax, TaxApplication } from "./tax.schema";
+import { parseIndianNumber } from "@/utils/CommaSeparator";
 
 export interface TaxRequestPayload extends Omit<Tax, "applications"> {
   applicationIds: string[];
@@ -7,10 +8,20 @@ export interface TaxRequestPayload extends Omit<Tax, "applications"> {
 }
 
 export const createTax = async (data: TaxRequestPayload) => {
+  // Create a processed copy of the data to ensure proper number handling
+  const processedData = {
+    ...data,
+    // Handle number formatting for fixed rate type
+    rateValue:
+      data.rateType === "FIXED" && typeof data.rateValue === "string"
+        ? parseIndianNumber(data.rateValue)
+        : Number(data.rateValue ?? 0),
+  };
+
   const response = await sendApiRequest("/taxes", {
     method: "POST",
     withAuthorization: true,
-    data,
+    data: processedData,
   });
   return response;
 };
@@ -35,10 +46,20 @@ export const fetchTaxApplications = async () => {
 };
 
 export const updateTax = async (id: string, data: TaxRequestPayload) => {
+  // Create a processed copy of the data to ensure proper number handling
+  const processedData = {
+    ...data,
+    // Handle number formatting for fixed rate type
+    rateValue:
+      data.rateType === "FIXED" && typeof data.rateValue === "string"
+        ? parseIndianNumber(data.rateValue)
+        : Number(data.rateValue ?? 0),
+  };
+
   const response = await sendApiRequest(`/taxes/${id}`, {
     method: "PATCH",
     withAuthorization: true,
-    data,
+    data: processedData,
   });
   return response;
 };

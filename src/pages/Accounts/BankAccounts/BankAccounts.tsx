@@ -5,10 +5,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 // import { convertNumberIntoLocalString } from "@/utils/CommaSeparator";
 import { Button } from "@/common/components/ui/Button";
-import { FormField } from "@/common/components/ui/form/FormField";
+import {
+  FormField,
+  FormattedNumberField,
+} from "@/common/components/ui/form/FormField";
 import { ErrorModal } from "@/common/components/Error";
 import { useService } from "@/common/hooks/custom/useService";
 import { logger } from "@/lib/logger";
+import { convertNumberIntoLocalString } from "@/utils/CommaSeparator";
 import { ApiException } from "@/utils/exceptions";
 import PencilSquareIcon from "@heroicons/react/24/solid/PencilSquareIcon";
 import TrashIcon from "@heroicons/react/24/solid/TrashIcon";
@@ -387,13 +391,14 @@ const BankAccounts = () => {
             register={registerBank}
             errorMessage={bankErrors.accountNumber?.message}
           />
-          <FormField
-            type="number"
+          <FormattedNumberField
+            type="text"
             name="openingBalance"
             label="Opening Balance"
-            valueAsNumber
             placeholder="Opening Balance"
             register={registerBank}
+            setValue={setBankValue}
+            watch={watchBankName}
             errorMessage={bankErrors.openingBalance?.message}
           />
         </div>
@@ -449,7 +454,9 @@ const BankAccounts = () => {
                   <td className="p-3 text-center">{account.bankName}</td>
                   <td className="p-3 text-center">{account.accountTitle}</td>
                   <td className="p-3 text-center">{account.accountNumber}</td>
-                  <td className="p-3 text-center">{account.openingBalance}</td>
+                  <td className="p-3 text-center">
+                    {convertNumberIntoLocalString(account.openingBalance)}
+                  </td>
                   <td className="p-3 text-center">
                     {typeof getChequesCount(account.id ?? "") === "number"
                       ? (getChequesCount(account.id ?? "") as number)

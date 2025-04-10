@@ -1,11 +1,27 @@
 import { type DeliveryRoute } from "./deliveryRoute.schema";
 import { sendApiRequest } from "@/common/services/api.service";
+import { parseIndianNumber } from "@/utils/CommaSeparator";
 
 export const createRoute = async (data: DeliveryRoute) => {
+  // Create a processed copy of the data to ensure proper number handling
+  const processedData = {
+    ...data,
+    // If toll exists and amount is a string, parse it to a number
+    toll: data.toll
+      ? {
+          ...data.toll,
+          amount:
+            typeof data.toll.amount === "string"
+              ? parseIndianNumber(data.toll.amount)
+              : Number(data.toll.amount ?? 0),
+        }
+      : undefined,
+  };
+
   const response = await sendApiRequest<DeliveryRoute>("/delivery-routes", {
     method: "POST",
     withAuthorization: true,
-    data,
+    data: processedData,
   });
   return response;
 };
@@ -19,12 +35,27 @@ export const fetchAllRoutes = async () => {
 };
 
 export const updateDeliveryRoute = async (id: string, data: DeliveryRoute) => {
+  // Create a processed copy of the data to ensure proper number handling
+  const processedData = {
+    ...data,
+    // If toll exists and amount is a string, parse it to a number
+    toll: data.toll
+      ? {
+          ...data.toll,
+          amount:
+            typeof data.toll.amount === "string"
+              ? parseIndianNumber(data.toll.amount)
+              : Number(data.toll.amount ?? 0),
+        }
+      : undefined,
+  };
+
   const response = await sendApiRequest<DeliveryRoute>(
     `/delivery-routes/${id}`,
     {
       method: "PATCH",
       withAuthorization: true,
-      data,
+      data: processedData,
     },
   );
   return response;

@@ -2,6 +2,7 @@
 import { sendApiRequest } from "@/common/services/api.service";
 import { type BrandFormData } from "./brand.schema";
 import type { Tax } from "@/pages/Accounts/TaxAccounts/tax.schema";
+import { parseIndianNumber } from "@/utils/CommaSeparator"; // Assuming you have a utility for number parsing
 
 type Freights = {
   route: any;
@@ -23,11 +24,24 @@ type GetBrandResponse = {
   freights: Freights[];
 };
 
+// Helper function to format commission per bag
+const formatCommissionPerBag = (amount: number): number => {
+  return Number(amount.toFixed(2)); // Example: Format as a number with 2 decimal places
+};
+
 export const createBrand = async (data: BrandFormData) => {
+  const processedData = {
+    ...data,
+    commissionPerBag:
+      typeof data.commissionPerBag === "string"
+        ? parseIndianNumber(data.commissionPerBag)
+        : Number(data.commissionPerBag ?? 0),
+  };
+
   const response = await sendApiRequest("/brands", {
     method: "POST",
     withAuthorization: true,
-    data,
+    data: processedData,
   });
   return response;
 };
@@ -37,16 +51,34 @@ export const fetchAllBrands = async () => {
     method: "GET",
     withAuthorization: true,
   });
-  return response;
+
+  // Format commission per bag for each brand
+  return response.map((brand) => ({
+    ...brand,
+    commissionPerBag: formatCommissionPerBag(brand.commissionPerBag),
+  }));
 };
 
 export const updateBrand = async (id: string, data: BrandFormData) => {
+  const processedData = {
+    ...data,
+    commissionPerBag:
+      typeof data.commissionPerBag === "string"
+        ? parseIndianNumber(data.commissionPerBag)
+        : Number(data.commissionPerBag ?? 0),
+  };
+
   const response = await sendApiRequest<GetBrandResponse>(`/brands/${id}`, {
     method: "PATCH",
     withAuthorization: true,
-    data,
+    data: processedData,
   });
-  return response;
+
+  // Format commission per bag after update
+  return {
+    ...response,
+    commissionPerBag: formatCommissionPerBag(response.commissionPerBag),
+  };
 };
 
 export const deleteBrand = async (id: string) => {

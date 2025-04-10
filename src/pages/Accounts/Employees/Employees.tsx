@@ -1,7 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import { notify } from "@/lib/notify";
 import { convertNumberIntoLocalString } from "@/utils/CommaSeparator";
-import { FormField } from "@/common/components/ui/form/FormField";
+import {
+  FormField,
+  FormattedNumberField,
+} from "@/common/components/ui/form/FormField";
 import { useForm } from "react-hook-form";
 import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -314,10 +317,7 @@ const EmployeeManagement = () => {
       const formattedData = data.map((employee) => ({
         ...employee,
         salary: Number(
-          convertNumberIntoLocalString(employee.salary.toString()).replace(
-            /,/g,
-            "",
-          ),
+          convertNumberIntoLocalString(employee.salary).replace(/,/g, ""),
         ),
         department: employee.department ?? "",
         document: employee.document ?? null,
@@ -393,13 +393,13 @@ const EmployeeManagement = () => {
             register={register}
             errorMessage={errors.designation?.message}
           />
-          <FormField
-            type="number"
-            placeholder="Salary"
+          <FormattedNumberField
+            placeholder="Enter Salary"
             name="salary"
             label="Salary"
-            valueAsNumber
             register={register}
+            setValue={setValue}
+            watch={getValues}
             errorMessage={errors.salary?.message}
           />
           <div className="block mb-1">
@@ -492,7 +492,9 @@ const EmployeeManagement = () => {
                   <td className="p-3">{employee.cnic}</td>
                   <td className="p-3">{employee.department}</td>
                   <td className="p-3">{employee.designation}</td>
-                  <td className="p-3">{employee.salary}</td>
+                  <td className="p-3">
+                    {convertNumberIntoLocalString(employee.salary)}
+                  </td>
                   <td className="p-3">
                     {employee.role ? (
                       <span className="badge badge-info">{employee.role}</span>

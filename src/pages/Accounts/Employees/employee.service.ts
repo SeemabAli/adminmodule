@@ -1,11 +1,20 @@
 import { sendApiRequest } from "@/common/services/api.service";
 import { type Employee } from "./employee.schema";
+import { parseIndianNumber } from "@/utils/CommaSeparator";
 
 export const createEmployee = async (data: Employee) => {
+  const processedData = {
+    ...data,
+    salary:
+      typeof data.salary === "string"
+        ? parseIndianNumber(data.salary)
+        : Number(data.salary ?? 0),
+  };
+
   const response = await sendApiRequest<Employee>("/employees", {
     method: "POST",
     withAuthorization: true,
-    data,
+    data: processedData,
   });
   return response;
 };
@@ -19,10 +28,18 @@ export const fetchAllEmployees = async () => {
 };
 
 export const updateEmployee = async (id: string, data: Employee) => {
+  const processedData = {
+    ...data,
+    salary:
+      typeof data.salary === "string"
+        ? parseIndianNumber(data.salary)
+        : Number(data.salary ?? 0),
+  };
+
   const response = await sendApiRequest<Employee>(`/employees/${id}`, {
     method: "PATCH",
     withAuthorization: true,
-    data,
+    data: processedData,
   });
   return response;
 };
