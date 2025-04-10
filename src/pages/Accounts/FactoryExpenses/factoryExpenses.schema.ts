@@ -46,7 +46,10 @@ export const factoryExpensesSchema = z.object({
     .max(100, "Percentage cannot exceed 100")
     .optional(),
   tieredPrices: z.array(tieredPriceSchema).optional(),
-  extraCharge: z.number().min(0, "Extra charge must be positive").optional(),
+  extraChargeIfBrandChanges: z
+    .number()
+    .min(0, "Extra charge must be positive")
+    .optional(),
 });
 
 // Convenience types

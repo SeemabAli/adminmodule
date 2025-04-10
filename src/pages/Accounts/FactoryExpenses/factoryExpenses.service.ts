@@ -4,6 +4,7 @@ import {
   type AppliesTo,
   type RateType,
 } from "./factoryExpenses.schema";
+import { parseIndianNumber } from "@/utils/CommaSeparator";
 
 // API interface for factory expenses
 interface IFactoryExpensesApiPayload {
@@ -17,8 +18,15 @@ interface IFactoryExpensesApiPayload {
     rangeId: string;
     price: number;
   }[];
-  extraCharge?: number;
+  extraChargeIfBrandChanges?: number;
 }
+
+// Helper function to parse number safely
+const safeParse = (value: string | number | undefined | null) => {
+  return typeof value === "string"
+    ? parseIndianNumber(value)
+    : Number(value ?? 0);
+};
 
 // Helper function to map UI form data to API payload
 const prepareApiPayload = (
@@ -42,15 +50,27 @@ const prepareApiPayload = (
       }
     })(),
     fixedPerTonRate:
-      data.expenseType === "Fixed/Ton" ? data.fixedPerTonRate : undefined,
+      data.expenseType === "Fixed/Ton"
+        ? safeParse(data.fixedPerTonRate)
+        : undefined,
     fixedAmountRate:
-      data.expenseType === "Fixed Amount" ? data.fixedAmountRate : undefined,
+      data.expenseType === "Fixed Amount"
+        ? safeParse(data.fixedAmountRate)
+        : undefined,
     percentagePerTonRate:
       data.expenseType === "Percent/Ton"
-        ? data.percentagePerTonRate
+        ? safeParse(data.percentagePerTonRate)
         : undefined,
-    tieredPrices: data.tieredPrices,
-    extraCharge: data.extraCharge,
+    tieredPrices:
+      data.expenseType === "Range Ton From"
+        ? data.tieredPrices?.map((tier) => ({
+            rangeId: tier.rangeId,
+            price: safeParse(tier.price),
+          }))
+        : undefined,
+    extraChargeIfBrandChanges: data.extraChargeIfBrandChanges
+      ? safeParse(data.extraChargeIfBrandChanges)
+      : undefined,
   };
 };
 
@@ -112,7 +132,6 @@ export const fetchAllRanges = async () => {
     return response;
   } catch (error) {
     console.error("Error fetching ranges:", error);
-    // Return empty array as fallback
     return [];
   }
 };

@@ -4,7 +4,11 @@ import { notify } from "@/lib/notify";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/common/components/ui/Button";
-import { FormField } from "@/common/components/ui/form/FormField";
+import {
+  FormField,
+  FormattedNumberField,
+} from "@/common/components/ui/form/FormField";
+import { convertNumberIntoLocalString } from "@/utils/CommaSeparator";
 import { ErrorModal } from "@/common/components/Error";
 import { useService } from "@/common/hooks/custom/useService";
 import { logger } from "@/lib/logger";
@@ -68,7 +72,7 @@ export const FactoryExpenses: React.FC = () => {
       name: "",
       type: "General",
       expenseType: "Fixed Amount",
-      extraCharge: 0,
+      extraChargeIfBrandChanges: 0,
       fixedAmountRate: 0,
       fixedPerTonRate: 0,
       percentagePerTonRate: 0,
@@ -153,7 +157,7 @@ export const FactoryExpenses: React.FC = () => {
           : undefined,
       tieredPrices:
         formData.expenseType === "Range Ton From" ? tieredPrices : [],
-      extraCharge: formData.extraCharge,
+      extraChargeIfBrandChanges: formData.extraChargeIfBrandChanges,
     };
   };
 
@@ -186,7 +190,7 @@ export const FactoryExpenses: React.FC = () => {
         name: "",
         type: "General",
         expenseType: "Fixed Amount",
-        extraCharge: 0,
+        extraChargeIfBrandChanges: 0,
         fixedAmountRate: 0,
         fixedPerTonRate: 0,
         percentagePerTonRate: 0,
@@ -245,7 +249,7 @@ export const FactoryExpenses: React.FC = () => {
         name: "",
         type: "General",
         expenseType: "Fixed Amount",
-        extraCharge: 0,
+        extraChargeIfBrandChanges: 0,
         fixedAmountRate: 0,
         fixedPerTonRate: 0,
         percentagePerTonRate: 0,
@@ -273,7 +277,10 @@ export const FactoryExpenses: React.FC = () => {
       "type",
       expense.appliesTo === "GENERAL" ? "General" : "Specific Product",
     );
-    setValue("extraCharge", expense.extraCharge ?? 0);
+    setValue(
+      "extraChargeIfBrandChanges",
+      expense.extraChargeIfBrandChanges ?? 0,
+    );
 
     // Map API rate type back to UI expense type
     let expenseType: IFactoryExpenses["expenseType"];
@@ -450,18 +457,14 @@ export const FactoryExpenses: React.FC = () => {
               )}
             </div>
             <div className="w-full">
-              <FormField
-                type="number"
-                name="extraCharge"
-                label="Extra Charge if Brand Changes"
-                valueAsNumber
-                placeholder="Extra Charge"
+              <FormattedNumberField
+                name="extraChargeIfBrandChanges"
+                label="Extra Charge If Brand Changes"
+                placeholder="Enter Amount"
                 register={register}
-                onChange={(e) => {
-                  handleNumberInput("extraCharge", e);
-                }}
-                value={getValues("extraCharge") ?? 0}
-                errorMessage={errors.extraCharge?.message}
+                setValue={setValue}
+                watch={watch}
+                errorMessage={errors.extraChargeIfBrandChanges?.message}
               />
             </div>
 
@@ -491,17 +494,13 @@ export const FactoryExpenses: React.FC = () => {
 
             {expenseType === "Fixed Amount" && (
               <div className="w-full">
-                <FormField
-                  type="number"
+                <FormattedNumberField
                   name="fixedAmountRate"
                   label="Fixed Amount"
                   placeholder="Fixed Amount"
-                  valueAsNumber
                   register={register}
-                  onChange={(e) => {
-                    handleNumberInput("fixedAmountRate", e);
-                  }}
-                  value={getValues("fixedAmountRate") ?? 0}
+                  setValue={setValue}
+                  watch={watch}
                   errorMessage={errors.fixedAmountRate?.message}
                 />
               </div>
@@ -509,17 +508,13 @@ export const FactoryExpenses: React.FC = () => {
 
             {expenseType === "Fixed/Ton" && (
               <div className="w-full">
-                <FormField
-                  type="number"
+                <FormattedNumberField
                   name="fixedPerTonRate"
                   label="Fixed/Ton"
-                  valueAsNumber
                   placeholder="Fixed/Ton"
                   register={register}
-                  onChange={(e) => {
-                    handleNumberInput("fixedPerTonRate", e);
-                  }}
-                  value={getValues("fixedPerTonRate") ?? 0}
+                  setValue={setValue}
+                  watch={watch}
                   errorMessage={errors.fixedPerTonRate?.message}
                 />
               </div>
@@ -559,22 +554,23 @@ export const FactoryExpenses: React.FC = () => {
                         tieredPrices.find((tp) => tp.rangeId === rangeId)
                           ?.price ?? 0;
 
-                      // Check if this is the last item in the array
-                      const isLastItem = index === rangeOptions.length - 1;
-
-                      // Format range display: show "+" for the last item, normal range otherwise
-                      const rangeDisplay = isLastItem
-                        ? `${range.rangeFrom}+`
-                        : `${range.rangeFrom} - ${range.rangeTo}`;
-
                       return (
                         <tr key={rangeId} className="hover:bg-gray-50">
-                          <td>{rangeDisplay}</td>
+                          <td>{`${range.rangeFrom} - ${range.rangeTo}`}</td>
                           <td>
-                            <input
-                              type="number"
+                            <FormattedNumberField
+                              name={`tieredPrices.${index}.price`}
+                              label={`Price for Range ${range.rangeFrom} - ${range.rangeTo}`}
                               placeholder="Enter Price"
                               value={existingPrice}
+                              register={register}
+                              setValue={setValue}
+                              watch={watch}
+                              errorMessage={
+                                errors[
+                                  `tieredPrice-${rangeId}` as keyof typeof errors
+                                ]?.message
+                              }
                               onChange={(e) => {
                                 const numValue =
                                   e.target.value.trim() === ""
@@ -582,11 +578,8 @@ export const FactoryExpenses: React.FC = () => {
                                     : parseInt(
                                         e.target.value.replace(/,/g, ""),
                                       );
-                                if (!isNaN(numValue)) {
-                                  handleTieredPriceInput(rangeId, numValue);
-                                }
+                                handleTieredPriceInput(rangeId, numValue);
                               }}
-                              className="input input-bordered input-sm w-full bg-white text-gray-800"
                             />
                           </td>
                         </tr>
@@ -635,6 +628,7 @@ export const FactoryExpenses: React.FC = () => {
                 <th className="p-3">Fixed/Ton</th>
                 <th className="p-3">Fixed Amount</th>
                 <th className="p-3">Percent/Ton</th>
+                <th className="p-3">Extra Charge</th>
                 <th className="p-3">Tiered Prices</th>
                 <th className="p-3">Actions</th>
               </tr>
@@ -646,9 +640,14 @@ export const FactoryExpenses: React.FC = () => {
                   <td>{expense.name}</td>
                   <td>{expense.appliesTo}</td>
                   <td>{expense.rateType}</td>
-                  <td>{expense.fixedPerTonRate ?? 0}</td>
-                  <td>{expense.fixedAmountRate ?? 0}</td>
+                  <td>
+                    {convertNumberIntoLocalString(expense.fixedPerTonRate ?? 0)}
+                  </td>
+                  <td>
+                    {convertNumberIntoLocalString(expense.fixedAmountRate ?? 0)}
+                  </td>
                   <td>{expense.percentagePerTonRate ?? 0}</td>
+                  <td>{expense.extraChargeIfBrandChanges ?? 0}</td>
                   <td>{getTieredPricesDisplay(expense.tieredPrices)}</td>
                   <td className="flex justify-center gap-2">
                     <button
