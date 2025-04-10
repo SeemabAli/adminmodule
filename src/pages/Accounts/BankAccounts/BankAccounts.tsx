@@ -392,7 +392,6 @@ const BankAccounts = () => {
             errorMessage={bankErrors.accountNumber?.message}
           />
           <FormattedNumberField
-            type="text"
             name="openingBalance"
             label="Opening Balance"
             placeholder="Opening Balance"
