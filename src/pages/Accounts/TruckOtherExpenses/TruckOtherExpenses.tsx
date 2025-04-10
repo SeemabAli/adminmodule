@@ -1,7 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { useEffect, useState } from "react";
 import { notify } from "@/lib/notify";
-import { FormField } from "@/common/components/ui/form/FormField";
+import {
+  FormattedNumberField,
+  FormField,
+} from "@/common/components/ui/form/FormField";
 import { useForm } from "react-hook-form";
 import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,6 +37,7 @@ const TruckOtherExpense = () => {
     formState: { errors, isSubmitting },
     handleSubmit,
     setValue,
+    watch,
     setFocus,
     reset,
   } = useForm({
@@ -151,31 +155,31 @@ const TruckOtherExpense = () => {
             register={register}
             errorMessage={errors.name?.message}
           />
-          <FormField
-            type="number"
+          <FormattedNumberField
             placeholder="1st Trip Amount"
             name={"firstTrip"}
             label={"First Trip Amount"}
-            valueAsNumber
             register={register}
+            setValue={setValue}
+            watch={watch}
             errorMessage={errors.firstTrip?.message}
           />
-          <FormField
-            type="number"
+          <FormattedNumberField
             placeholder="2nd Trip Amount"
             name={"secondTrip"}
             label={"Second Trip Amount"}
-            valueAsNumber
             register={register}
+            setValue={setValue}
+            watch={watch}
             errorMessage={errors.secondTrip?.message}
           />
-          <FormField
-            type="number"
+          <FormattedNumberField
             placeholder="3rd Trip Amount"
             name={"thirdTrip"}
             label={"Third Trip Amount"}
-            valueAsNumber
             register={register}
+            setValue={setValue}
+            watch={watch}
             errorMessage={errors.thirdTrip?.message}
           />
         </div>
