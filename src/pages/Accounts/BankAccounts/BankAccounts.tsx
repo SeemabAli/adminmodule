@@ -492,7 +492,7 @@ const BankAccounts = () => {
           </table>
         </div>
       ) : (
-        <div className="bg-base-200 p-6 rounded-lg shadow-md mb-6 text-center">
+        <div className="bg-base-200 p-6 rounded-lg shadow-md mb-6 text-center text-gray-500">
           No bank accounts added yet.
         </div>
       )}

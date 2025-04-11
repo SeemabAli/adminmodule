@@ -671,7 +671,7 @@ export const FactoryExpenses: React.FC = () => {
           </table>
         </div>
       ) : (
-        <div className="bg-gray-100 p-6 rounded-lg shadow-md text-center">
+        <div className="bg-base-200 p-6 rounded-lg shadow-md text-center text-gray-500">
           No expenses added yet.
         </div>
       )}
