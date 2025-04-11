@@ -17,7 +17,7 @@ import { useService } from "@/common/hooks/custom/useService";
 import { ErrorModal } from "@/common/components/Error";
 import { TrashIcon } from "@heroicons/react/24/solid";
 import { PencilSquareIcon } from "@heroicons/react/24/solid";
-import { ApiException } from "@/utils/exceptions";
+import { handleErrorNotification } from "@/utils/exceptions";
 
 const CompanyAccounts = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -51,13 +51,7 @@ const CompanyAccounts = () => {
     } catch (error: unknown) {
       logger.error(error);
 
-      if (error instanceof ApiException) {
-        if (error.statusCode == 409) {
-          notify.error("Company already exists.");
-        }
-        return;
-      }
-      notify.error("Failed to add company.");
+      handleErrorNotification(error, "Company");
     }
   };
 
@@ -78,7 +72,7 @@ const CompanyAccounts = () => {
       reset();
       notify.success("Company updated successfully.");
     } catch (error: unknown) {
-      notify.error("Failed to update company.");
+      handleErrorNotification(error, "Company");
       logger.error(error);
     }
   };
@@ -102,7 +96,7 @@ const CompanyAccounts = () => {
         setCompanies(companies.filter((company) => company.id !== companyId));
         notify.success("Company deleted successfully.");
       } catch (error: unknown) {
-        notify.error("Failed to delete company.");
+        handleErrorNotification(error, "Company");
         logger.error(error);
       }
     });
