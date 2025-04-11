@@ -30,6 +30,7 @@ import ImageUploader from "@/common/components/ImageUploader";
 import { uploadImage } from "@/common/services/upload.service";
 import { X, Eye } from "lucide-react";
 import { removeEmptyFields } from "@/utils/Form_Utils";
+import { handleErrorNotification } from "@/utils/exceptions";
 
 export const Customer: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -95,7 +96,7 @@ export const Customer: React.FC = () => {
       );
     } catch (error) {
       logger.error("Error creating URL for CNIC front image:", error);
-      notify.error("Failed to process image");
+      handleErrorNotification(error, "CNIC front image");
     }
   };
 
@@ -119,7 +120,7 @@ export const Customer: React.FC = () => {
       );
     } catch (error) {
       logger.error("Error creating URL for CNIC back image:", error);
-      notify.error("Failed to process image");
+      handleErrorNotification(error, "CNIC back image");
     }
   };
 
@@ -143,7 +144,7 @@ export const Customer: React.FC = () => {
       );
     } catch (error) {
       logger.error("Error creating URL for cheque image:", error);
-      notify.error("Failed to process image");
+      handleErrorNotification(error, "Cheque image");
     }
   };
 
@@ -167,7 +168,7 @@ export const Customer: React.FC = () => {
       );
     } catch (error) {
       logger.error("Error creating URL for signature image:", error);
-      notify.error("Failed to process image");
+      handleErrorNotification(error, "Signature image");
     }
   };
 
@@ -191,7 +192,7 @@ export const Customer: React.FC = () => {
       );
     } catch (error) {
       logger.error("Error creating URL for other image:", error);
-      notify.error("Failed to process image");
+      handleErrorNotification(error, "Other image");
     }
   };
 
@@ -329,7 +330,7 @@ export const Customer: React.FC = () => {
 
       notify.success("Cheque added successfully");
     } catch (error) {
-      notify.error("Failed to add cheque");
+      handleErrorNotification(error, "Cheque");
       logger.error("Cheque upload error:", error);
     }
   };
@@ -380,7 +381,7 @@ export const Customer: React.FC = () => {
 
       notify.success("Signature added successfully");
     } catch (error) {
-      notify.error("Failed to add signature");
+      handleErrorNotification(error, "Signature");
       logger.error("Signature upload error:", error);
     }
   };
@@ -444,7 +445,7 @@ export const Customer: React.FC = () => {
 
       notify.success("Image added successfully!");
     } catch (error) {
-      notify.error("Failed to add image");
+      handleErrorNotification(error, "Image");
       logger.error("Image upload error:", error);
     }
   };
@@ -498,7 +499,7 @@ export const Customer: React.FC = () => {
       // Reset form and state
       resetForm();
     } catch (error) {
-      notify.error("Failed to save customer.");
+      handleErrorNotification(error, "Customer");
       logger.error("Customer save error:", error);
     }
   };
@@ -604,7 +605,7 @@ export const Customer: React.FC = () => {
         setCustomers(customers.filter((_, i) => i !== index));
         notify.success("Customer deleted successfully!");
       } catch (error) {
-        notify.error("Failed to delete customer.");
+        handleErrorNotification(error, "Customer");
         logger.error(error);
       }
     });
@@ -648,7 +649,7 @@ export const Customer: React.FC = () => {
         setRoutes(routesData);
       } catch (error) {
         logger.error("Failed to fetch routes:", error);
-        notify.error("Failed to load routes");
+        handleErrorNotification(error, "Routes");
       }
     };
     void loadRoutes();
@@ -1155,9 +1156,7 @@ export const Customer: React.FC = () => {
                                   "Failed to upload CNIC front image:",
                                   error,
                                 );
-                                notify.error(
-                                  "Failed to upload CNIC front image",
-                                );
+                                handleErrorNotification(error, "CNIC Front");
                               }
                             } else {
                               notify.error(
@@ -1277,9 +1276,7 @@ export const Customer: React.FC = () => {
                                   "Failed to upload CNIC back image:",
                                   error,
                                 );
-                                notify.error(
-                                  "Failed to upload CNIC back image",
-                                );
+                                handleErrorNotification(error, "CNIC Back");
                               }
                             } else {
                               notify.error(

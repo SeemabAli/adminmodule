@@ -23,7 +23,7 @@ import { useService } from "@/common/hooks/custom/useService";
 import { ErrorModal } from "@/common/components/Error";
 import { TrashIcon } from "@heroicons/react/24/solid";
 import { PencilSquareIcon } from "@heroicons/react/24/solid";
-import { ApiException } from "@/utils/exceptions";
+import { handleErrorNotification } from "@/utils/exceptions";
 import { convertNumberIntoLocalString } from "@/utils/CommaSeparator";
 
 const TruckOtherExpense = () => {
@@ -59,14 +59,7 @@ const TruckOtherExpense = () => {
       notify.success("Expense added successfully.");
     } catch (error: unknown) {
       logger.error(error);
-
-      if (error instanceof ApiException) {
-        if (error.statusCode == 409) {
-          notify.error("Expense already exists.");
-        }
-        return;
-      }
-      notify.error("Failed to add expense.");
+      handleErrorNotification(error, "Expense");
     }
   };
 
@@ -89,7 +82,7 @@ const TruckOtherExpense = () => {
       reset();
       notify.success("Expense updated successfully.");
     } catch (error: unknown) {
-      notify.error("Failed to update expense.");
+      handleErrorNotification(error, "Expense");
       logger.error(error);
     }
   };
@@ -119,7 +112,7 @@ const TruckOtherExpense = () => {
         setExpenses(expenses.filter((expense) => expense.id !== expenseId));
         notify.success("Expense deleted successfully.");
       } catch (error: unknown) {
-        notify.error("Failed to delete expense.");
+        handleErrorNotification(error, "Expense");
         logger.error(error);
       }
     });

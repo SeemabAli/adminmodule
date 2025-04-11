@@ -28,7 +28,7 @@ import { fetchAllTruckRoute } from "../TruckRoute/truckroute.service";
 import { fetchAllTaxes } from "../Accounts/TaxAccounts/tax.service";
 import TrashIcon from "@heroicons/react/24/solid/TrashIcon";
 import PencilSquareIcon from "@heroicons/react/24/solid/PencilSquareIcon";
-import { ApiException } from "@/utils/exceptions";
+import { handleErrorNotification } from "@/utils/exceptions";
 import type { ITruckRoute } from "../TruckRoute/truckroute.schema";
 
 type BrandExtended = BrandFormData & {
@@ -123,7 +123,7 @@ const Brands = () => {
         );
       } catch (error) {
         logger.error("Failed to fetch initial data", error);
-        notify.error("Could not load required data");
+        handleErrorNotification(error, "Initial data");
       }
     };
 
@@ -329,14 +329,8 @@ const Brands = () => {
           : "Brand added successfully!",
       );
     } catch (error) {
-      if (error instanceof ApiException && error.statusCode === 409) {
-        notify.error("Brand with this code already exists.");
-      } else {
-        notify.error(
-          isEditMode ? "Failed to update brand" : "Failed to add brand",
-        );
-        logger.error(error);
-      }
+      logger.error(error);
+      handleErrorNotification(error, "Brand");
     }
   };
 
@@ -384,7 +378,7 @@ const Brands = () => {
         setBrands(brands.filter((brand) => brand.id !== brandId));
         notify.success("Brand deleted successfully!");
       } catch (error) {
-        notify.error("Failed to delete brand");
+        handleErrorNotification(error, "Brand");
         logger.error(error);
       }
     });

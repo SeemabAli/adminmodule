@@ -21,7 +21,7 @@ import { useService } from "@/common/hooks/custom/useService";
 import { ErrorModal } from "@/common/components/Error";
 import { TrashIcon } from "@heroicons/react/24/solid";
 import { PencilSquareIcon } from "@heroicons/react/24/solid";
-import { ApiException } from "@/utils/exceptions";
+import { ApiException, handleErrorNotification } from "@/utils/exceptions";
 import { fetchAllTruckRoute } from "@/pages/TruckRoute/truckroute.service";
 import { fetchAllDrivers } from "../Purchase/purchase.service";
 import type { ITruckRoute } from "@/pages/TruckRoute/truckroute.schema";
@@ -66,13 +66,7 @@ export const TruckInformation = () => {
       notify.success("Truck added successfully.");
     } catch (error: unknown) {
       logger.error(error);
-
-      if (error instanceof ApiException && error.statusCode === 409) {
-        notify.error("Truck already exists.");
-        return;
-      }
-
-      notify.error("Failed to add truck.");
+      handleErrorNotification(error, "Truck");
     }
   };
 
@@ -96,7 +90,7 @@ export const TruckInformation = () => {
       reset();
       notify.success("Truck updated successfully.");
     } catch (error: unknown) {
-      notify.error("Failed to update truck.");
+      handleErrorNotification(error, "Truck");
       logger.error(error);
     }
   };
@@ -125,7 +119,7 @@ export const TruckInformation = () => {
         setTrucks(trucks.filter((truck) => truck.id !== truckId));
         notify.success("Truck deleted successfully.");
       } catch (error: unknown) {
-        notify.error("Failed to delete truck.");
+        handleErrorNotification(error, "Truck");
         logger.error(error);
       }
     });
@@ -143,7 +137,7 @@ export const TruckInformation = () => {
         setRoutes(routesData);
       } catch (error) {
         logger.error("Failed to fetch routes", error);
-        notify.error("Could not load routes data");
+        handleErrorNotification(error, "Route");
       }
     };
 
@@ -153,7 +147,7 @@ export const TruckInformation = () => {
         setDrivers(driversData);
       } catch (error) {
         logger.error("Failed to fetch drivers", error);
-        notify.error("Could not load drivers data");
+        handleErrorNotification(error, "Driver");
       }
     };
 

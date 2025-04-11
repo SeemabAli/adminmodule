@@ -21,7 +21,7 @@ import { logger } from "@/lib/logger";
 import { ErrorModal } from "@/common/components/Error";
 import PencilSquareIcon from "@heroicons/react/24/solid/PencilSquareIcon";
 import TrashIcon from "@heroicons/react/24/solid/TrashIcon";
-import { ApiException } from "@/utils/exceptions";
+import { handleErrorNotification } from "@/utils/exceptions";
 import { convertNumberIntoLocalString } from "@/utils/CommaSeparator";
 
 const TaxAccounts = () => {
@@ -120,18 +120,7 @@ const TaxAccounts = () => {
       notify.success("Tax added successfully!");
     } catch (error: unknown) {
       logger.error(error);
-
-      if (error instanceof ApiException) {
-        if (error.statusCode === 409) {
-          if (selectedOption === "PERCENTAGE") {
-            notify.error("Tax percentage should be under 100%.");
-          } else {
-            notify.error("Tax already exists.");
-          }
-        }
-        return;
-      }
-      notify.error("Failed to add tax.");
+      handleErrorNotification(error, "Tax");
     }
   };
 
@@ -186,20 +175,7 @@ const TaxAccounts = () => {
       return;
     } catch (error: unknown) {
       logger.error(error);
-
-      if (error instanceof ApiException) {
-        if (error.statusCode === 409) {
-          if (selectedOption === "PERCENTAGE") {
-            notify.error("Tax percentage should be under 100%.");
-          } else {
-            notify.error("Failed to update tax. It may already exist.");
-          }
-        } else {
-          notify.error("Failed to update tax.");
-        }
-      } else {
-        notify.error("Failed to update tax.");
-      }
+      handleErrorNotification(error, "Tax");
       return Promise.reject();
     }
   };
@@ -252,7 +228,7 @@ const TaxAccounts = () => {
         setTaxes(taxes.filter((t) => t.id !== tax.id));
         notify.success("Tax deleted successfully!");
       } catch (error) {
-        notify.error("Failed to delete tax.");
+        handleErrorNotification(error, "Tax");
         logger.error(error);
       }
     });
@@ -264,8 +240,8 @@ const TaxAccounts = () => {
         const applications = await fetchTaxApplications();
         setTaxApplications(applications);
       } catch (error) {
-        console.error("Error fetching tax options:", error);
-        notify.error("Failed to fetch tax options.");
+        logger.error("Error fetching tax options:", error);
+        handleErrorNotification(error, "Tax Applications");
       }
     };
 

@@ -22,7 +22,7 @@ import {
 } from "./deliveryRoute.schema";
 import TrashIcon from "@heroicons/react/24/solid/TrashIcon";
 import PencilSquareIcon from "@heroicons/react/24/solid/PencilSquareIcon";
-import { ApiException } from "@/utils/exceptions";
+import { handleErrorNotification } from "@/utils/exceptions";
 import { convertNumberIntoLocalString } from "@/utils/CommaSeparator";
 
 const DeliveryRoutes = () => {
@@ -68,14 +68,7 @@ const DeliveryRoutes = () => {
       notify.success("Route added successfully!");
     } catch (error: unknown) {
       logger.error(error);
-
-      if (error instanceof ApiException) {
-        if (error.statusCode == 409) {
-          notify.error("Route already exists.");
-        }
-        return;
-      }
-      notify.error("Failed to add route.");
+      handleErrorNotification(error, "Delivery Route");
     }
   };
 
@@ -112,7 +105,7 @@ const DeliveryRoutes = () => {
         notify.error("Route ID is missing.");
       }
     } catch (error) {
-      notify.error("Failed to update route.");
+      handleErrorNotification(error, "Delivery Route");
       logger.error(error);
     }
 
@@ -157,7 +150,7 @@ const DeliveryRoutes = () => {
         setRoutes(routes.filter((route) => route.id !== id));
         notify.success("Route deleted successfully!");
       } catch (error) {
-        notify.error("Failed to delete route.");
+        handleErrorNotification(error, "Delivery Route");
         logger.error(error);
       }
     });

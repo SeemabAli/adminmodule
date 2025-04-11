@@ -13,7 +13,7 @@ import { ErrorModal } from "@/common/components/Error";
 import { useService } from "@/common/hooks/custom/useService";
 import { logger } from "@/lib/logger";
 import { convertNumberIntoLocalString } from "@/utils/CommaSeparator";
-import { ApiException } from "@/utils/exceptions";
+import { ApiException, handleErrorNotification } from "@/utils/exceptions";
 import PencilSquareIcon from "@heroicons/react/24/solid/PencilSquareIcon";
 import TrashIcon from "@heroicons/react/24/solid/TrashIcon";
 import { BanknotesIcon } from "@heroicons/react/24/solid";
@@ -164,7 +164,7 @@ const BankAccounts = () => {
       const chequesData = await fetchCheques(accountId);
       setCheques(chequesData);
     } catch (error) {
-      notify.error("Failed to load cheques");
+      handleErrorNotification(error, "Cheques");
       logger.error(error);
     } finally {
       setIsLoadingCheques(false);
@@ -180,11 +180,7 @@ const BankAccounts = () => {
       notify.success("Bank account added successfully");
     } catch (error: unknown) {
       logger.error(error);
-      if (error instanceof ApiException && error.statusCode === 409) {
-        notify.error("Bank account already exists");
-        return;
-      }
-      notify.error("Failed to add bank account");
+      handleErrorNotification(error, "Bank Account");
     }
   };
 
@@ -201,8 +197,8 @@ const BankAccounts = () => {
       resetBankForm();
       notify.success("Bank account updated successfully");
     } catch (error) {
-      notify.error("Failed to update bank account");
       logger.error(error);
+      handleErrorNotification(error, "Bank Account");
     }
   };
 
@@ -232,8 +228,8 @@ const BankAccounts = () => {
         }
         notify.success("Bank account deleted successfully");
       } catch (error) {
-        notify.error("Failed to delete bank account");
         logger.error(error);
+        handleErrorNotification(error, "Bank Account");
       }
     });
   };
@@ -250,7 +246,7 @@ const BankAccounts = () => {
       setActiveTab(data.status);
       notify.success("Cheque batch added successfully");
     } catch (error) {
-      notify.error("Failed to add cheque batch");
+      handleErrorNotification(error, "Cheque Batch");
       logger.error(error);
     }
   };
@@ -276,7 +272,7 @@ const BankAccounts = () => {
       setActiveTab(status);
       notify.success("Cheque status updated successfully");
     } catch (error) {
-      notify.error("Failed to update cheque status");
+      handleErrorNotification(error, "Cheque Status");
       logger.error(error);
     }
   };

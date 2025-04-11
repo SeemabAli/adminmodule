@@ -24,7 +24,7 @@ import {
   TrashIcon,
   UserPlusIcon,
 } from "@heroicons/react/24/solid";
-import { ApiException } from "@/utils/exceptions";
+import { handleErrorNotification } from "@/utils/exceptions";
 import { uploadPDF } from "@/common/services/upload.service";
 
 export type Employees = {
@@ -112,7 +112,7 @@ const EmployeeManagement = () => {
       notify.success("Document uploaded successfully!");
     } catch (error) {
       logger.error("Failed to upload PDF:", error);
-      notify.error("Failed to upload document. Please try again.");
+      handleErrorNotification(error, "PDF");
     } finally {
       setUploading(false);
     }
@@ -145,14 +145,7 @@ const EmployeeManagement = () => {
       notify.success("Employee added successfully!");
     } catch (error: unknown) {
       logger.error(error);
-
-      if (error instanceof ApiException) {
-        if (error.statusCode == 409) {
-          notify.error("Employee already exists.");
-        }
-        return;
-      }
-      notify.error("Failed to add employee.");
+      handleErrorNotification(error, "Employee");
     }
   };
 
@@ -198,7 +191,7 @@ const EmployeeManagement = () => {
       setDocumentPath(null);
       notify.success("Employee updated successfully!");
     } catch (error: unknown) {
-      notify.error("Failed to update employee.");
+      handleErrorNotification(error, "Employee");
       logger.error(error);
     }
   };
@@ -232,7 +225,7 @@ const EmployeeManagement = () => {
         setEmployees(employees.filter((employee) => employee.id !== id));
         notify.success("Employee deleted successfully!");
       } catch (error: unknown) {
-        notify.error("Failed to delete employee.");
+        handleErrorNotification(error, "Employee");
         logger.error(error);
       }
     });
@@ -281,7 +274,7 @@ const EmployeeManagement = () => {
       closeRoleModal();
     } catch (error) {
       logger.error("Failed to update role:", error);
-      notify.error("Failed to update employee role. Please try again.");
+      handleErrorNotification(error, "Role");
     }
   };
 
@@ -308,7 +301,7 @@ const EmployeeManagement = () => {
       closeRoleModal();
     } catch (error) {
       logger.error("Failed to revoke role:", error);
-      notify.error("Failed to revoke employee role. Please try again.");
+      handleErrorNotification(error, "Role");
     }
   };
 

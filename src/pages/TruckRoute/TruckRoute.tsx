@@ -17,7 +17,7 @@ import { useService } from "@/common/hooks/custom/useService";
 import { ErrorModal } from "@/common/components/Error";
 import { TrashIcon } from "@heroicons/react/24/solid";
 import { PencilSquareIcon } from "@heroicons/react/24/solid";
-import { ApiException } from "@/utils/exceptions";
+import { handleErrorNotification } from "@/utils/exceptions";
 
 export const TruckRoute = () => {
   const [routes, setRoutes] = useState<ITruckRoute[]>([]);
@@ -51,14 +51,7 @@ export const TruckRoute = () => {
       notify.success("Route added successfully.");
     } catch (error: unknown) {
       logger.error(error);
-
-      if (error instanceof ApiException) {
-        if (error.statusCode == 409) {
-          notify.error("Route already exists.");
-        }
-        return;
-      }
-      notify.error("Failed to add route.");
+      handleErrorNotification(error, "Route");
     }
   };
 
@@ -78,7 +71,7 @@ export const TruckRoute = () => {
       reset();
       notify.success("Route updated successfully.");
     } catch (error: unknown) {
-      notify.error("Failed to update route.");
+      handleErrorNotification(error, "Route");
       logger.error(error);
     }
   };
@@ -105,7 +98,7 @@ export const TruckRoute = () => {
         setRoutes(routes.filter((route) => route.id !== routeId));
         notify.success("Route deleted successfully.");
       } catch (error: unknown) {
-        notify.error("Failed to delete route.");
+        handleErrorNotification(error, "Route");
         logger.error(error);
       }
     });

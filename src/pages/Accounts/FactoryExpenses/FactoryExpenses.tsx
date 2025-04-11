@@ -12,7 +12,7 @@ import { convertNumberIntoLocalString } from "@/utils/CommaSeparator";
 import { ErrorModal } from "@/common/components/Error";
 import { useService } from "@/common/hooks/custom/useService";
 import { logger } from "@/lib/logger";
-import { ApiException } from "@/utils/exceptions";
+import { handleErrorNotification } from "@/utils/exceptions";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
 import {
   factoryExpensesSchema,
@@ -88,9 +88,9 @@ export const FactoryExpenses: React.FC = () => {
         // Fetch range options separately from the service hook
         const rangeData = await fetchAllRanges();
         setRangeOptions(rangeData);
-      } catch (fetchError) {
-        logger.error(fetchError);
-        notify.error("Failed to fetch range options");
+      } catch (error) {
+        logger.error(error);
+        handleErrorNotification(error, "Range Options");
       }
     };
 
@@ -202,13 +202,9 @@ export const FactoryExpenses: React.FC = () => {
       // If refetch functionality is needed, consider implementing it in the service or manually re-triggering the hook.
 
       notify.success("Expense added successfully");
-    } catch (fetchError: unknown) {
-      logger.error(fetchError);
-      if (fetchError instanceof ApiException && fetchError.statusCode === 409) {
-        notify.error("Expense already exists");
-      } else {
-        notify.error("Failed to add expense");
-      }
+    } catch (error: unknown) {
+      logger.error(error);
+      handleErrorNotification(error, "Expense");
     } finally {
       setIsSubmitting(false);
     }
@@ -260,7 +256,7 @@ export const FactoryExpenses: React.FC = () => {
       notify.success("Expense updated successfully");
     } catch (error) {
       logger.error(error);
-      notify.error("Failed to update expense");
+      handleErrorNotification(error, "Expense");
     } finally {
       setIsSubmitting(false);
     }
@@ -340,7 +336,7 @@ export const FactoryExpenses: React.FC = () => {
         notify.success("Expense deleted successfully");
       } catch (error) {
         logger.error(error);
-        notify.error("Failed to delete expense");
+        handleErrorNotification(error, "Expense");
       }
     });
   };
