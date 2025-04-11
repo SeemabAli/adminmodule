@@ -20,7 +20,11 @@ export const employeeSchema = z.object({
     .nonempty("Email is required")
     .email("Invalid email address"),
 
-  cnic: z.string().nonempty("CNIC is required"),
+  cnic: z
+    .string()
+    .nonempty("CNIC is required")
+    .min(10, "CNIC must be at least 10 characters")
+    .max(20, "CNIC must not exceed 20 characters"),
 
   designation: z.string().nonempty("Designation is required"),
 
