@@ -46,7 +46,7 @@ export const deletePurchase = async (id: string) => {
 
 // Updated to fetch employees with department "DRIVER"
 export const fetchAllDrivers = async () => {
-  const response = await sendApiRequest<any[]>("/employees?department=DRIVER", {
+  const response = await sendApiRequest<any[]>("/employees/drivers", {
     method: "GET",
     withAuthorization: true,
   });

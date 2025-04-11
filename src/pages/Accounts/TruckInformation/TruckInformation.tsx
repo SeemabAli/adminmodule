@@ -30,7 +30,9 @@ export const TruckInformation = () => {
   const [trucks, setTrucks] = useState<ITruckInformation[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [routes, setRoutes] = useState<ITruckRoute[]>([]);
-  const [drivers, setDrivers] = useState<{ id: string; name: string }[]>([]); // State for drivers
+  const [drivers, setDrivers] = useState<
+    { id: string; name: string; email?: string }[]
+  >([]); // Updated for email
 
   const { error, data, isLoading } = useService(fetchAllTruckInformation);
 
@@ -47,7 +49,8 @@ export const TruckInformation = () => {
     resolver: zodResolver(truckInformationSchema),
     defaultValues: {
       number: "",
-      driverName: "",
+      driverId: "",
+      driver: { name: "", email: "" },
       routeId: "",
       sourcingType: "INSOURCE", // Set default to Insource
     },
@@ -64,12 +67,11 @@ export const TruckInformation = () => {
     } catch (error: unknown) {
       logger.error(error);
 
-      if (error instanceof ApiException) {
-        if (error.statusCode == 409) {
-          notify.error("Truck already exists.");
-        }
+      if (error instanceof ApiException && error.statusCode === 409) {
+        notify.error("Truck already exists.");
         return;
       }
+
       notify.error("Failed to add truck.");
     }
   };
@@ -105,7 +107,11 @@ export const TruckInformation = () => {
 
     setValue("id", targetTruck.id ?? "");
     setValue("number", targetTruck.number);
-    setValue("driverName", targetTruck.driverName);
+    setValue("driverId", targetTruck.driverId);
+    // Set driver information based on nested driver object
+    if (targetTruck.driver) {
+      setValue("driver", targetTruck.driver);
+    }
     setValue("routeId", targetTruck.routeId);
     setValue("sourcingType", targetTruck.sourcingType);
     setFocus("number");
@@ -184,19 +190,31 @@ export const TruckInformation = () => {
           <label className="block mb-1 font-medium">
             Driver Name
             <select
-              {...register("driverName")}
+              {...register("driverId", {
+                onChange: (e) => {
+                  const selectedDriver = drivers.find(
+                    (d) => d.id === e.target.value,
+                  );
+                  // Update the driver object instead of just driverName
+                  setValue("driver", {
+                    id: selectedDriver?.id,
+                    name: selectedDriver?.name,
+                    email: selectedDriver?.email,
+                  });
+                },
+              })}
               className="select select-bordered w-full"
             >
               <option value="">Select Driver</option>
               {drivers.map((driver) => (
-                <option key={driver.id} value={driver.name}>
+                <option key={driver.id} value={driver.id}>
                   {driver.name}
                 </option>
               ))}
             </select>
-            {errors.driverName && (
+            {errors.driverId && (
               <span className="text-red-500 text-xs font-light">
-                {errors.driverName.message}
+                {errors.driverId.message}
               </span>
             )}
           </label>
@@ -294,9 +312,11 @@ export const TruckInformation = () => {
                 >
                   <td className="p-3">{index + 1}</td>
                   <td className="p-3">{truck.number}</td>
-                  <td className="p-3">{truck.driverName}</td>
+                  <td className="p-3">{truck.driver?.name}</td>
                   <td className="p-3">
-                    {routes.find((route) => route.id === truck.routeId)?.name ??
+                    {truck.route?.name ??
+                      routes.find((route) => route.id === truck.routeId)
+                        ?.name ??
                       "Unknown"}
                   </td>
                   <td className="p-3">{truck.sourcingType}</td>
