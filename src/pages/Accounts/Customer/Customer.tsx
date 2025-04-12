@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { useState, useEffect } from "react";
@@ -16,20 +15,12 @@ import { Button } from "@/common/components/ui/Button";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ErrorModal } from "@/common/components/Error";
 import { useService } from "@/common/hooks/custom/useService";
-import {
-  customerSchema,
-  type ICustomer,
-  type Phone,
-  type Address,
-  type PostDatedCheque,
-} from "./customer.schema";
+import { customerSchema, type ICustomer } from "./customer.schema";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
 import { fetchAllRoutes } from "../DeliveryRoutes/route.service";
 import type { DeliveryRoute } from "../DeliveryRoutes/deliveryRoute.schema";
-import ImageUploader from "@/common/components/ImageUploader";
 import { uploadImage } from "@/common/services/upload.service";
 import { X, Eye } from "lucide-react";
-import { removeEmptyFields } from "@/utils/Form_Utils";
 import { handleErrorNotification } from "@/utils/exceptions";
 
 export const Customer: React.FC = () => {
@@ -51,14 +42,16 @@ export const Customer: React.FC = () => {
   const [cnicFrontFile, setCnicFrontFile] = useState<File | null>(null);
   const [cnicBackFile, setCnicBackFile] = useState<File | null>(null);
   const [chequeFile, setChequeFile] = useState<File | null>(null);
-  const [signatureFile, setSignatureFile] = useState<File | null>(null);
+  const [signatureImageFile, setSignatureImageFile] = useState<File | null>(
+    null,
+  );
   const [otherImageFile, setOtherImageFile] = useState<File | null>(null);
 
   // Image previews
   const [cnicFrontPreview, setCnicFrontPreview] = useState("");
   const [cnicBackPreview, setCnicBackPreview] = useState("");
   const [chequePreview, setChequePreview] = useState("");
-  const [signaturePreview, setSignaturePreview] = useState("");
+  const [signatureImagePreview, setSignatureImagePreview] = useState("");
   const [otherImagePreview, setOtherImagePreview] = useState("");
 
   // Notification preference state
@@ -148,21 +141,21 @@ export const Customer: React.FC = () => {
     }
   };
 
-  const handleSignatureSelected = (file: File) => {
+  const handleSignatureImageSelected = (file: File) => {
     if (!file || !(file instanceof File) || file.size === 0) {
       notify.error("Invalid file selected");
       return;
     }
 
     // Clear previous preview if it exists
-    if (signaturePreview?.startsWith("blob:")) {
-      URL.revokeObjectURL(signaturePreview);
+    if (signatureImagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(signatureImagePreview);
     }
 
     try {
       const objectUrl = URL.createObjectURL(file);
-      setSignatureFile(file);
-      setSignaturePreview(objectUrl);
+      setSignatureImageFile(file);
+      setSignatureImagePreview(objectUrl);
       logger.info(
         `Signature image selected: ${file.name}, size: ${file.size}, type: ${file.type}`,
       );
@@ -343,9 +336,9 @@ export const Customer: React.FC = () => {
 
   const handleAddSignature = async () => {
     if (
-      !signatureFile ||
-      !(signatureFile instanceof File) ||
-      signatureFile.size === 0
+      !signatureImageFile ||
+      !(signatureImageFile instanceof File) ||
+      signatureImageFile.size === 0
     ) {
       notify.error("Please select a valid signature image first");
       return;
@@ -353,11 +346,11 @@ export const Customer: React.FC = () => {
 
     try {
       logger.info(
-        `Uploading signature: ${signatureFile.name}, size: ${signatureFile.size}, type: ${signatureFile.type}`,
+        `Uploading signature: ${signatureImageFile.name}, size: ${signatureImageFile.size}, type: ${signatureImageFile.type}`,
       );
 
       // Upload the file first
-      const uploadResponse = await uploadImage(signatureFile);
+      const uploadResponse = await uploadImage(signatureImageFile);
 
       // Validate response
       if (!uploadResponse?.path) {
@@ -366,46 +359,20 @@ export const Customer: React.FC = () => {
       }
 
       // Add signature to the form
-      const currentSignatures = watchedValues.signatures ?? [];
-      setValue("signatures", [
-        ...currentSignatures,
-        { image: uploadResponse.path },
-      ]);
+      setValue("signatureImage", uploadResponse.path);
 
       // Reset state
-      setSignatureFile(null);
-      if (signaturePreview?.startsWith("blob:")) {
-        URL.revokeObjectURL(signaturePreview);
+      setSignatureImageFile(null);
+      if (signatureImagePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(signatureImagePreview);
       }
-      setSignaturePreview("");
+      setSignatureImagePreview("");
 
       notify.success("Signature added successfully");
     } catch (error) {
       handleErrorNotification(error, "Signature");
       logger.error("Signature upload error:", error);
     }
-  };
-
-  const handleRemoveSignature = (index: number) => {
-    const currentSignatures = [...(watchedValues.signatures ?? [])];
-    currentSignatures.splice(index, 1);
-    setValue("signatures", currentSignatures);
-  };
-
-  const handleSignatureImageUpload = (file: File) => {
-    if (signaturePreview?.startsWith("blob:")) {
-      URL.revokeObjectURL(signaturePreview);
-    }
-    setSignatureFile(file);
-    setSignaturePreview(URL.createObjectURL(file));
-  };
-
-  const handleOtherImageUpload = (file: File) => {
-    if (otherImagePreview?.startsWith("blob:")) {
-      URL.revokeObjectURL(otherImagePreview);
-    }
-    setOtherImageFile(file);
-    setOtherImagePreview(URL.createObjectURL(file));
   };
 
   const handleAddOtherImage = async () => {
@@ -448,13 +415,6 @@ export const Customer: React.FC = () => {
       handleErrorNotification(error, "Image");
       logger.error("Image upload error:", error);
     }
-  };
-
-  const handleRemoveOtherImage = (index: number) => {
-    const currentImages = [...(watchedValues.otherImages || [])];
-    currentImages.splice(index, 1);
-    setValue("otherImages", currentImages);
-    notify.success("Image removed successfully!");
   };
 
   const handleSave = async (formData: ICustomer) => {
@@ -518,7 +478,7 @@ export const Customer: React.FC = () => {
     setCnicFrontFile(null);
     setCnicBackFile(null);
     setChequeFile(null);
-    setSignatureFile(null);
+    setSignatureImageFile(null);
     setOtherImageFile(null);
 
     // Clean up preview URLs
@@ -527,8 +487,8 @@ export const Customer: React.FC = () => {
     if (cnicBackPreview?.startsWith("blob:"))
       URL.revokeObjectURL(cnicBackPreview);
     if (chequePreview?.startsWith("blob:")) URL.revokeObjectURL(chequePreview);
-    if (signaturePreview?.startsWith("blob:"))
-      URL.revokeObjectURL(signaturePreview);
+    if (signatureImagePreview?.startsWith("blob:"))
+      URL.revokeObjectURL(signatureImagePreview);
     if (otherImagePreview?.startsWith("blob:"))
       URL.revokeObjectURL(otherImagePreview);
 
@@ -536,7 +496,7 @@ export const Customer: React.FC = () => {
     setCnicFrontPreview("");
     setCnicBackPreview("");
     setChequePreview("");
-    setSignaturePreview("");
+    setSignatureImagePreview("");
     setOtherImagePreview("");
 
     setNotificationEnabled(false);
@@ -621,8 +581,8 @@ export const Customer: React.FC = () => {
         URL.revokeObjectURL(cnicBackPreview);
       if (chequePreview?.startsWith("blob:"))
         URL.revokeObjectURL(chequePreview);
-      if (signaturePreview?.startsWith("blob:"))
-        URL.revokeObjectURL(signaturePreview);
+      if (signatureImagePreview?.startsWith("blob:"))
+        URL.revokeObjectURL(signatureImagePreview);
       if (otherImagePreview?.startsWith("blob:"))
         URL.revokeObjectURL(otherImagePreview);
     };
@@ -630,7 +590,7 @@ export const Customer: React.FC = () => {
     cnicFrontPreview,
     cnicBackPreview,
     chequePreview,
-    signaturePreview,
+    signatureImagePreview,
     otherImagePreview,
   ]);
 
@@ -840,24 +800,16 @@ export const Customer: React.FC = () => {
                     <h3 className="card-title border-b pb-2 mb-3 text-secondary">
                       Signatures
                     </h3>
-                    {selectedCustomer.signatures &&
-                    selectedCustomer.signatures.length > 0 ? (
+                    {selectedCustomer.signatureImage && (
                       <div className="grid grid-cols-2 gap-4">
-                        {selectedCustomer.signatures.map((signature, index) => (
-                          <div
-                            key={index}
-                            className="border rounded-md p-2 bg-white"
-                          >
-                            <img
-                              src={signature.image}
-                              alt={`Signature ${index + 1}`}
-                              className="w-full h-24 object-contain"
-                            />
-                          </div>
-                        ))}
+                        <div className="border rounded-md p-2 bg-white">
+                          <img
+                            src={selectedCustomer.signatureImage}
+                            alt="Signature"
+                            className="w-full h-24 object-contain"
+                          />
+                        </div>
                       </div>
-                    ) : (
-                      <p className="text-gray-500 italic">No signatures</p>
                     )}
                   </div>
                 </div>
@@ -1354,7 +1306,7 @@ export const Customer: React.FC = () => {
                       accept="image/*"
                       onChange={(e) => {
                         if (e.target.files?.[0]) {
-                          handleSignatureSelected(e.target.files[0]);
+                          handleSignatureImageSelected(e.target.files[0]);
                         }
                       }}
                       className="file-input file-input-bordered w-full"
@@ -1362,12 +1314,12 @@ export const Customer: React.FC = () => {
                   </div>
                 </div>
 
-                {signaturePreview && (
+                {signatureImagePreview && (
                   <div className="mt-2 bg-gray-50 p-2 rounded-md">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
                         <img
-                          src={signaturePreview}
+                          src={signatureImagePreview}
                           alt="Signature Preview"
                           className="w-24 h-16 object-cover rounded"
                         />
@@ -1378,11 +1330,11 @@ export const Customer: React.FC = () => {
                       <button
                         className="btn btn-circle btn-xs btn-ghost text-error hover:bg-error hover:text-white transition-colors duration-200 flex items-center justify-center"
                         onClick={() => {
-                          if (signaturePreview?.startsWith("blob:")) {
-                            URL.revokeObjectURL(signaturePreview);
+                          if (signatureImagePreview?.startsWith("blob:")) {
+                            URL.revokeObjectURL(signatureImagePreview);
                           }
-                          setSignaturePreview("");
-                          setSignatureFile(null);
+                          setSignatureImagePreview("");
+                          setSignatureImageFile(null);
                         }}
                       >
                         <span className="text-lg font-bold leading-none pb-1">
@@ -1393,13 +1345,13 @@ export const Customer: React.FC = () => {
                   </div>
                 )}
 
-                {signatureFile && (
+                {signatureImageFile && (
                   <div className="flex justify-end mt-1">
                     <Button
                       className="btn-sm"
                       shape="info"
                       onClick={handleAddSignature}
-                      disabled={!signatureFile}
+                      disabled={!signatureImageFile}
                     >
                       Add Signature
                     </Button>
@@ -1407,17 +1359,15 @@ export const Customer: React.FC = () => {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                {(watchedValues.signatures ?? []).map((signature, index) => (
-                  <div key={index} className="relative">
-                    <img
-                      src={signature.image}
-                      alt={`Signature ${index + 1}`}
-                      className="w-full h-32 object-contain border rounded-md"
-                    />
-                  </div>
-                ))}
-              </div>
+              {watchedValues.signatureImage && (
+                <div className="mt-4">
+                  <img
+                    src={watchedValues.signatureImage}
+                    className="w-32 h-32 object-contain border rounded-md"
+                    alt="Signature"
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}

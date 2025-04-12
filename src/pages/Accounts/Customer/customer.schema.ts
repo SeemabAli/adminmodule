@@ -20,11 +20,6 @@ export const postDatedChequeSchema = z.object({
   image: z.string().optional(),
 });
 
-// Define schema for Signature
-const signatureSchema = z.object({
-  image: z.string().nonempty("Signature image is required"),
-});
-
 // Define schema for Address
 export const addressSchema = z.object({
   currentAddress: z.string().optional(),
@@ -72,7 +67,7 @@ export const customerSchema = z.object({
     })
     .optional(),
   postDatedCheques: z.array(postDatedChequeSchema).optional(),
-  signatures: z.array(signatureSchema).optional(),
+  signatureImage: z.string().optional(),
   otherImages: z.array(z.string()).optional(),
   smsPattern: smsPatternSchema.optional(),
 });
