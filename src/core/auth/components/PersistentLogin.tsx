@@ -9,7 +9,8 @@ import { FullPageLoader } from "@/common/components/ui/FullPageLoader";
 
 export const PersistentLogin = () => {
   const dispatch = useDispatch();
-  const authToken = useSelector<RootState>((state) => state.auth.accessToken);
+  const { accessToken } = useSelector((state: RootState) => state.auth);
+  console.log("authToken", accessToken);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -23,12 +24,12 @@ export const PersistentLogin = () => {
         setIsLoading(false);
       }
     }
-    if (!authToken) {
+    if (!accessToken) {
       void refreshToken();
     } else {
       setIsLoading(false);
     }
-  }, [authToken, dispatch]);
+  }, [accessToken, dispatch]);
 
   return isLoading ? <FullPageLoader /> : <Outlet />;
 };

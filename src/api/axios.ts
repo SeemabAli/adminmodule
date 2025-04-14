@@ -46,8 +46,8 @@ function createPrivateAxiosInstance() {
         prevRequest.sent = true;
         logger.info("Access token expired");
         try {
-          const { accessToken } = await refreshAuthToken();
-          prevRequest.headers.Authorization = `Bearer ${accessToken}`;
+          const { accessToken: token } = await refreshAuthToken();
+          prevRequest.headers.Authorization = `Bearer ${token}`;
           return await axiosPrivate.request(prevRequest);
         } catch (error: unknown) {
           logger.error(error, "AxiosPrivateInterceptor");
