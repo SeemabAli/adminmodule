@@ -34,7 +34,7 @@ const forgotPasswordSchema = z.object({
 
 type ForgotPasswordData = z.infer<typeof forgotPasswordSchema>;
 
-export const SignInPage = () => {
+const LoginPage = () => {
   const {
     register,
     handleSubmit,
@@ -307,3 +307,5 @@ export const SignInPage = () => {
     </div>
   );
 };
+
+export default LoginPage;

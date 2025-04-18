@@ -52,7 +52,13 @@ function createPrivateAxiosInstance() {
         } catch (error: unknown) {
           logger.error(error, "AxiosPrivateInterceptor");
           // remove auth token from store if refresh token fails
-          store.dispatch(authActions.setAuth({}));
+          store.dispatch(
+            authActions.setAuth({
+              userId: "",
+              accessToken: undefined,
+              roles: [],
+            }),
+          );
           if (error instanceof Error) {
             return Promise.reject(error);
           }

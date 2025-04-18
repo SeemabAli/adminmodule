@@ -1,8 +1,13 @@
 import { useNavigate } from "react-router";
+import {
+  ExclamationTriangleIcon,
+  ArrowLeftIcon,
+} from "@heroicons/react/24/outline";
 
 type ErrorModalProps = {
   message?: string;
 };
+
 export const ErrorModal = ({ message }: ErrorModalProps) => {
   const navigate = useNavigate();
 
@@ -16,47 +21,21 @@ export const ErrorModal = ({ message }: ErrorModalProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-base-300 to-base-100 flex items-center justify-center p-4">
-      <div className="card w-full max-w-md bg-base-100 shadow-2xl border border-base-200">
-        <div className="card-body items-center text-center p-8">
-          <div className="text-error animate-pulse">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-32 w-32"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
+    <div className="min-h-screen bg-gray-800 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-gray-700 shadow-2xl border border-gray-600 rounded-lg">
+        <div className="items-center text-center p-8">
+          <div className="text-red-400 animate-pulse">
+            <ExclamationTriangleIcon className="h-32 w-32 mx-auto" />
           </div>
-          <h1 className="text-5xl font-bold text-base-content">Oops!</h1>
-          <div className="divider"></div>
-          <p className="text-base-content/80 text-lg">{errorMessage}</p>
-          <div className="card-actions">
+          <h1 className="text-5xl font-bold text-white mt-4">Oops!</h1>
+          <div className="my-4 border-t border-gray-600"></div>
+          <p className="text-gray-300 text-lg mb-6">{errorMessage}</p>
+          <div className="flex justify-center">
             <button
               onClick={handleGoBack}
-              className="btn btn-info btn-lg shadow-md hover:shadow-lg transition-all duration-300"
+              className="flex items-center px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 shadow-md hover:shadow-lg transition-all duration-300"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 mr-2"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
-              </svg>
+              <ArrowLeftIcon className="h-6 w-6 mr-2" />
               Go Back
             </button>
           </div>

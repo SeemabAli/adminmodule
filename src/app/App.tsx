@@ -1,48 +1,67 @@
 import { Toaster } from "react-hot-toast";
-import CompanyAccounts from "@/pages/Accounts/CompanyAccounts/CompanyAccounts";
-import Employees from "@/pages/Accounts/Employees/Employees";
-import BankAccounts from "@/pages/Accounts/BankAccounts/BankAccounts";
-import DeliveryRoutes from "@/pages/Accounts/DeliveryRoutes/DeliveryRoutes";
-import TaxAccounts from "@/pages/Accounts/TaxAccounts/TaxAccounts";
-import TruckOtherExpenses from "@/pages/Accounts/TruckOtherExpenses/TruckOtherExpenses";
-import Brands from "@/pages/Brands/Brands";
 import {
   Route,
   createBrowserRouter,
   createRoutesFromElements,
   RouterProvider,
 } from "react-router";
-import { Home } from "@/pages/home/Home";
 import { RootLayout } from "@/common/layouts/rootLayout/RootLayout";
 import { AuthLayout } from "@/common/layouts/authLayout/AuthLayout";
-import { SigninPage } from "@/core/auth/pages/SigninPage";
 import { RequireAuth } from "@/core/auth/components/RequireAuth";
 import { PersistentLogin } from "@/core/auth/components/PersistentLogin";
 import { ROLES } from "@/common/constants/roles.constants";
+import { SignInPage } from "@/core/auth/pages/SigninPage";
 import { UnauthorizedPage } from "@/pages/unAuthorized/UnAuthorizedPage";
-import Purchase from "@/pages/Accounts/Purchase/Purchase";
+import OnboardingMain from "@/pages/OnBoarding/OnboardingMain";
 
-import { TruckInformation } from "@/pages/Accounts/TruckInformation/TruckInformation";
-import { FactoryExpenses } from "@/pages/Accounts/FactoryExpenses/FactoryExpenses";
-import { Customer } from "@/pages/Accounts/Customer/Customer";
-import { TruckRoute } from "@/pages/TruckRoute/TruckRoute";
-import { SetPasswordPage } from "@/core/auth/pages/SetPasswordPage";
+// Pages
+import InsertClassPage from "@/pages/addclass";
+import AddStaffPage from "@/pages/addstaff";
+import AddSubjectPage from "@/pages/addsubject";
+import Admission from "@/pages/admission";
+import AttendanceMain from "@/pages/Attendance/AttendanceMain";
+import ClassListingPage from "@/pages/class";
+import DiaryPage from "@/pages/Diary";
+import UpdateClassPage from "@/pages/editclass";
+import EditSubjectPage from "@/pages/editsubject";
+import ExamManagement from "@/pages/EMS";
+import GradesPage from "@/pages/grades";
+import StaffListingPage from "@/pages/staff";
+import StudentListing from "@/pages/Students";
+import SubjectListingPage from "@/pages/Subjects";
+import OnboardingCheck from "@/pages/OnBoarding/OnboardingCheck";
 
 const router = createBrowserRouter(
   createRoutesFromElements([
-    // public routes
-    <Route path="/login" element={<AuthLayout />}>
-      <Route index element={<SigninPage />} />
+    // Public Routes
+    <Route path="/login" element={<AuthLayout />} key="auth">
+      <Route index element={<SignInPage />} />
     </Route>,
 
-    <Route path="/" element={<RootLayout />}>
-      <Route element={<UnauthorizedPage />} path="unauthorized" />
-      {/* Employee Routes */}
-      <Route element={<RequireAuth allowedRoles={[ROLES.EMPLOYEE]} />}>
-        <Route path="set-password" element={<SetPasswordPage />} />
-      </Route>
+    <Route path="/" element={<RootLayout />} key="main">
+      <Route path="unauthorized" element={<UnauthorizedPage />} />
+
       <Route element={<PersistentLogin />}>
-        {/* Home Access */}
+        {/* Onboarding Route */}
+        <Route
+          element={
+            <RequireAuth
+              allowedRoles={[ROLES.ADMIN, ROLES.OWNER, ROLES.ACCOUNTANT]}
+            />
+          }
+        >
+          <Route
+            path="onboarding"
+            element={
+              <OnboardingMain
+                onComplete={(data) => {
+                  console.log("Onboarding completed:", data);
+                }}
+              />
+            }
+          />
+        </Route>
+
         <Route
           element={
             <RequireAuth
@@ -55,102 +74,47 @@ const router = createBrowserRouter(
             />
           }
         >
-          <Route index element={<Home />} />
-        </Route>
+          {/* OnboardingCheck wraps routes to ensure OWNER completes onboarding */}
+          <Route element={<OnboardingCheck />}>
+            {/* Class Management */}
+            <Route path="add-class" element={<InsertClassPage />} />
+            <Route path="update-class/:classID" element={<UpdateClassPage />} />
+            <Route path="class" element={<ClassListingPage />} />
 
-        {/* Company Access */}
-        <Route
-          element={<RequireAuth allowedRoles={[ROLES.OWNER, ROLES.ADMIN]} />}
-        >
-          <Route path="company-accounts" element={<CompanyAccounts />} />
-        </Route>
-        {/* Bank Access */}
-        <Route
-          element={<RequireAuth allowedRoles={[ROLES.OWNER, ROLES.ADMIN]} />}
-        >
-          <Route path="bank-accounts" element={<BankAccounts />} />
-        </Route>
-        {/* Delivery Routes Access */}
-        <Route
-          element={
-            <RequireAuth
-              allowedRoles={[ROLES.OWNER, ROLES.ADMIN, ROLES.ACCOUNTANT]}
-            />
-          }
-        >
-          <Route path="delivery-routes" element={<DeliveryRoutes />} />
-        </Route>
-        {/* Tax Access */}
-        <Route
-          element={
-            <RequireAuth
-              allowedRoles={[ROLES.OWNER, ROLES.ADMIN, ROLES.ACCOUNTANT]}
-            />
-          }
-        >
-          <Route path="tax-accounts" element={<TaxAccounts />} />
-        </Route>
-        {/* Truck Other Expenses Access */}
-        <Route
-          element={
-            <RequireAuth
-              allowedRoles={[ROLES.OWNER, ROLES.ADMIN, ROLES.ACCOUNTANT]}
-            />
-          }
-        >
-          <Route path="truck-other-expenses" element={<TruckOtherExpenses />} />
-        </Route>
-        {/* Truck Information Access */}
-        <Route
-          element={
-            <RequireAuth
-              allowedRoles={[ROLES.OWNER, ROLES.ADMIN, ROLES.ACCOUNTANT]}
-            />
-          }
-        >
-          <Route path="truck-information" element={<TruckInformation />} />
-        </Route>
-        {/* Factory Expenses Access */}
-        <Route
-          element={<RequireAuth allowedRoles={[ROLES.OWNER, ROLES.ADMIN]} />}
-        >
-          <Route path="factory-expenses" element={<FactoryExpenses />} />
-        </Route>
-        {/* Purchase Access */}
-        <Route
-          element={<RequireAuth allowedRoles={[ROLES.OWNER, ROLES.ADMIN]} />}
-        >
-          <Route path="purchase" element={<Purchase />} />
-        </Route>
-        {/* Brands Access */}
-        <Route
-          element={<RequireAuth allowedRoles={[ROLES.OWNER, ROLES.ADMIN]} />}
-        >
-          <Route path="brands" element={<Brands />} />
-        </Route>
-        {/* Customer Access */}
-        <Route
-          element={<RequireAuth allowedRoles={[ROLES.OWNER, ROLES.ADMIN]} />}
-        >
-          <Route path="customer" element={<Customer />} />
-        </Route>
-        {/* Truck Route Access */}
-        <Route
-          element={<RequireAuth allowedRoles={[ROLES.OWNER, ROLES.ADMIN]} />}
-        >
-          <Route path="truck-route" element={<TruckRoute />} />
-        </Route>
+            {/* Staff Management */}
+            <Route path="add-staff" element={<AddStaffPage />} />
+            <Route path="staff" element={<StaffListingPage />} />
 
-        {/* Employee Access */}
-        <Route element={<RequireAuth allowedRoles={[ROLES.OWNER]} />}>
-          <Route path="employees" element={<Employees />} />
+            {/* Subject Management */}
+            <Route path="subject" element={<SubjectListingPage />} />
+            <Route path="add-subject" element={<AddSubjectPage />} />
+            <Route
+              path="update-subject/:subjectID"
+              element={<EditSubjectPage />}
+            />
+
+            {/* Exams */}
+            <Route path="exam-board" element={<ExamManagement />} />
+            <Route path="exams-details" element={<GradesPage />} />
+            <Route path="exams-detail/:examsID" element={<GradesPage />} />
+
+            {/* Attendance */}
+            <Route path="attendance" element={<AttendanceMain />} />
+
+            {/* Diary */}
+            <Route path="diary" element={<DiaryPage />} />
+
+            {/* Students */}
+            <Route path="students" element={<StudentListing />} />
+            <Route path="admission" element={<Admission />} />
+          </Route>
         </Route>
       </Route>
     </Route>,
   ]),
 );
 
-export const App = () => {
+const App = () => {
   return (
     <div>
       <Toaster />
@@ -158,3 +122,5 @@ export const App = () => {
     </div>
   );
 };
+
+export default App;

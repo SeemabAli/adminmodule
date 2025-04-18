@@ -218,3 +218,82 @@ export function FormattedNumberField<T extends FieldValues>({
     </div>
   );
 }
+
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
+type SelectFieldProps<T extends FieldValues> = {
+  name: FieldPath<T>;
+  label: string;
+  options: SelectOption[];
+  errorMessage?: FieldError["message"];
+  register: UseFormRegister<T>;
+  className?: string;
+} & Omit<InputHTMLAttributes<HTMLSelectElement>, "name">;
+
+export function SelectField<T extends FieldValues>({
+  name,
+  label,
+  options,
+  errorMessage,
+  register,
+  className = "relative left-0.5",
+  ...rest
+}: SelectFieldProps<T>) {
+  return (
+    <div className={`form-control w-full ${className}`}>
+      <label className="label font-medium">
+        <span className="label-text text-base-content">{label}</span>
+      </label>
+      <select
+        {...register(name)}
+        className="select select-bordered w-full bg-base-100 text-base-content focus:outline-none focus:ring-2 focus:ring-info"
+        {...rest}
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      {errorMessage && (
+        <span className="text-error text-xs mt-1">{errorMessage}</span>
+      )}
+    </div>
+  );
+}
+
+type TextAreaFieldProps<T extends FieldValues> = {
+  name: FieldPath<T>;
+  label: string;
+  errorMessage?: FieldError["message"];
+  register: UseFormRegister<T>;
+  className?: string;
+} & Omit<InputHTMLAttributes<HTMLTextAreaElement>, "name">;
+
+export function TextAreaField<T extends FieldValues>({
+  name,
+  label,
+  errorMessage,
+  register,
+  className = "relative left-0.5",
+  ...rest
+}: TextAreaFieldProps<T>) {
+  return (
+    <div className={`form-control w-full ${className}`}>
+      <label className="label font-medium">
+        <span className="label-text text-base-content">{label}</span>
+      </label>
+      <textarea
+        {...register(name)}
+        className="textarea textarea-bordered w-full bg-base-100 text-base-content focus:outline-none focus:ring-2 focus:ring-info"
+        {...rest}
+      />
+      {errorMessage && (
+        <span className="text-error text-xs mt-1">{errorMessage}</span>
+      )}
+    </div>
+  );
+}
